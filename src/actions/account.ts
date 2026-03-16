@@ -7,6 +7,7 @@ import { deleteAttachment } from "@/lib/r2";
 import { eq, inArray } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { revalidatePath } from "next/cache";
+import { createEmailProvider } from "@/lib/providers/factory";
 
 export async function getAccounts() {
   return db.select().from(accounts).orderBy(accounts.createdAt);
@@ -15,6 +16,31 @@ export async function getAccounts() {
 export async function getAccountById(id: string) {
   const rows = await db.select().from(accounts).where(eq(accounts.id, id));
   return rows[0] ?? null;
+}
+
+export async function getSendCapableAccounts() {
+  const rows = await getAccounts();
+
+  return rows.flatMap((account) => {
+    try {
+      const creds = JSON.parse(decrypt(account.credentials));
+      const provider = createEmailProvider(account, creds);
+      if (!provider.getCapabilities().canSend) return [];
+
+      return [{
+        id: account.id,
+        provider: account.provider,
+        email: account.email,
+        displayName: account.displayName ?? account.email,
+        fromAddress: account.displayName
+          ? `${account.displayName} <${account.email}>`
+          : account.email,
+      }];
+    } catch (error) {
+      console.warn("Failed to resolve send capability for account:", account.email, error);
+      return [];
+    }
+  });
 }
 
 export async function addQQAccount(
@@ -46,10 +72,11 @@ export async function addOAuthAccount(
   displayName: string,
   accessToken: string,
   refreshToken: string,
+  scopes: string[] = [],
   initialFetchLimit = 200
 ) {
   const id = nanoid();
-  const creds = encrypt(JSON.stringify({ accessToken, refreshToken }));
+  const creds = encrypt(JSON.stringify({ accessToken, refreshToken, scopes }));
 
   await db
     .insert(accounts)
@@ -68,6 +95,8 @@ export async function addOAuthAccount(
 
   revalidatePath("/");
   revalidatePath("/accounts");
+  revalidatePath("/compose");
+  revalidatePath("/sent");
   return id;
 }
 
@@ -114,6 +143,8 @@ export async function removeAccount(id: string) {
   await db.delete(accounts).where(eq(accounts.id, id));
   revalidatePath("/");
   revalidatePath("/accounts");
+  revalidatePath("/compose");
+  revalidatePath("/sent");
 }
 
 export async function getDecryptedCredentials(id: string) {

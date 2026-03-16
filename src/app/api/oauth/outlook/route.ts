@@ -10,9 +10,9 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const { email, displayName, accessToken, refreshToken } =
+    const { email, displayName, accessToken, refreshToken, scopes } =
       await exchangeOutlookCode(code);
-    await addOAuthAccount("outlook", email, displayName, accessToken, refreshToken);
+    await addOAuthAccount("outlook", email, displayName, accessToken, refreshToken, scopes);
 
     return NextResponse.redirect(new URL("/accounts?success=outlook", request.url));
   } catch (err: unknown) {

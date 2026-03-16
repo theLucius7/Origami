@@ -10,8 +10,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const { email, accessToken, refreshToken } = await exchangeGmailCode(code);
-    await addOAuthAccount("gmail", email, email, accessToken, refreshToken);
+    const { email, accessToken, refreshToken, scopes } = await exchangeGmailCode(code);
+    await addOAuthAccount("gmail", email, email, accessToken, refreshToken, scopes);
 
     return NextResponse.redirect(new URL("/accounts?success=gmail", request.url));
   } catch (err: unknown) {

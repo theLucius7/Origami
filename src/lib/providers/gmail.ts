@@ -1,6 +1,9 @@
 import { google, type gmail_v1 } from "googleapis";
+import { buildMimeMessage, encodeMimeMessageBase64Url } from "./mime";
 import type {
   EmailProvider,
+  SendMailParams,
+  SendMailResult,
   SyncOptions,
   SyncResult,
   SyncedAttachment,
@@ -10,6 +13,24 @@ import type {
 interface GmailCredentials {
   accessToken: string;
   refreshToken: string;
+  scopes?: string[];
+}
+
+const GMAIL_SEND_SCOPES = [
+  "https://mail.google.com/",
+  "https://www.googleapis.com/auth/gmail.modify",
+  "https://www.googleapis.com/auth/gmail.compose",
+  "https://www.googleapis.com/auth/gmail.send",
+];
+
+function normalizeScopes(scopes?: string[] | string): string[] {
+  const list = Array.isArray(scopes) ? scopes : scopes?.split(/\s+/) ?? [];
+  return [...new Set(list.map((scope) => scope.trim()).filter(Boolean))];
+}
+
+function hasGmailSendScope(scopes?: string[]): boolean {
+  const normalized = normalizeScopes(scopes);
+  return GMAIL_SEND_SCOPES.some((scope) => normalized.includes(scope));
 }
 
 function getOAuth2Client() {
@@ -26,7 +47,8 @@ export function getGmailAuthUrl(): string {
     access_type: "offline",
     prompt: "consent",
     scope: [
-      "https://www.googleapis.com/auth/gmail.readonly",
+      "https://www.googleapis.com/auth/gmail.modify",
+      "https://www.googleapis.com/auth/gmail.send",
       "https://www.googleapis.com/auth/userinfo.email",
     ],
   });
@@ -44,31 +66,128 @@ export async function exchangeGmailCode(code: string) {
     email: profile.data.emailAddress!,
     accessToken: tokens.access_token!,
     refreshToken: tokens.refresh_token!,
+    scopes: normalizeScopes(tokens.scope),
   };
 }
 
 export class GmailProvider implements EmailProvider {
   private gmail: gmail_v1.Gmail;
   private oauth2: InstanceType<typeof google.auth.OAuth2>;
+  private creds: GmailCredentials;
 
   constructor(creds: GmailCredentials) {
+    this.creds = {
+      ...creds,
+      scopes: normalizeScopes(creds.scopes),
+    };
     this.oauth2 = getOAuth2Client();
     this.oauth2.setCredentials({
       access_token: creds.accessToken,
       refresh_token: creds.refreshToken,
     });
-    this.oauth2.on("tokens", () => {
-      // Token refresh is handled transparently by the library
+    this.oauth2.on("tokens", (tokens) => {
+      if (tokens.access_token) {
+        this.creds.accessToken = tokens.access_token;
+      }
+      if (tokens.refresh_token) {
+        this.creds.refreshToken = tokens.refresh_token;
+      }
+      if (tokens.scope) {
+        this.creds.scopes = normalizeScopes(tokens.scope);
+      }
     });
     this.gmail = google.gmail({ version: "v1", auth: this.oauth2 });
   }
 
-  getUpdatedTokens(): { accessToken: string; refreshToken: string } {
+  getUpdatedTokens(): { accessToken: string; refreshToken: string; scopes: string[] } {
     const creds = this.oauth2.credentials;
     return {
-      accessToken: creds.access_token ?? "",
-      refreshToken: creds.refresh_token ?? "",
+      accessToken: creds.access_token ?? this.creds.accessToken,
+      refreshToken: creds.refresh_token ?? this.creds.refreshToken,
+      scopes: this.creds.scopes ?? [],
     };
+  }
+
+  getCapabilities() {
+    return {
+      canSend: hasGmailSendScope(this.creds.scopes),
+    };
+  }
+
+  async sendMail(params: SendMailParams): Promise<SendMailResult> {
+    if (params.to.length === 0) {
+      return {
+        ok: false,
+        errorCode: "VALIDATION",
+        errorMessage: "至少需要一个收件人。",
+      };
+    }
+
+    if (!this.getCapabilities().canSend) {
+      return {
+        ok: false,
+        errorCode: "INSUFFICIENT_SCOPE",
+        errorMessage: "当前 Gmail 账号没有发送权限，请重新授权并包含 gmail.send/gmail.modify。",
+      };
+    }
+
+    try {
+      const mime = buildMimeMessage(params);
+      const raw = encodeMimeMessageBase64Url(mime);
+      const response = await this.gmail.users.messages.send({
+        userId: "me",
+        requestBody: { raw },
+      });
+
+      return {
+        ok: true,
+        providerMessageId: response.data.id ?? null,
+        sentAt: Math.floor(Date.now() / 1000),
+      };
+    } catch (error: unknown) {
+      const gmailError = error as {
+        code?: number;
+        status?: number;
+        message?: string;
+        response?: { data?: unknown };
+      };
+      const status = gmailError.status ?? gmailError.code;
+      const providerRawError = JSON.stringify(gmailError.response?.data ?? gmailError.message ?? error);
+
+      if (status === 401) {
+        return {
+          ok: false,
+          errorCode: "AUTH_EXPIRED",
+          errorMessage: "Gmail 登录已过期，请重新授权。",
+          providerRawError,
+        };
+      }
+
+      if (status === 403) {
+        return {
+          ok: false,
+          errorCode: "INSUFFICIENT_SCOPE",
+          errorMessage: "Gmail 账号缺少发送权限或当前被策略限制。",
+          providerRawError,
+        };
+      }
+
+      if (status === 429) {
+        return {
+          ok: false,
+          errorCode: "RATE_LIMITED",
+          errorMessage: "Gmail 当前触发了发送频率限制，请稍后重试。",
+          providerRawError,
+        };
+      }
+
+      return {
+        ok: false,
+        errorCode: "PROVIDER_ERROR",
+        errorMessage: gmailError.message ?? "Gmail 发信失败。",
+        providerRawError,
+      };
+    }
   }
 
   async sync(cursor: string | null, options: SyncOptions = {}): Promise<SyncResult> {

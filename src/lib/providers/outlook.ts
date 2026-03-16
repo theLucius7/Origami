@@ -1,6 +1,8 @@
 import { Client } from "@microsoft/microsoft-graph-client";
 import type {
   EmailProvider,
+  SendMailParams,
+  SendMailResult,
   SyncOptions,
   SyncResult,
   SyncedAttachment,
@@ -10,10 +12,21 @@ import type {
 interface OutlookCredentials {
   accessToken: string;
   refreshToken: string;
+  scopes?: string[];
 }
 
 const TENANT = "common";
 const TOKEN_URL = `https://login.microsoftonline.com/${TENANT}/oauth2/v2.0/token`;
+const OUTLOOK_REQUIRED_SEND_SCOPE = "mail.send";
+
+function normalizeScopes(scopes?: string[] | string): string[] {
+  const list = Array.isArray(scopes) ? scopes : scopes?.split(/\s+/) ?? [];
+  return [...new Set(list.map((scope) => scope.trim().toLowerCase()).filter(Boolean))];
+}
+
+function hasOutlookSendScope(scopes?: string[]): boolean {
+  return normalizeScopes(scopes).includes(OUTLOOK_REQUIRED_SEND_SCOPE);
+}
 
 export function getOutlookAuthUrl(): string {
   const params = new URLSearchParams({
@@ -21,7 +34,7 @@ export function getOutlookAuthUrl(): string {
     response_type: "code",
     redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/api/oauth/outlook`,
     response_mode: "query",
-    scope: "openid email User.Read Mail.Read offline_access",
+    scope: "openid email User.Read Mail.Read Mail.Send offline_access",
     prompt: "consent",
   });
   return `https://login.microsoftonline.com/${TENANT}/oauth2/v2.0/authorize?${params}`;
@@ -53,6 +66,7 @@ export async function exchangeOutlookCode(code: string) {
     displayName: (me.displayName ?? me.mail) as string,
     accessToken: tokens.access_token as string,
     refreshToken: tokens.refresh_token as string,
+    scopes: normalizeScopes(tokens.scope as string),
   };
 }
 
@@ -72,6 +86,7 @@ async function refreshTokens(refreshToken: string) {
   return {
     accessToken: data.access_token as string,
     refreshToken: (data.refresh_token ?? refreshToken) as string,
+    scopes: normalizeScopes(data.scope as string),
   };
 }
 
@@ -80,14 +95,23 @@ export class OutlookProvider implements EmailProvider {
   private client: Client;
 
   constructor(creds: OutlookCredentials) {
-    this.creds = { ...creds };
+    this.creds = {
+      ...creds,
+      scopes: normalizeScopes(creds.scopes),
+    };
     this.client = Client.init({
       authProvider: (done) => done(null, this.creds.accessToken),
     });
   }
 
   getUpdatedTokens() {
-    return { ...this.creds };
+    return { ...this.creds, scopes: normalizeScopes(this.creds.scopes) };
+  }
+
+  getCapabilities() {
+    return {
+      canSend: hasOutlookSendScope(this.creds.scopes),
+    };
   }
 
   async sync(cursor: string | null, options: SyncOptions = {}): Promise<SyncResult> {
@@ -107,12 +131,124 @@ export class OutlookProvider implements EmailProvider {
     });
   }
 
+  async sendMail(params: SendMailParams): Promise<SendMailResult> {
+    if (params.to.length === 0) {
+      return {
+        ok: false,
+        errorCode: "VALIDATION",
+        errorMessage: "至少需要一个收件人。",
+      };
+    }
+
+    if (!this.getCapabilities().canSend) {
+      return {
+        ok: false,
+        errorCode: "INSUFFICIENT_SCOPE",
+        errorMessage: "当前 Outlook 账号没有 Mail.Send 权限，请重新授权。",
+      };
+    }
+
+    return this.withRefresh(async () => {
+      try {
+        await this.client.api("/me/sendMail").post({
+          message: {
+            subject: params.subject || "(无主题)",
+            body: {
+              contentType: params.htmlBody ? "HTML" : "Text",
+              content: params.htmlBody || params.textBody || "",
+            },
+            toRecipients: params.to.map((address) => ({
+              emailAddress: { address },
+            })),
+            ...(params.cc?.length
+              ? {
+                  ccRecipients: params.cc.map((address) => ({
+                    emailAddress: { address },
+                  })),
+                }
+              : {}),
+            ...(params.bcc?.length
+              ? {
+                  bccRecipients: params.bcc.map((address) => ({
+                    emailAddress: { address },
+                  })),
+                }
+              : {}),
+            ...(params.attachments?.length
+              ? {
+                  attachments: params.attachments.map((attachment) => ({
+                    "@odata.type": "#microsoft.graph.fileAttachment",
+                    name: attachment.filename,
+                    contentType: attachment.contentType,
+                    contentBytes: attachment.content.toString("base64"),
+                  })),
+                }
+              : {}),
+          },
+          saveToSentItems: true,
+        });
+
+        return {
+          ok: true,
+          providerMessageId: null,
+          sentAt: Math.floor(Date.now() / 1000),
+        };
+      } catch (error: unknown) {
+        const graphError = error as {
+          statusCode?: number;
+          code?: string;
+          message?: string;
+          body?: unknown;
+        };
+        const status = graphError.statusCode;
+        const providerRawError = JSON.stringify(graphError.body ?? graphError.message ?? error);
+
+        if (status === 401) {
+          return {
+            ok: false,
+            errorCode: "AUTH_EXPIRED",
+            errorMessage: "Outlook 登录已过期，请重新授权。",
+            providerRawError,
+          };
+        }
+
+        if (status === 403) {
+          return {
+            ok: false,
+            errorCode: "INSUFFICIENT_SCOPE",
+            errorMessage: "Outlook 账号缺少 Mail.Send 权限或当前被策略限制。",
+            providerRawError,
+          };
+        }
+
+        if (status === 429) {
+          return {
+            ok: false,
+            errorCode: "RATE_LIMITED",
+            errorMessage: "Outlook 当前触发了频率限制，请稍后重试。",
+            providerRawError,
+          };
+        }
+
+        return {
+          ok: false,
+          errorCode: "PROVIDER_ERROR",
+          errorMessage: graphError.message ?? "Outlook 发信失败。",
+          providerRawError,
+        };
+      }
+    });
+  }
+
   private async withRefresh<T>(fn: () => Promise<T>): Promise<T> {
     try {
       return await fn();
     } catch {
       const newTokens = await refreshTokens(this.creds.refreshToken);
-      this.creds = newTokens;
+      this.creds = {
+        ...newTokens,
+        scopes: newTokens.scopes.length > 0 ? newTokens.scopes : this.creds.scopes,
+      };
       this.client = Client.init({
         authProvider: (done) => done(null, this.creds.accessToken),
       });

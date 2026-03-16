@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { downloadAttachment } from "@/lib/r2";
 import { db } from "@/lib/db";
-import { attachments } from "@/lib/db/schema";
+import { attachments, sentMessageAttachments } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function GET(
@@ -11,12 +11,21 @@ export async function GET(
   const { key } = await params;
   const decodedKey = decodeURIComponent(key);
 
-  const rows = await db
+  const inboundRows = await db
     .select()
     .from(attachments)
     .where(eq(attachments.id, decodedKey));
 
-  const attachment = rows[0];
+  const inboundAttachment = inboundRows[0];
+
+  const sentRows = inboundAttachment
+    ? []
+    : await db
+        .select()
+        .from(sentMessageAttachments)
+        .where(eq(sentMessageAttachments.id, decodedKey));
+
+  const attachment = inboundAttachment ?? sentRows[0];
   if (!attachment) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }

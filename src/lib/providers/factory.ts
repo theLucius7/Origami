@@ -7,20 +7,25 @@ import { OutlookProvider } from "./outlook";
 
 export function createEmailProvider(
   account: Account,
-  creds: Record<string, string>
+  creds: Record<string, unknown>
 ): EmailProvider {
   switch (account.provider) {
     case "qq":
-      return new QQProvider({ email: creds.email, authCode: creds.authCode });
+      return new QQProvider({
+        email: String(creds.email ?? account.email),
+        authCode: String(creds.authCode ?? ""),
+      });
     case "gmail":
       return new GmailProvider({
-        accessToken: creds.accessToken,
-        refreshToken: creds.refreshToken,
+        accessToken: String(creds.accessToken ?? ""),
+        refreshToken: String(creds.refreshToken ?? ""),
+        scopes: Array.isArray(creds.scopes) ? creds.scopes.map(String) : [],
       });
     case "outlook":
       return new OutlookProvider({
-        accessToken: creds.accessToken,
-        refreshToken: creds.refreshToken,
+        accessToken: String(creds.accessToken ?? ""),
+        refreshToken: String(creds.refreshToken ?? ""),
+        scopes: Array.isArray(creds.scopes) ? creds.scopes.map(String) : [],
       });
     default:
       throw new Error(`Unknown provider: ${account.provider}`);

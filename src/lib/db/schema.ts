@@ -68,6 +68,62 @@ export const attachments = sqliteTable(
   (t) => [index("attachments_email_id_idx").on(t.emailId)]
 );
 
+export const composeUploads = sqliteTable(
+  "compose_uploads",
+  {
+    id: text("id").primaryKey(),
+    filename: text("filename").notNull(),
+    contentType: text("content_type").notNull(),
+    size: integer("size").notNull(),
+    r2ObjectKey: text("r2_object_key").notNull(),
+    createdAt: integer("created_at").default(sql`(unixepoch())`),
+  },
+  (t) => [index("compose_uploads_created_idx").on(t.createdAt)]
+);
+
+export const sentMessages = sqliteTable(
+  "sent_messages",
+  {
+    id: text("id").primaryKey(),
+    accountId: text("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    provider: text("provider").notNull(),
+    fromAddress: text("from_address").notNull(),
+    toRecipients: text("to_recipients").notNull().default("[]"),
+    ccRecipients: text("cc_recipients").notNull().default("[]"),
+    bccRecipients: text("bcc_recipients").notNull().default("[]"),
+    subject: text("subject"),
+    snippet: text("snippet"),
+    bodyText: text("body_text"),
+    bodyHtml: text("body_html"),
+    providerMessageId: text("provider_message_id"),
+    status: text("status").notNull().default("sent"),
+    sentAt: integer("sent_at").notNull(),
+    createdAt: integer("created_at").default(sql`(unixepoch())`),
+  },
+  (t) => [
+    index("sent_messages_account_sent_idx").on(t.accountId, t.sentAt),
+    index("sent_messages_provider_id_idx").on(t.providerMessageId),
+  ]
+);
+
+export const sentMessageAttachments = sqliteTable(
+  "sent_message_attachments",
+  {
+    id: text("id").primaryKey(),
+    sentMessageId: text("sent_message_id")
+      .notNull()
+      .references(() => sentMessages.id, { onDelete: "cascade" }),
+    filename: text("filename"),
+    contentType: text("content_type"),
+    size: integer("size"),
+    r2ObjectKey: text("r2_object_key").notNull(),
+    createdAt: integer("created_at").default(sql`(unixepoch())`),
+  },
+  (t) => [index("sent_message_attachments_message_idx").on(t.sentMessageId)]
+);
+
 export type Account = typeof accounts.$inferSelect;
 export type NewAccount = typeof accounts.$inferInsert;
 export type Email = typeof emails.$inferSelect;
@@ -92,3 +148,9 @@ export type EmailListItem = Pick<
 >;
 export type Attachment = typeof attachments.$inferSelect;
 export type NewAttachment = typeof attachments.$inferInsert;
+export type ComposeUpload = typeof composeUploads.$inferSelect;
+export type NewComposeUpload = typeof composeUploads.$inferInsert;
+export type SentMessage = typeof sentMessages.$inferSelect;
+export type NewSentMessage = typeof sentMessages.$inferInsert;
+export type SentMessageAttachment = typeof sentMessageAttachments.$inferSelect;
+export type NewSentMessageAttachment = typeof sentMessageAttachments.$inferInsert;

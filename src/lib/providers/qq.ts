@@ -2,6 +2,8 @@ import { ImapFlow } from "imapflow";
 import { simpleParser } from "mailparser";
 import type {
   EmailProvider,
+  SendMailParams,
+  SendMailResult,
   SyncOptions,
   SyncResult,
   SyncedAttachment,
@@ -39,6 +41,18 @@ export class QQProvider implements EmailProvider {
 
   constructor(creds: QQCredentials) {
     this.creds = creds;
+  }
+
+  getCapabilities() {
+    return { canSend: false };
+  }
+
+  async sendMail(_params: SendMailParams): Promise<SendMailResult> {
+    return {
+      ok: false,
+      errorCode: "UNSUPPORTED",
+      errorMessage: "QQ 邮箱暂不支持通过 Origami 发信。",
+    };
   }
 
   async sync(cursor: string | null, options: SyncOptions = {}): Promise<SyncResult> {
@@ -219,6 +233,8 @@ export class QQProvider implements EmailProvider {
       content: att.content,
     }));
 
+    const normalizedInternalDate = normalizeDate(internalDate);
+
     return {
       remoteId: String(uid),
       messageId: parsed?.messageId ?? `qq-${uid}`,
@@ -234,8 +250,8 @@ export class QQProvider implements EmailProvider {
       bodyHtml: parsed?.html || parsed?.textAsHtml || "",
       receivedAt: parsed?.date
         ? Math.floor(parsed.date.getTime() / 1000)
-        : normalizeDate(internalDate)
-          ? Math.floor(normalizeDate(internalDate)!.getTime() / 1000)
+        : normalizedInternalDate
+          ? Math.floor(normalizedInternalDate.getTime() / 1000)
           : Math.floor(Date.now() / 1000),
       folder: "INBOX",
       attachments,

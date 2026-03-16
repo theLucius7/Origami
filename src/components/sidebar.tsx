@@ -10,9 +10,11 @@ import {
   Settings,
   Mail,
   RefreshCw,
+  Send,
 } from "lucide-react";
 import type { Account } from "@/lib/db/schema";
 import { SyncAllButton } from "./sync-button";
+import { ComposeLink } from "./compose-link";
 
 const PROVIDER_COLORS: Record<string, string> = {
   gmail: "bg-red-500",
@@ -30,9 +32,10 @@ interface SidebarProps {
   accounts: Account[];
   activeAccountId?: string;
   unreadCount: number;
+  hasSendAccounts: boolean;
 }
 
-export function Sidebar({ accounts, activeAccountId, unreadCount }: SidebarProps) {
+export function Sidebar({ accounts, activeAccountId, unreadCount, hasSendAccounts }: SidebarProps) {
   return (
     <div className="flex h-full w-64 flex-col border-r bg-muted/30">
       <div className="flex items-center gap-2 p-4">
@@ -41,6 +44,10 @@ export function Sidebar({ accounts, activeAccountId, unreadCount }: SidebarProps
       </div>
 
       <Separator />
+
+      <div className="px-3 pt-3">
+        <ComposeLink hasAccounts={hasSendAccounts} />
+      </div>
 
       <ScrollArea className="flex-1 px-3 py-2">
         <div className="space-y-1">
@@ -66,6 +73,15 @@ export function Sidebar({ accounts, activeAccountId, unreadCount }: SidebarProps
               已标星
             </Link>
           </Button>
+
+          {hasSendAccounts && (
+            <Button variant="ghost" className="w-full justify-start" asChild>
+              <Link href="/sent">
+                <Send className="mr-2 h-4 w-4" />
+                已发送
+              </Link>
+            </Button>
+          )}
         </div>
 
         <Separator className="my-3" />

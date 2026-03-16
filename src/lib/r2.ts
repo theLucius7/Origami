@@ -52,6 +52,20 @@ export async function downloadAttachment(
   };
 }
 
+export async function downloadAttachmentBuffer(
+  key: string
+): Promise<{ content: Buffer; contentType: string }> {
+  const res = await getS3().send(
+    new GetObjectCommand({ Bucket: getBucket(), Key: key })
+  );
+
+  const bytes = await res.Body!.transformToByteArray();
+  return {
+    content: Buffer.from(bytes),
+    contentType: res.ContentType ?? "application/octet-stream",
+  };
+}
+
 export async function deleteAttachment(key: string): Promise<void> {
   await getS3().send(
     new DeleteObjectCommand({ Bucket: getBucket(), Key: key })
@@ -64,4 +78,8 @@ export function buildObjectKey(
   filename: string
 ): string {
   return `${accountId}/${emailId}/${filename}`;
+}
+
+export function buildComposeUploadKey(uploadId: string, filename: string): string {
+  return `compose/${uploadId}/${filename}`;
 }
