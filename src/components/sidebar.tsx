@@ -37,7 +37,7 @@ export function Sidebar({ accounts, activeAccountId, unreadCount }: SidebarProps
     <div className="flex h-full w-64 flex-col border-r bg-muted/30">
       <div className="flex items-center gap-2 p-4">
         <Mail className="h-5 w-5 text-primary" />
-        <h1 className="text-lg font-semibold">VTR-box</h1>
+        <h1 className="text-lg font-semibold">Origami</h1>
       </div>
 
       <Separator />

@@ -1,6 +1,6 @@
-# VTR-box
+# Origami
 
-VTR-box 是一个面向个人使用场景的 Serverless 多邮箱统一收件箱，目标是在一个网页里集中查看 `Gmail`、`Outlook` 和 `QQ 邮箱` 的邮件，并把附件二进制存放到 `Cloudflare R2`，邮件与附件元数据存放到 `Turso`。
+Origami 是一个面向个人使用场景的 Serverless 多邮箱统一收件箱，目标是在一个网页里集中查看 `Gmail`、`Outlook` 和 `QQ 邮箱` 的邮件，并把附件二进制存放到 `Cloudflare R2`，邮件与附件元数据存放到 `Turso`。
 
 ## 当前定位
 

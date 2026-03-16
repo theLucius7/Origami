@@ -41,7 +41,7 @@ export default function LoginPage() {
           <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
             <Mail className="h-6 w-6 text-primary" />
           </div>
-          <CardTitle className="text-xl">VTR-box</CardTitle>
+          <CardTitle className="text-xl">Origami</CardTitle>
           <p className="text-sm text-muted-foreground">
             输入访问令牌以登录
           </p>

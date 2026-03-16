@@ -3,7 +3,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "VTR-box",
+  title: "Origami",
   description: "Serverless 多邮箱管理工具",
 };
 

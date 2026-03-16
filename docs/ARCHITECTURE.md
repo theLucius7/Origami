@@ -1,10 +1,10 @@
 # Architecture
 
-本文档说明 VTR-box 的实际运行架构、数据流和安全边界，便于后续维护和扩展。
+本文档说明 Origami 的实际运行架构、数据流和安全边界，便于后续维护和扩展。
 
 ## 1. 系统定位
 
-VTR-box 是一个单用户、Serverless 的统一收件箱系统。
+Origami 是一个单用户、Serverless 的统一收件箱系统。
 
 它的核心目标是：
 
@@ -81,7 +81,7 @@ flowchart TD
 
 ## 4. 为什么以 Server Actions 为主
 
-VTR-box 的内部读写采用 `Server Actions`，而不是为每个列表、详情、操作都再包一层 `/api/*`。
+Origami 的内部读写采用 `Server Actions`，而不是为每个列表、详情、操作都再包一层 `/api/*`。
 
 这样做的好处：
 

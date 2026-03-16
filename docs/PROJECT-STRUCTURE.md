@@ -1,11 +1,11 @@
 # Project Structure
 
-本文档从目录、职责和维护视角说明 VTR-box 项目结构。
+本文档从目录、职责和维护视角说明 Origami 项目结构。
 
 ## 1. 顶层结构
 
 ```text
-VTR-box/
+Origami/
 ├── docs/
 │   ├── ARCHITECTURE.md
 │   ├── DEPLOYMENT.md
