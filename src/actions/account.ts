@@ -1,9 +1,10 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { accounts } from "@/lib/db/schema";
+import { accounts, emails, attachments } from "@/lib/db/schema";
 import { encrypt, decrypt } from "@/lib/crypto";
-import { eq } from "drizzle-orm";
+import { deleteAttachment } from "@/lib/r2";
+import { eq, inArray } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { revalidatePath } from "next/cache";
 
@@ -61,8 +62,32 @@ export async function addOAuthAccount(
 }
 
 export async function removeAccount(id: string) {
+  const emailRows = await db
+    .select({ id: emails.id })
+    .from(emails)
+    .where(eq(emails.accountId, id));
+
+  const emailIds = emailRows.map((row) => row.id);
+  if (emailIds.length > 0) {
+    const attachmentRows = await db
+      .select({ key: attachments.r2ObjectKey })
+      .from(attachments)
+      .where(inArray(attachments.emailId, emailIds));
+
+    const deletionResults = await Promise.allSettled(
+      attachmentRows.map((row) => deleteAttachment(row.key))
+    );
+
+    for (const result of deletionResults) {
+      if (result.status === "rejected") {
+        console.warn("Failed to delete R2 attachment during account removal:", result.reason);
+      }
+    }
+  }
+
   await db.delete(accounts).where(eq(accounts.id, id));
   revalidatePath("/");
+  revalidatePath("/accounts");
 }
 
 export async function getDecryptedCredentials(id: string) {

@@ -14,23 +14,43 @@ interface MailDetailProps {
   email: Email;
   attachments: Attachment[];
   onClose?: () => void;
+  onMarkedRead?: (emailId: string) => void;
+  onToggledStar?: (emailId: string) => void;
 }
 
-export function MailDetail({ email, attachments, onClose }: MailDetailProps) {
+export function MailDetail({
+  email,
+  attachments,
+  onClose,
+  onMarkedRead,
+  onToggledStar,
+}: MailDetailProps) {
   const [, startTransition] = useTransition();
 
   useEffect(() => {
     if (!email.isRead) {
       startTransition(async () => {
         await markRead(email.id);
+        onMarkedRead?.(email.id);
       });
     }
-  }, [email.id, email.isRead]);
+  }, [email.id, email.isRead, onMarkedRead]);
 
   function handleStar() {
     startTransition(async () => {
       await toggleStar(email.id);
+      onToggledStar?.(email.id);
     });
+  }
+
+  let recipients: string[] = [];
+  if (email.recipients) {
+    try {
+      const parsed = JSON.parse(email.recipients);
+      recipients = Array.isArray(parsed) ? parsed : [];
+    } catch {
+      recipients = [];
+    }
   }
 
   return (
@@ -62,9 +82,9 @@ export function MailDetail({ email, attachments, onClose }: MailDetailProps) {
             {email.receivedAt ? formatRelativeTime(email.receivedAt) : ""}
           </span>
         </div>
-        {email.recipients && (
+        {recipients.length > 0 && (
           <p className="mt-1 text-xs text-muted-foreground">
-            收件人: {JSON.parse(email.recipients).join(", ")}
+            收件人: {recipients.join(", ")}
           </p>
         )}
       </div>

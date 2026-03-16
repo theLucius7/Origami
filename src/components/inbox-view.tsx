@@ -4,7 +4,6 @@ import { useState, useTransition, useCallback } from "react";
 import { MailList } from "./mail-list";
 import { MailDetail } from "./mail-detail";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Search, X } from "lucide-react";
 import { getEmails, getEmailById, getEmailAttachments } from "@/actions/email";
 import type { Email, Attachment } from "@/lib/db/schema";
@@ -35,11 +34,12 @@ export function InboxView({
         const results = await getEmails({
           accountId,
           search: query || undefined,
+          starred,
         });
         setEmails(results);
       });
     },
-    [accountId]
+    [accountId, starred]
   );
 
   function handleSearchSubmit(e: React.FormEvent) {
@@ -62,6 +62,41 @@ export function InboxView({
       setSelectedEmail(email);
       setSelectedAttachments(atts);
     });
+  }
+
+  function handleMarkedRead(emailId: string) {
+    setEmails((current) =>
+      current.map((email) =>
+        email.id === emailId ? { ...email, isRead: 1 } : email
+      )
+    );
+    setSelectedEmail((current) =>
+      current && current.id === emailId ? { ...current, isRead: 1 } : current
+    );
+  }
+
+  function handleToggledStar(emailId: string) {
+    setEmails((current) =>
+      current
+        .map((email) =>
+          email.id === emailId
+            ? { ...email, isStarred: email.isStarred ? 0 : 1 }
+            : email
+        )
+        .filter((email) => !starred || email.isStarred === 1)
+    );
+
+    setSelectedEmail((current) =>
+      current && current.id === emailId
+        ? { ...current, isStarred: current.isStarred ? 0 : 1 }
+        : current
+    );
+
+    if (starred && selectedId === emailId) {
+      setSelectedId(null);
+      setSelectedEmail(null);
+      setSelectedAttachments([]);
+    }
   }
 
   function handleClose() {
@@ -115,6 +150,8 @@ export function InboxView({
               email={selectedEmail}
               attachments={selectedAttachments}
               onClose={handleClose}
+              onMarkedRead={handleMarkedRead}
+              onToggledStar={handleToggledStar}
             />
           </div>
         ) : (

@@ -15,13 +15,9 @@ export default async function InboxPage({ searchParams }: PageProps) {
   const starred = params.starred === "1";
 
   const [emailList, accountList] = await Promise.all([
-    getEmails({ accountId }),
+    getEmails({ accountId, starred }),
     getAccounts(),
   ]);
-
-  const filteredEmails = starred
-    ? emailList.filter((e) => e.isStarred === 1)
-    : emailList;
 
   const accountProviders: Record<string, string> = {};
   for (const acc of accountList) {
@@ -30,7 +26,7 @@ export default async function InboxPage({ searchParams }: PageProps) {
 
   return (
     <InboxView
-      initialEmails={filteredEmails}
+      initialEmails={emailList}
       accountProviders={accountProviders}
       accountId={accountId}
       starred={starred}

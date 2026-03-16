@@ -67,7 +67,7 @@ flowchart TD
 - 放行 `/api/auth`
 - 放行 `/api/oauth/*`
 - 放行 `/api/cron/sync`
-- 其他页面和接口要求 `vtr_token` Cookie 或 `Authorization: Bearer <token>`
+- 其他页面和接口要求 `origami_token` Cookie 或 `Authorization: Bearer <token>`
 
 这意味着应用本体默认处于受保护状态。
 
@@ -111,7 +111,7 @@ sequenceDiagram
 
   User->>LoginPage: 输入 ACCESS_TOKEN
   LoginPage->>LoginRoute: POST /api/auth/login
-  LoginRoute-->>User: Set-Cookie(vtr_token)
+  LoginRoute-->>User: Set-Cookie(origami_token)
   User->>ProxyLayer: 请求受保护页面
   ProxyLayer-->>User: 放行
 ```

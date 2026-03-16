@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 
-const TOKEN_COOKIE = "vtr_token";
+const TOKEN_COOKIE = "origami_token";
 
 export async function verifyAuth(): Promise<boolean> {
   const expected = process.env.ACCESS_TOKEN;

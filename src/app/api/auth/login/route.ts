@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getTokenCookieName } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   const { token } = await request.json();
@@ -9,7 +10,7 @@ export async function POST(request: NextRequest) {
   }
 
   const response = NextResponse.json({ ok: true });
-  response.cookies.set("vtr_token", token, {
+  response.cookies.set(getTokenCookieName(), token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",

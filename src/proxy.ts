@@ -15,7 +15,7 @@ export function proxy(request: NextRequest) {
   }
 
   const token =
-    request.cookies.get("vtr_token")?.value ??
+    request.cookies.get("origami_token")?.value ??
     request.headers.get("authorization")?.replace("Bearer ", "");
 
   if (token && token === process.env.ACCESS_TOKEN) {

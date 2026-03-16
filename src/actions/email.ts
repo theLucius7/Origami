@@ -9,14 +9,23 @@ export async function getEmails(opts?: {
   accountId?: string;
   folder?: string;
   search?: string;
+  starred?: boolean;
   limit?: number;
   offset?: number;
 }) {
-  const { accountId, folder, search, limit = 50, offset = 0 } = opts ?? {};
+  const {
+    accountId,
+    folder,
+    search,
+    starred,
+    limit = 50,
+    offset = 0,
+  } = opts ?? {};
 
   const conditions = [];
   if (accountId) conditions.push(eq(emails.accountId, accountId));
   if (folder) conditions.push(eq(emails.folder, folder));
+  if (starred) conditions.push(eq(emails.isStarred, 1));
   if (search) {
     conditions.push(
       or(
