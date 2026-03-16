@@ -11,6 +11,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
+    "bench:seed": "node scripts/seed-search-benchmark.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "audit": "npm audit",

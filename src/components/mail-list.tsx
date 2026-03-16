@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Star } from "lucide-react";
-import type { Email } from "@/lib/db/schema";
+import type { EmailListItem } from "@/lib/db/schema";
 import { formatRelativeTime } from "@/lib/format";
 
 const PROVIDER_DOT: Record<string, string> = {
@@ -14,7 +14,7 @@ const PROVIDER_DOT: Record<string, string> = {
 };
 
 interface MailListProps {
-  emails: Email[];
+  emails: EmailListItem[];
   selectedId?: string;
   accountProviders: Record<string, string>;
   onSelect: (id: string) => void;

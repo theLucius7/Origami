@@ -6,10 +6,10 @@ import { MailDetail } from "./mail-detail";
 import { Input } from "@/components/ui/input";
 import { Search, X } from "lucide-react";
 import { getEmails, getEmailById, getEmailAttachments } from "@/actions/email";
-import type { Email, Attachment } from "@/lib/db/schema";
+import type { Email, EmailListItem, Attachment } from "@/lib/db/schema";
 
 interface InboxViewProps {
-  initialEmails: Email[];
+  initialEmails: EmailListItem[];
   accountProviders: Record<string, string>;
   accountId?: string;
   starred?: boolean;
