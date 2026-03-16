@@ -8,6 +8,13 @@
       "when": 1773676200000,
       "tag": "0000_search_indexes_fts",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1773680400000,
+      "tag": "0001_local_triage_lazy_sync",
+      "breakpoints": true
     }
   ]
 }

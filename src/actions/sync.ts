@@ -3,40 +3,19 @@
 import { db } from "@/lib/db";
 import { accounts, emails, attachments } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { decrypt, encrypt } from "@/lib/crypto";
+import { decrypt } from "@/lib/crypto";
 import { uploadAttachment, buildObjectKey } from "@/lib/r2";
-import { QQProvider } from "@/lib/providers/qq";
-import { GmailProvider } from "@/lib/providers/gmail";
-import { OutlookProvider } from "@/lib/providers/outlook";
 import { updateAccountSyncState } from "./account";
 import { nanoid } from "nanoid";
 import { revalidatePath } from "next/cache";
-import type { EmailProvider, SyncedEmail, SyncedAttachment } from "@/lib/providers/types";
+import type { SyncedEmail, SyncedAttachment } from "@/lib/providers/types";
 import type { Account } from "@/lib/db/schema";
+import {
+  createEmailProvider,
+  getUpdatedProviderCredentials,
+} from "@/lib/providers/factory";
 
-function createProvider(account: Account, creds: Record<string, string>): EmailProvider {
-  switch (account.provider) {
-    case "qq":
-      return new QQProvider({ email: creds.email, authCode: creds.authCode });
-    case "gmail":
-      return new GmailProvider({
-        accessToken: creds.accessToken,
-        refreshToken: creds.refreshToken,
-      });
-    case "outlook":
-      return new OutlookProvider({
-        accessToken: creds.accessToken,
-        refreshToken: creds.refreshToken,
-      });
-    default:
-      throw new Error(`Unknown provider: ${account.provider}`);
-  }
-}
-
-async function persistEmails(
-  accountId: string,
-  synced: SyncedEmail[]
-): Promise<number> {
+async function persistEmails(accountId: string, synced: SyncedEmail[]): Promise<number> {
   let count = 0;
 
   for (const mail of synced) {
@@ -45,6 +24,7 @@ async function persistEmails(
       await db.insert(emails).values({
         id: emailId,
         accountId,
+        remoteId: mail.remoteId,
         messageId: mail.messageId,
         subject: mail.subject,
         sender: mail.sender,
@@ -54,6 +34,9 @@ async function persistEmails(
         bodyHtml: mail.bodyHtml,
         isRead: 0,
         isStarred: 0,
+        localDone: 0,
+        localArchived: 0,
+        localLabels: "[]",
         receivedAt: mail.receivedAt,
         folder: mail.folder,
       });
@@ -93,28 +76,29 @@ async function persistAttachment(
   });
 }
 
+async function syncSingleAccount(account: Account) {
+  const creds = JSON.parse(decrypt(account.credentials));
+  const provider = createEmailProvider(account, creds);
+  const result = await provider.sync(account.syncCursor, {
+    limit: account.initialFetchLimit,
+    metadataOnly: true,
+  });
+  const synced = await persistEmails(account.id, result.emails);
+  const updatedCreds = getUpdatedProviderCredentials(account, provider);
+
+  await updateAccountSyncState(account.id, result.newCursor, updatedCreds);
+  return { synced };
+}
+
 export async function syncAccount(accountId: string): Promise<{ synced: number; error?: string }> {
   const rows = await db.select().from(accounts).where(eq(accounts.id, accountId));
   const account = rows[0];
   if (!account) return { synced: 0, error: "Account not found" };
 
   try {
-    const creds = JSON.parse(decrypt(account.credentials));
-    const provider = createProvider(account, creds);
-    const result = await provider.sync(account.syncCursor);
-    const synced = await persistEmails(account.id, result.emails);
-
-    let updatedCreds: string | undefined;
-    if (account.provider === "gmail") {
-      const updated = (provider as GmailProvider).getUpdatedTokens();
-      updatedCreds = encrypt(JSON.stringify(updated));
-    } else if (account.provider === "outlook") {
-      const updated = (provider as OutlookProvider).getUpdatedTokens();
-      updatedCreds = encrypt(JSON.stringify(updated));
-    }
-
-    await updateAccountSyncState(account.id, result.newCursor, updatedCreds);
+    const { synced } = await syncSingleAccount(account);
     revalidatePath("/");
+    revalidatePath("/accounts");
     return { synced };
   } catch (err: unknown) {
     const error = err as Error;
@@ -129,21 +113,7 @@ export async function syncAll(): Promise<{ results: Array<{ email: string; synce
 
   for (const account of allAccounts) {
     try {
-      const creds = JSON.parse(decrypt(account.credentials));
-      const provider = createProvider(account, creds);
-      const result = await provider.sync(account.syncCursor);
-      const synced = await persistEmails(account.id, result.emails);
-
-      let updatedCreds: string | undefined;
-      if (account.provider === "gmail") {
-        const updated = (provider as GmailProvider).getUpdatedTokens();
-        updatedCreds = encrypt(JSON.stringify(updated));
-      } else if (account.provider === "outlook") {
-        const updated = (provider as OutlookProvider).getUpdatedTokens();
-        updatedCreds = encrypt(JSON.stringify(updated));
-      }
-
-      await updateAccountSyncState(account.id, result.newCursor, updatedCreds);
+      const { synced } = await syncSingleAccount(account);
       results.push({ email: account.email, synced });
     } catch (err: unknown) {
       const error = err as Error;
@@ -153,5 +123,6 @@ export async function syncAll(): Promise<{ results: Array<{ email: string; synce
   }
 
   revalidatePath("/");
+  revalidatePath("/accounts");
   return { results };
 }

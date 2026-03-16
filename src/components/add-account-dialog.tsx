@@ -6,7 +6,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,15 +20,22 @@ export function AddAccountDialog() {
   const [qqEmail, setQQEmail] = useState("");
   const [qqAuthCode, setQQAuthCode] = useState("");
   const [qqName, setQQName] = useState("");
+  const [initialFetchLimit, setInitialFetchLimit] = useState("200");
   const [isPending, startTransition] = useTransition();
 
   function handleAddQQ(e: React.FormEvent) {
     e.preventDefault();
     startTransition(async () => {
-      await addQQAccount(qqEmail, qqAuthCode, qqName || undefined);
+      await addQQAccount(
+        qqEmail,
+        qqAuthCode,
+        qqName || undefined,
+        Number(initialFetchLimit)
+      );
       setQQEmail("");
       setQQAuthCode("");
       setQQName("");
+      setInitialFetchLimit("200");
       setOpen(false);
     });
   }
@@ -50,12 +56,10 @@ export function AddAccountDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          添加邮箱
-        </Button>
-      </DialogTrigger>
+      <Button onClick={() => setOpen(true)}>
+        <Plus className="mr-2 h-4 w-4" />
+        添加邮箱
+      </Button>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>添加邮箱账号</DialogTitle>
@@ -69,7 +73,7 @@ export function AddAccountDialog() {
 
           <TabsContent value="gmail" className="space-y-4 pt-4">
             <p className="text-sm text-muted-foreground">
-              点击下方按钮将跳转到 Google 授权页面，授权后自动返回。
+              点击下方按钮将跳转到 Google 授权页面，授权后自动返回。首次同步默认抓取最近 200 封，可在账号管理页修改。
             </p>
             <Button
               className="w-full"
@@ -82,7 +86,7 @@ export function AddAccountDialog() {
 
           <TabsContent value="outlook" className="space-y-4 pt-4">
             <p className="text-sm text-muted-foreground">
-              点击下方按钮将跳转到 Microsoft 授权页面，授权后自动返回。
+              点击下方按钮将跳转到 Microsoft 授权页面，授权后自动返回。首次同步默认抓取最近 200 封，可在账号管理页修改。
             </p>
             <Button
               className="w-full"
@@ -128,6 +132,19 @@ export function AddAccountDialog() {
                   value={qqName}
                   onChange={(e) => setQQName(e.target.value)}
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="initial-fetch-limit">首次同步抓取范围</Label>
+                <select
+                  id="initial-fetch-limit"
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  value={initialFetchLimit}
+                  onChange={(event) => setInitialFetchLimit(event.target.value)}
+                >
+                  <option value="50">50 封</option>
+                  <option value="200">200 封</option>
+                  <option value="1000">1000 封</option>
+                </select>
               </div>
               <Button type="submit" className="w-full" disabled={isPending}>
                 {isPending ? "添加中..." : "添加 QQ 邮箱"}

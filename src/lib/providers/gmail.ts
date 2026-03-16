@@ -1,5 +1,11 @@
 import { google, type gmail_v1 } from "googleapis";
-import type { EmailProvider, SyncResult, SyncedEmail, SyncedAttachment } from "./types";
+import type {
+  EmailProvider,
+  SyncOptions,
+  SyncResult,
+  SyncedAttachment,
+  SyncedEmail,
+} from "./types";
 
 interface GmailCredentials {
   accessToken: string;
@@ -65,22 +71,35 @@ export class GmailProvider implements EmailProvider {
     };
   }
 
-  async sync(cursor: string | null): Promise<SyncResult> {
+  async sync(cursor: string | null, options: SyncOptions = {}): Promise<SyncResult> {
     if (cursor) {
-      return this.incrementalSync(cursor);
+      return this.incrementalSync(cursor, options);
     }
-    return this.fullSync();
+    return this.fullSync(options);
   }
 
-  private async fullSync(): Promise<SyncResult> {
+  async fetchMessage(remoteId: string): Promise<SyncedEmail | null> {
+    const msg = await this.gmail.users.messages.get({
+      userId: "me",
+      id: remoteId,
+      format: "full",
+    });
+
+    return this.mapMessage(msg.data, false);
+  }
+
+  private async fullSync(options: SyncOptions): Promise<SyncResult> {
     const listRes = await this.gmail.users.messages.list({
       userId: "me",
-      maxResults: 50,
+      maxResults: options.limit ?? 200,
       labelIds: ["INBOX"],
     });
 
     const messageIds = listRes.data.messages ?? [];
-    const emails = await this.fetchMessages(messageIds.map((m) => m.id!));
+    const emails = await this.fetchMessages(
+      messageIds.map((m) => m.id!).filter(Boolean),
+      options.metadataOnly ?? true
+    );
 
     const profile = await this.gmail.users.getProfile({ userId: "me" });
     const historyId = profile.data.historyId ?? null;
@@ -88,7 +107,7 @@ export class GmailProvider implements EmailProvider {
     return { emails, newCursor: historyId };
   }
 
-  private async incrementalSync(historyId: string): Promise<SyncResult> {
+  private async incrementalSync(historyId: string, options: SyncOptions): Promise<SyncResult> {
     try {
       const historyRes = await this.gmail.users.history.list({
         userId: "me",
@@ -111,77 +130,92 @@ export class GmailProvider implements EmailProvider {
         return { emails: [], newCursor: newHistoryId };
       }
 
-      const emails = await this.fetchMessages([...addedIds]);
+      const emails = await this.fetchMessages(
+        [...addedIds].slice(0, options.limit ?? 50),
+        options.metadataOnly ?? true
+      );
       return { emails, newCursor: newHistoryId };
     } catch (err: unknown) {
       const error = err as { code?: number };
       if (error.code === 404) {
-        return this.fullSync();
+        return this.fullSync(options);
       }
       throw err;
     }
   }
 
-  private async fetchMessages(ids: string[]): Promise<SyncedEmail[]> {
+  private async fetchMessages(ids: string[], metadataOnly: boolean): Promise<SyncedEmail[]> {
     const results: SyncedEmail[] = [];
 
     for (const id of ids) {
       const msg = await this.gmail.users.messages.get({
         userId: "me",
         id,
-        format: "full",
+        format: metadataOnly ? "metadata" : "full",
+        metadataHeaders: ["Message-ID", "Subject", "From", "To", "Date"],
       });
 
-      const headers = msg.data.payload?.headers ?? [];
-      const getHeader = (name: string) =>
-        headers.find((h) => h.name?.toLowerCase() === name.toLowerCase())?.value ?? "";
-
-      const attachments: SyncedAttachment[] = [];
-      const bodyHtml = this.extractBody(msg.data.payload, "text/html");
-      const bodyText = this.extractBody(msg.data.payload, "text/plain");
-
-      if (msg.data.payload?.parts) {
-        for (const part of this.flattenParts(msg.data.payload.parts)) {
-          if (part.filename && part.body?.attachmentId) {
-            const att = await this.gmail.users.messages.attachments.get({
-              userId: "me",
-              messageId: id,
-              id: part.body.attachmentId,
-            });
-            if (att.data.data) {
-              attachments.push({
-                filename: part.filename,
-                contentType: part.mimeType ?? "application/octet-stream",
-                size: att.data.size ?? 0,
-                content: Buffer.from(att.data.data, "base64url"),
-              });
-            }
-          }
-        }
+      const email = await this.mapMessage(msg.data, metadataOnly);
+      if (email) {
+        results.push(email);
       }
-
-      const receivedDate = msg.data.internalDate
-        ? Math.floor(parseInt(msg.data.internalDate) / 1000)
-        : Math.floor(Date.now() / 1000);
-
-      results.push({
-        messageId: getHeader("Message-ID") || `gmail-${id}`,
-        subject: getHeader("Subject") || "(无主题)",
-        sender: getHeader("From"),
-        recipients: getHeader("To")
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
-        snippet: msg.data.snippet ?? "",
-        bodyText,
-        bodyHtml,
-        receivedAt: receivedDate,
-        folder: "INBOX",
-        attachments,
-      });
     }
 
     return results;
+  }
+
+  private async mapMessage(
+    data: gmail_v1.Schema$Message,
+    metadataOnly: boolean
+  ): Promise<SyncedEmail | null> {
+    if (!data.id) return null;
+
+    const headers = data.payload?.headers ?? [];
+    const getHeader = (name: string) =>
+      headers.find((h) => h.name?.toLowerCase() === name.toLowerCase())?.value ?? "";
+
+    const attachments: SyncedAttachment[] = [];
+
+    if (!metadataOnly && data.payload?.parts) {
+      for (const part of this.flattenParts(data.payload.parts)) {
+        if (part.filename && part.body?.attachmentId) {
+          const att = await this.gmail.users.messages.attachments.get({
+            userId: "me",
+            messageId: data.id,
+            id: part.body.attachmentId,
+          });
+          if (att.data.data) {
+            attachments.push({
+              filename: part.filename,
+              contentType: part.mimeType ?? "application/octet-stream",
+              size: att.data.size ?? 0,
+              content: Buffer.from(att.data.data, "base64url"),
+            });
+          }
+        }
+      }
+    }
+
+    const receivedDate = data.internalDate
+      ? Math.floor(parseInt(data.internalDate) / 1000)
+      : Math.floor(Date.now() / 1000);
+
+    return {
+      remoteId: data.id,
+      messageId: getHeader("Message-ID") || `gmail-${data.id}`,
+      subject: getHeader("Subject") || "(无主题)",
+      sender: getHeader("From"),
+      recipients: getHeader("To")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+      snippet: data.snippet ?? "",
+      bodyText: metadataOnly ? null : this.extractBody(data.payload, "text/plain"),
+      bodyHtml: metadataOnly ? null : this.extractBody(data.payload, "text/html"),
+      receivedAt: receivedDate,
+      folder: "INBOX",
+      attachments,
+    };
   }
 
   private extractBody(

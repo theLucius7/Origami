@@ -8,6 +8,7 @@ export const accounts = sqliteTable("accounts", {
   displayName: text("display_name"),
   credentials: text("credentials").notNull(), // AES-encrypted JSON
   syncCursor: text("sync_cursor"),
+  initialFetchLimit: integer("initial_fetch_limit").notNull().default(200),
   lastSyncedAt: integer("last_synced_at"),
   createdAt: integer("created_at").default(sql`(unixepoch())`),
 });
@@ -19,6 +20,7 @@ export const emails = sqliteTable(
     accountId: text("account_id")
       .notNull()
       .references(() => accounts.id, { onDelete: "cascade" }),
+    remoteId: text("remote_id"),
     messageId: text("message_id"),
     subject: text("subject"),
     sender: text("sender"),
@@ -28,6 +30,10 @@ export const emails = sqliteTable(
     bodyHtml: text("body_html"),
     isRead: integer("is_read").default(0),
     isStarred: integer("is_starred").default(0),
+    localDone: integer("local_done").default(0),
+    localArchived: integer("local_archived").default(0),
+    localSnoozeUntil: integer("local_snooze_until"),
+    localLabels: text("local_labels").default("[]"),
     receivedAt: integer("received_at"),
     folder: text("folder").default("INBOX"),
     rawHeaders: text("raw_headers"),
@@ -40,6 +46,9 @@ export const emails = sqliteTable(
     index("emails_is_read_account_idx").on(t.isRead, t.accountId),
     index("emails_is_starred_received_idx").on(t.isStarred, t.receivedAt),
     index("emails_folder_received_idx").on(t.folder, t.receivedAt),
+    index("emails_local_archived_received_idx").on(t.localArchived, t.receivedAt),
+    index("emails_local_done_received_idx").on(t.localDone, t.receivedAt),
+    index("emails_local_snooze_idx").on(t.localSnoozeUntil),
   ]
 );
 
@@ -67,12 +76,16 @@ export type EmailListItem = Pick<
   Email,
   | "id"
   | "accountId"
+  | "remoteId"
   | "messageId"
   | "subject"
   | "sender"
   | "snippet"
   | "isRead"
   | "isStarred"
+  | "localDone"
+  | "localArchived"
+  | "localSnoozeUntil"
   | "receivedAt"
   | "folder"
   | "createdAt"

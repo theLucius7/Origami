@@ -17,7 +17,12 @@ export async function getAccountById(id: string) {
   return rows[0] ?? null;
 }
 
-export async function addQQAccount(email: string, authCode: string, displayName?: string) {
+export async function addQQAccount(
+  email: string,
+  authCode: string,
+  displayName?: string,
+  initialFetchLimit = 200
+) {
   const id = nanoid();
   const creds = encrypt(JSON.stringify({ email, authCode }));
 
@@ -27,9 +32,11 @@ export async function addQQAccount(email: string, authCode: string, displayName?
     email,
     displayName: displayName ?? email,
     credentials: creds,
+    initialFetchLimit,
   });
 
   revalidatePath("/");
+  revalidatePath("/accounts");
   return id;
 }
 
@@ -38,7 +45,8 @@ export async function addOAuthAccount(
   email: string,
   displayName: string,
   accessToken: string,
-  refreshToken: string
+  refreshToken: string,
+  initialFetchLimit = 200
 ) {
   const id = nanoid();
   const creds = encrypt(JSON.stringify({ accessToken, refreshToken }));
@@ -51,6 +59,7 @@ export async function addOAuthAccount(
       email,
       displayName: displayName ?? email,
       credentials: creds,
+      initialFetchLimit,
     })
     .onConflictDoUpdate({
       target: accounts.email,
@@ -58,7 +67,24 @@ export async function addOAuthAccount(
     });
 
   revalidatePath("/");
+  revalidatePath("/accounts");
   return id;
+}
+
+export async function updateAccountInitialFetchLimit(
+  id: string,
+  initialFetchLimit: number
+) {
+  if (![50, 200, 1000].includes(initialFetchLimit)) {
+    throw new Error("Unsupported initial fetch limit");
+  }
+
+  await db
+    .update(accounts)
+    .set({ initialFetchLimit })
+    .where(eq(accounts.id, id));
+
+  revalidatePath("/accounts");
 }
 
 export async function removeAccount(id: string) {
