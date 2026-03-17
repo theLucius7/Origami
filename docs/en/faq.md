@@ -14,6 +14,27 @@ Keeping them local makes the model more stable and the UI more predictable.
 
 Because those states are closer to native mailbox behavior and provide more obvious cross-client value.
 
+## Why doesn't the global write-back toggle enable every account?
+
+Because in Origami, “global” means **bulk setting**, not blind force-enable.
+Some accounts can sync mail normally but still lack the provider capability or permission scope required for write-back.
+
+Current behavior:
+
+- turning **on** global read-back / star-back only affects accounts that are currently eligible for that capability
+- turning **off** still applies to all accounts
+- skipped accounts continue to show the reason on the Accounts page, such as missing re-authorization
+
+This avoids the misleading state where the UI says write-back is enabled even though the provider can never execute it.
+
+## Why do some messages disappear from Inbox after sync?
+
+Usually that means Origami finally reconciled with the remote mailbox state.
+If a message was deleted remotely or moved out of Inbox, Origami now removes it from the default Inbox list on the next sync cycle.
+
+That is more accurate than keeping a stale local Inbox entry forever.
+If the same message later returns to Inbox, it can appear again through normal sync.
+
 ## Is QQ send supported now?
 
 Yes.
