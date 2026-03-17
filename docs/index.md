@@ -23,6 +23,8 @@ features:
     details: Done, Archive, and Snooze stay local to Origami, while Read / Star can optionally write back to supported providers.
   - title: Minimal sending flow
     details: Compose and send new emails through Gmail, Outlook, and IMAP/SMTP mailboxes, with local sent history.
+  - title: OAuth app management
+    details: Gmail and Outlook can use either env-backed default apps or DB-managed OAuth apps selected per account.
   - title: R2-backed attachments
     details: Large binary attachments stay in Cloudflare R2 while metadata lives in Turso.
   - title: Search syntax

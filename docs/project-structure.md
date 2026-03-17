@@ -141,6 +141,7 @@ Read-oriented data access:
 
 - accounts
 - emails
+- oauth apps
 - sent messages
 
 #### `src/lib/services/`
@@ -185,6 +186,17 @@ Look at:
 - `src/app/actions/send.ts`
 - `src/lib/providers/gmail.ts`
 - `src/lib/providers/outlook.ts`
+
+### If you want to change OAuth app management
+
+Look at:
+
+- `src/app/(app)/accounts/page.tsx`
+- `src/app/actions/oauth-apps.ts`
+- `src/components/accounts/oauth-apps-panel.tsx`
+- `src/components/accounts/oauth-app-dialog.tsx`
+- `src/lib/oauth-apps.ts`
+- `src/lib/queries/oauth-apps.ts`
 
 ### If you want to change deployment/runtime config
 

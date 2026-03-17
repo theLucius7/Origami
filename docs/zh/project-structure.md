@@ -141,6 +141,7 @@ provider 实现以及共用类型：
 
 - accounts
 - emails
+- oauth apps
 - sent messages
 
 #### `src/lib/services/`
@@ -185,6 +186,17 @@ provider 实现以及共用类型：
 - `src/app/actions/send.ts`
 - `src/lib/providers/gmail.ts`
 - `src/lib/providers/outlook.ts`
+
+### 如果你想改 OAuth 应用管理
+
+重点看：
+
+- `src/app/(app)/accounts/page.tsx`
+- `src/app/actions/oauth-apps.ts`
+- `src/components/accounts/oauth-apps-panel.tsx`
+- `src/components/accounts/oauth-app-dialog.tsx`
+- `src/lib/oauth-apps.ts`
+- `src/lib/queries/oauth-apps.ts`
 
 ### 如果你想改部署 / 运行时配置
 

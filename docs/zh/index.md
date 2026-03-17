@@ -23,6 +23,8 @@ features:
     details: Done、Archive、Snooze 仍只保存在 Origami 本地；Read / Star 则可按账号选择是否回写到支持的提供商。
   - title: 最小可用发信流程
     details: 可通过 Gmail、Outlook 与 IMAP/SMTP 邮箱撰写并发送新邮件，同时保留本地已发送记录。
+  - title: OAuth 应用管理
+    details: Gmail 与 Outlook 既可使用环境变量默认应用，也可使用数据库中托管、并按账号选择的 OAuth 应用。
   - title: R2 附件存储
     details: 大体积二进制附件放在 Cloudflare R2，元数据保存在 Turso。
   - title: 搜索语法
