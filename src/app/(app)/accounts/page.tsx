@@ -1,10 +1,10 @@
-import { getAccounts } from "@/actions/account";
+import { listAccounts } from "@/lib/queries/accounts";
 import { AccountCard } from "@/components/account-card";
 import { AddAccountDialog } from "@/components/add-account-dialog";
 import { Separator } from "@/components/ui/separator";
 
 export default async function AccountsPage() {
-  const accounts = await getAccounts();
+  const accounts = await listAccounts();
 
   return (
     <div className="flex-1 overflow-auto">

@@ -1,5 +1,5 @@
-import { getEmails } from "@/actions/email";
-import { getAccounts } from "@/actions/account";
+import { listAccounts } from "@/lib/queries/accounts";
+import { listEmails } from "@/lib/queries/emails";
 import { InboxView } from "@/components/inbox-view";
 
 interface PageProps {
@@ -15,8 +15,8 @@ export default async function InboxPage({ searchParams }: PageProps) {
   const starred = params.starred === "1";
 
   const [emailList, accountList] = await Promise.all([
-    getEmails({ accountId, starred }),
-    getAccounts(),
+    listEmails({ accountId, starred }),
+    listAccounts(),
   ]);
 
   const accountProviders: Record<string, string> = {};

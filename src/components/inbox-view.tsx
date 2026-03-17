@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { MailList } from "./mail-list";
 import { MailDetail } from "./mail-detail";
 import { SnoozeDialog } from "./snooze-dialog";
@@ -37,6 +38,7 @@ export function InboxView({
   accountId,
   starred,
 }: InboxViewProps) {
+  const router = useRouter();
   const [emails, setEmails] = useState(initialEmails);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -150,6 +152,7 @@ export function InboxView({
     if (selectedIds.length === 0) return;
     startTransition(async () => {
       await action();
+      router.refresh();
     });
   }
 
@@ -299,6 +302,7 @@ export function InboxView({
           applyBatchPatch(selectedIds, {
             localSnoozeUntil: Math.floor(new Date(value).getTime() / 1000),
           });
+          router.refresh();
         }}
       />
     </>

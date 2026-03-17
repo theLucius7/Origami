@@ -1,6 +1,7 @@
 import { Sidebar } from "@/components/sidebar";
-import { getAccounts, getSendCapableAccounts } from "@/actions/account";
-import { getUnreadCount } from "@/actions/email";
+import { listSendCapableAccounts } from "@/lib/account-providers";
+import { listAccounts } from "@/lib/queries/accounts";
+import { countUnreadEmails } from "@/lib/queries/emails";
 
 export const dynamic = "force-dynamic";
 
@@ -10,9 +11,9 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const [accounts, unreadCount, sendCapableAccounts] = await Promise.all([
-    getAccounts(),
-    getUnreadCount(),
-    getSendCapableAccounts(),
+    listAccounts(),
+    countUnreadEmails(),
+    listSendCapableAccounts(),
   ]);
 
   return (

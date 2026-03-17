@@ -1,4 +1,4 @@
-import { getSendCapableAccounts } from "@/actions/account";
+import { listSendCapableAccounts } from "@/lib/account-providers";
 import { ComposeForm } from "@/components/compose-form";
 
 interface PageProps {
@@ -7,7 +7,7 @@ interface PageProps {
 
 export default async function ComposePage({ searchParams }: PageProps) {
   const params = await searchParams;
-  const accounts = await getSendCapableAccounts();
+  const accounts = await listSendCapableAccounts();
 
   if (accounts.length === 0) {
     return (

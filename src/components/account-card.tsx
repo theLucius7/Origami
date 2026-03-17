@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,23 +9,20 @@ import { Trash2 } from "lucide-react";
 import { removeAccount, updateAccountInitialFetchLimit } from "@/actions/account";
 import { SyncAccountButton } from "./sync-button";
 import { formatRelativeTime } from "@/lib/format";
+import { getProviderMeta } from "@/lib/provider-meta";
 import type { Account } from "@/lib/db/schema";
 
-const PROVIDER_STYLES: Record<string, { label: string; color: string }> = {
-  gmail: { label: "Gmail", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
-  outlook: { label: "Outlook", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
-  qq: { label: "QQ 邮箱", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
-};
-
 export function AccountCard({ account }: { account: Account }) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [fetchLimit, setFetchLimit] = useState(String(account.initialFetchLimit ?? 200));
-  const style = PROVIDER_STYLES[account.provider] ?? { label: account.provider, color: "bg-gray-100" };
+  const provider = getProviderMeta(account.provider);
 
   function handleRemove() {
     if (!confirm(`确定要删除 ${account.email} 吗？关联的邮件数据也会被删除。`)) return;
     startTransition(async () => {
       await removeAccount(account.id);
+      router.refresh();
     });
   }
 
@@ -32,6 +30,7 @@ export function AccountCard({ account }: { account: Account }) {
     setFetchLimit(value);
     startTransition(async () => {
       await updateAccountInitialFetchLimit(account.id, Number(value));
+      router.refresh();
     });
   }
 
@@ -42,8 +41,8 @@ export function AccountCard({ account }: { account: Account }) {
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <span className="truncate font-medium">{account.displayName ?? account.email}</span>
-              <Badge variant="secondary" className={style.color}>
-                {style.label}
+              <Badge variant="secondary" className={provider.badgeClass}>
+                {provider.label}
               </Badge>
             </div>
             <p className="truncate text-sm text-muted-foreground">{account.email}</p>

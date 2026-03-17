@@ -7,12 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Check, Star, Clock3, Archive, CheckCircle2 } from "lucide-react";
 import type { EmailListItem } from "@/lib/db/schema";
 import { formatRelativeTime } from "@/lib/format";
-
-const PROVIDER_DOT: Record<string, string> = {
-  gmail: "bg-red-500",
-  outlook: "bg-blue-500",
-  qq: "bg-green-500",
-};
+import { getProviderMeta } from "@/lib/provider-meta";
 
 interface MailListProps {
   emails: EmailListItem[];
@@ -80,7 +75,7 @@ export function MailList({
                   <span
                     className={cn(
                       "h-2 w-2 shrink-0 rounded-full",
-                      PROVIDER_DOT[provider] ?? "bg-gray-400"
+                      getProviderMeta(provider).dotClass
                     )}
                   />
                   <span

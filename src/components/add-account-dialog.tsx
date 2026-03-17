@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +17,7 @@ import { addQQAccount } from "@/actions/account";
 import { getGmailOAuthUrl, getOutlookOAuthUrl } from "@/actions/oauth";
 
 export function AddAccountDialog() {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [qqEmail, setQQEmail] = useState("");
   const [qqAuthCode, setQQAuthCode] = useState("");
@@ -37,6 +39,7 @@ export function AddAccountDialog() {
       setQQName("");
       setInitialFetchLimit("200");
       setOpen(false);
+      router.refresh();
     });
   }
 

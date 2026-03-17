@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { getSentMessageDetail } from "@/actions/send";
+import { getSentMessageDetailRecord } from "@/lib/queries/sent-messages";
 import { SentDetail } from "@/components/sent-detail";
 import { Button } from "@/components/ui/button";
 
@@ -11,7 +11,7 @@ interface PageProps {
 
 export default async function SentDetailPage({ params }: PageProps) {
   const { id } = await params;
-  const detail = await getSentMessageDetail(id);
+  const detail = await getSentMessageDetailRecord(id);
 
   if (!detail) notFound();
 

@@ -49,6 +49,19 @@ export const emails = sqliteTable(
     index("emails_local_archived_received_idx").on(t.localArchived, t.receivedAt),
     index("emails_local_done_received_idx").on(t.localDone, t.receivedAt),
     index("emails_local_snooze_idx").on(t.localSnoozeUntil),
+    index("emails_account_archive_received_idx").on(t.accountId, t.localArchived, t.receivedAt),
+    index("emails_account_archive_starred_received_idx").on(
+      t.accountId,
+      t.localArchived,
+      t.isStarred,
+      t.receivedAt
+    ),
+    index("emails_account_archive_read_received_idx").on(
+      t.accountId,
+      t.localArchived,
+      t.isRead,
+      t.receivedAt
+    ),
   ]
 );
 

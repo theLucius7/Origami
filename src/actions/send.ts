@@ -1,21 +1,26 @@
 "use server";
 
+import { inArray } from "drizzle-orm";
+import { nanoid } from "nanoid";
 import { db } from "@/lib/db";
 import {
   accounts,
   composeUploads,
   sentMessages,
   sentMessageAttachments,
-  type SentMessage,
-  type SentMessageAttachment,
 } from "@/lib/db/schema";
-import { decrypt } from "@/lib/crypto";
-import { createEmailProvider, getUpdatedProviderCredentials } from "@/lib/providers/factory";
 import { downloadAttachmentBuffer } from "@/lib/r2";
-import { desc, eq, inArray } from "drizzle-orm";
-import { nanoid } from "nanoid";
-import { revalidatePath } from "next/cache";
 import type { SendMailResult, SyncedAttachment } from "@/lib/providers/types";
+import {
+  getAccountWithProvider,
+  persistProviderCredentialsIfNeeded,
+} from "@/lib/account-providers";
+import {
+  getSentMessageDetailRecord,
+  getSentMessageRecordById,
+  listSentMessageAttachments,
+  listSentMessages,
+} from "@/lib/queries/sent-messages";
 
 const MAX_OUTLOOK_SAFE_ATTACHMENT_BYTES = 3 * 1024 * 1024;
 
@@ -154,9 +159,8 @@ export async function sendMailAction(input: SendMailActionInput): Promise<SendMa
     };
   }
 
-  const accountRows = await db.select().from(accounts).where(eq(accounts.id, input.accountId));
-  const account = accountRows[0];
-  if (!account) {
+  const resolved = await getAccountWithProvider(input.accountId);
+  if (!resolved) {
     return {
       ok: false,
       errorCode: "VALIDATION",
@@ -164,8 +168,7 @@ export async function sendMailAction(input: SendMailActionInput): Promise<SendMa
     };
   }
 
-  const creds = JSON.parse(decrypt(account.credentials));
-  const provider = createEmailProvider(account, creds);
+  const { account, provider } = resolved;
 
   if (!provider.getCapabilities().canSend) {
     return {
@@ -206,10 +209,7 @@ export async function sendMailAction(input: SendMailActionInput): Promise<SendMa
     attachments: sendAttachments,
   });
 
-  const updatedCredentials = getUpdatedProviderCredentials(account, provider);
-  if (updatedCredentials) {
-    await db.update(accounts).set({ credentials: updatedCredentials }).where(eq(accounts.id, account.id));
-  }
+  await persistProviderCredentialsIfNeeded(account, provider);
 
   if (!result.ok) {
     return result;
@@ -223,9 +223,6 @@ export async function sendMailAction(input: SendMailActionInput): Promise<SendMa
     uploadedAttachments
   );
 
-  revalidatePath("/sent");
-  revalidatePath("/compose");
-
   return {
     ...result,
     localMessageId,
@@ -233,34 +230,17 @@ export async function sendMailAction(input: SendMailActionInput): Promise<SendMa
 }
 
 export async function getSentMessages(accountId?: string) {
-  const where = accountId ? eq(sentMessages.accountId, accountId) : undefined;
-  return db.select().from(sentMessages).where(where).orderBy(desc(sentMessages.sentAt));
+  return listSentMessages(accountId);
 }
 
-export async function getSentMessageById(id: string): Promise<SentMessage | null> {
-  const rows = await db.select().from(sentMessages).where(eq(sentMessages.id, id));
-  return rows[0] ?? null;
+export async function getSentMessageById(id: string) {
+  return getSentMessageRecordById(id);
 }
 
-export async function getSentMessageAttachments(sentMessageId: string): Promise<SentMessageAttachment[]> {
-  return db
-    .select()
-    .from(sentMessageAttachments)
-    .where(eq(sentMessageAttachments.sentMessageId, sentMessageId));
+export async function getSentMessageAttachments(sentMessageId: string) {
+  return listSentMessageAttachments(sentMessageId);
 }
 
 export async function getSentMessageDetail(id: string) {
-  const message = await getSentMessageById(id);
-  if (!message) return null;
-
-  const [accountRows, attachmentsRows] = await Promise.all([
-    db.select().from(accounts).where(eq(accounts.id, message.accountId)),
-    getSentMessageAttachments(id),
-  ]);
-
-  return {
-    message,
-    account: accountRows[0] ?? null,
-    attachments: attachmentsRows,
-  };
+  return getSentMessageDetailRecord(id);
 }

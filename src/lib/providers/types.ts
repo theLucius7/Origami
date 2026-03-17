@@ -67,8 +67,8 @@ export type SendMailResult =
     };
 
 export interface EmailProvider {
-  sync(cursor: string | null, options?: SyncOptions): Promise<SyncResult>;
-  fetchMessage(remoteId: string): Promise<SyncedEmail | null>;
+  syncEmails(cursor: string | null, options?: SyncOptions): Promise<SyncResult>;
+  fetchEmail(remoteId: string): Promise<SyncedEmail | null>;
   getCapabilities(): ProviderCapabilities;
   sendMail(params: SendMailParams): Promise<SendMailResult>;
 }

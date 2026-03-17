@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -41,6 +42,7 @@ export function MailDetail({
   onClose,
   onLocalUpdate,
 }: MailDetailProps) {
+  const router = useRouter();
   const [, startTransition] = useTransition();
   const [snoozeOpen, setSnoozeOpen] = useState(false);
   const [nowTs] = useState(() => Math.floor(Date.now() / 1000));
@@ -50,14 +52,16 @@ export function MailDetail({
       startTransition(async () => {
         await markRead(email.id);
         onLocalUpdate?.(email.id, { isRead: 1 });
+        router.refresh();
       });
     }
-  }, [email.id, email.isRead, onLocalUpdate]);
+  }, [email.id, email.isRead, onLocalUpdate, router]);
 
   function handleStar() {
     startTransition(async () => {
       await toggleStar(email.id);
       onLocalUpdate?.(email.id, { isStarred: email.isStarred ? 0 : 1 });
+      router.refresh();
     });
   }
 
@@ -65,6 +69,7 @@ export function MailDetail({
     startTransition(async () => {
       await markDone([email.id], email.localDone !== 1);
       onLocalUpdate?.(email.id, { localDone: email.localDone === 1 ? 0 : 1 });
+      router.refresh();
     });
   }
 
@@ -73,6 +78,7 @@ export function MailDetail({
       const nextValue = email.localArchived !== 1;
       await markArchived([email.id], nextValue);
       onLocalUpdate?.(email.id, { localArchived: nextValue ? 1 : 0 });
+      router.refresh();
     });
   }
 
@@ -80,6 +86,7 @@ export function MailDetail({
     startTransition(async () => {
       await clearSnooze([email.id]);
       onLocalUpdate?.(email.id, { localSnoozeUntil: null });
+      router.refresh();
     });
   }
 
@@ -223,6 +230,7 @@ export function MailDetail({
           onLocalUpdate?.(email.id, {
             localSnoozeUntil: Math.floor(new Date(value).getTime() / 1000),
           });
+          router.refresh();
         }}
       />
     </>

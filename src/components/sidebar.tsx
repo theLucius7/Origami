@@ -13,20 +13,9 @@ import {
   Send,
 } from "lucide-react";
 import type { Account } from "@/lib/db/schema";
+import { getProviderMeta } from "@/lib/provider-meta";
 import { SyncAllButton } from "./sync-button";
 import { ComposeLink } from "./compose-link";
-
-const PROVIDER_COLORS: Record<string, string> = {
-  gmail: "bg-red-500",
-  outlook: "bg-blue-500",
-  qq: "bg-green-500",
-};
-
-const PROVIDER_LABELS: Record<string, string> = {
-  gmail: "Gmail",
-  outlook: "Outlook",
-  qq: "QQ 邮箱",
-};
 
 interface SidebarProps {
   accounts: Account[];
@@ -101,14 +90,14 @@ export function Sidebar({ accounts, activeAccountId, unreadCount, hasSendAccount
                 <span
                   className={cn(
                     "mr-2 h-2 w-2 rounded-full",
-                    PROVIDER_COLORS[account.provider] ?? "bg-gray-500"
+                    getProviderMeta(account.provider).dotClass
                   )}
                 />
                 <span className="truncate text-sm">
                   {account.displayName ?? account.email}
                 </span>
                 <span className="ml-auto text-xs text-muted-foreground">
-                  {PROVIDER_LABELS[account.provider] ?? account.provider}
+                  {getProviderMeta(account.provider).label}
                 </span>
               </Link>
             </Button>
@@ -131,4 +120,4 @@ export function Sidebar({ accounts, activeAccountId, unreadCount, hasSendAccount
   );
 }
 
-export { PROVIDER_COLORS, PROVIDER_LABELS, RefreshCw };
+export { RefreshCw };

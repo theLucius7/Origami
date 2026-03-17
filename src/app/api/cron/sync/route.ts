@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { syncAll } from "@/actions/sync";
+import { syncAllAccounts } from "@/lib/services/sync-service";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -10,6 +10,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { results } = await syncAll();
+  const { results } = await syncAllAccounts();
   return NextResponse.json({ ok: true, results });
 }

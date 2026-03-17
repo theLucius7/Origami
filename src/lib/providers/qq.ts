@@ -55,7 +55,7 @@ export class QQProvider implements EmailProvider {
     };
   }
 
-  async sync(cursor: string | null, options: SyncOptions = {}): Promise<SyncResult> {
+  async syncEmails(cursor: string | null, options: SyncOptions = {}): Promise<SyncResult> {
     const client = new ImapFlow({
       host: "imap.qq.com",
       port: 993,
@@ -148,7 +148,7 @@ export class QQProvider implements EmailProvider {
     }
   }
 
-  async fetchMessage(remoteId: string): Promise<SyncedEmail | null> {
+  async fetchEmail(remoteId: string): Promise<SyncedEmail | null> {
     const uid = parseInt(remoteId, 10);
     if (!Number.isFinite(uid)) return null;
 

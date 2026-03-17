@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getEmailDetail } from "@/actions/email";
+import { getHydratedEmailDetail } from "@/lib/services/email-service";
 import { MailDetail } from "@/components/mail-detail";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -11,7 +11,7 @@ interface PageProps {
 
 export default async function MailDetailPage({ params }: PageProps) {
   const { id } = await params;
-  const detail = await getEmailDetail(id);
+  const detail = await getHydratedEmailDetail(id);
 
   if (!detail) notFound();
 

@@ -1,16 +1,19 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { syncAll, syncAccount } from "@/actions/sync";
 
 export function SyncAllButton() {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   function handleSync() {
     startTransition(async () => {
       await syncAll();
+      router.refresh();
     });
   }
 
@@ -28,16 +31,18 @@ export function SyncAllButton() {
 }
 
 export function SyncAccountButton({ accountId }: { accountId: string }) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [result, setResult] = useState<string | null>(null);
 
   function handleSync() {
     startTransition(async () => {
       const res = await syncAccount(accountId);
-      if (res.error) {
+      if (!res.ok) {
         setResult(`错误: ${res.error}`);
       } else {
         setResult(`同步了 ${res.synced} 封邮件`);
+        router.refresh();
       }
       setTimeout(() => setResult(null), 3000);
     });

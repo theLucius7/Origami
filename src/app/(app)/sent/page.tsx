@@ -1,4 +1,4 @@
-import { getSentMessages } from "@/actions/send";
+import { listSentMessages } from "@/lib/queries/sent-messages";
 import { SentList } from "@/components/sent-list";
 
 interface PageProps {
@@ -7,7 +7,7 @@ interface PageProps {
 
 export default async function SentPage({ searchParams }: PageProps) {
   const params = await searchParams;
-  const messages = await getSentMessages(params.account);
+  const messages = await listSentMessages(params.account);
 
   return <SentList messages={messages} />;
 }

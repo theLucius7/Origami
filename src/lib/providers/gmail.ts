@@ -190,14 +190,14 @@ export class GmailProvider implements EmailProvider {
     }
   }
 
-  async sync(cursor: string | null, options: SyncOptions = {}): Promise<SyncResult> {
+  async syncEmails(cursor: string | null, options: SyncOptions = {}): Promise<SyncResult> {
     if (cursor) {
       return this.incrementalSync(cursor, options);
     }
     return this.fullSync(options);
   }
 
-  async fetchMessage(remoteId: string): Promise<SyncedEmail | null> {
+  async fetchEmail(remoteId: string): Promise<SyncedEmail | null> {
     const msg = await this.gmail.users.messages.get({
       userId: "me",
       id: remoteId,

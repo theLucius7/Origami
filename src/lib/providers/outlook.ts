@@ -114,11 +114,11 @@ export class OutlookProvider implements EmailProvider {
     };
   }
 
-  async sync(cursor: string | null, options: SyncOptions = {}): Promise<SyncResult> {
+  async syncEmails(cursor: string | null, options: SyncOptions = {}): Promise<SyncResult> {
     return this.withRefresh(() => this._sync(cursor, options));
   }
 
-  async fetchMessage(remoteId: string): Promise<SyncedEmail | null> {
+  async fetchEmail(remoteId: string): Promise<SyncedEmail | null> {
     return this.withRefresh(async () => {
       const msg = await this.client
         .api(`/me/messages/${remoteId}`)

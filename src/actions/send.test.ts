@@ -27,18 +27,18 @@ const providerMock = {
 };
 
 vi.mock("@/lib/db/schema", () => schemaMock);
-vi.mock("@/lib/crypto", () => ({
-  decrypt: vi.fn(() => JSON.stringify({ accessToken: "a", refreshToken: "r", scopes: ["https://www.googleapis.com/auth/gmail.send"] })),
+vi.mock("@/lib/account-providers", () => ({
+  getAccountWithProvider: vi.fn(async () => ({ account: mockAccount, provider: providerMock })),
+  persistProviderCredentialsIfNeeded: vi.fn(async () => undefined),
 }));
-vi.mock("@/lib/providers/factory", () => ({
-  createEmailProvider: vi.fn(() => providerMock),
-  getUpdatedProviderCredentials: vi.fn(() => undefined),
+vi.mock("@/lib/queries/sent-messages", () => ({
+  getSentMessageDetailRecord: vi.fn(),
+  getSentMessageRecordById: vi.fn(),
+  listSentMessageAttachments: vi.fn(),
+  listSentMessages: vi.fn(),
 }));
 vi.mock("@/lib/r2", () => ({
   downloadAttachmentBuffer: vi.fn(),
-}));
-vi.mock("next/cache", () => ({
-  revalidatePath: vi.fn(),
 }));
 vi.mock("@/lib/db", () => ({
   db: {
