@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { decodeSession } from "@/lib/session";
 
 const PUBLIC_PATHS = ["/login", "/api/auth", "/api/oauth", "/api/cron"];
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
@@ -14,11 +15,19 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  const session = await decodeSession(request.cookies.get("origami_session")?.value ?? null);
+  if (session) {
+    if (!session.setupComplete && pathname !== "/setup") {
+      return NextResponse.redirect(new URL("/setup", request.url));
+    }
+    return NextResponse.next();
+  }
+
   const token =
     request.cookies.get("origami_token")?.value ??
     request.headers.get("authorization")?.replace("Bearer ", "");
 
-  if (token && token === process.env.ACCESS_TOKEN) {
+  if (token && process.env.ACCESS_TOKEN && token === process.env.ACCESS_TOKEN) {
     return NextResponse.next();
   }
 
@@ -26,8 +35,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const loginUrl = new URL("/login", request.url);
-  return NextResponse.redirect(loginUrl);
+  return NextResponse.redirect(new URL("/login", request.url));
 }
 
 export const config = {

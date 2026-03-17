@@ -31,6 +31,16 @@ vi.mock("@/lib/db/schema", () => ({
   accounts: { id: "accounts.id" },
 }));
 
+vi.mock("@/lib/session", () => ({
+  readSessionFromCookies: vi.fn().mockResolvedValue({
+    githubId: "123",
+    githubLogin: "lucius7",
+    githubName: null,
+    githubAvatarUrl: null,
+    setupComplete: true,
+  }),
+}));
+
 describe("GET /api/oauth/outlook", () => {
   beforeEach(() => {
     addOAuthAccountMock.mockReset();
@@ -54,14 +64,18 @@ describe("GET /api/oauth/outlook", () => {
   });
 
   it("upgrades OAuth scopes and auto-enables write-back after Outlook reauth", async () => {
+    process.env.AUTH_SECRET = "test-auth-secret";
     const { GET } = await import("./route");
 
-    const state = encodeOAuthState({
-      appId: "default",
-      intent: "writeback",
-      enableReadBack: true,
-      enableStarBack: true,
-    });
+    const state = await encodeOAuthState(
+      {
+        appId: "default",
+        intent: "writeback",
+        enableReadBack: true,
+        enableStarBack: true,
+      },
+      { sessionGithubId: "123" }
+    );
     const request = new NextRequest(`http://localhost:3000/api/oauth/outlook?code=test-code&state=${state}`);
 
     const response = await GET(request);

@@ -41,6 +41,17 @@ export const oauthApps = sqliteTable(
   ]
 );
 
+export const appInstallation = sqliteTable("app_installation", {
+  id: text("id").primaryKey(),
+  ownerGithubId: text("owner_github_id").notNull(),
+  ownerGithubLogin: text("owner_github_login").notNull(),
+  ownerGithubName: text("owner_github_name"),
+  ownerGithubAvatarUrl: text("owner_github_avatar_url"),
+  setupCompletedAt: integer("setup_completed_at"),
+  createdAt: integer("created_at").default(sql`(unixepoch())`),
+  updatedAt: integer("updated_at").default(sql`(unixepoch())`),
+});
+
 export const emails = sqliteTable(
   "emails",
   {
@@ -167,6 +178,7 @@ export const sentMessageAttachments = sqliteTable(
 
 export type Account = typeof accounts.$inferSelect;
 export type OAuthApp = typeof oauthApps.$inferSelect;
+export type AppInstallation = typeof appInstallation.$inferSelect;
 export type Email = typeof emails.$inferSelect;
 export type EmailListItem = Pick<
   Email,

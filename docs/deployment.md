@@ -18,9 +18,13 @@
 | 变量 | 必填 | 说明 |
 |---|---:|---|
 | `NEXT_PUBLIC_APP_URL` | 是 | 公开访问地址，用于 OAuth callback |
-| `ACCESS_TOKEN` | 是 | 单用户登录口令 |
-| `CRON_SECRET` | 是 | `/api/cron/sync` 的 Bearer 密钥 |
+| `GITHUB_CLIENT_ID` | 是 | GitHub 登录 OAuth app client id |
+| `GITHUB_CLIENT_SECRET` | 是 | GitHub 登录 OAuth app client secret |
 | `ENCRYPTION_KEY` | 是 | 64 位十六进制字符串，用于 AES-256-GCM |
+| `GITHUB_ALLOWED_LOGIN` | 否 | 限制允许完成首次绑定 / 登录的 GitHub 用户名 |
+| `AUTH_SECRET` | 否 | session 签名密钥；不填时回退到 `ENCRYPTION_KEY` |
+| `CRON_SECRET` | 否 | `/api/cron/sync` 的 Bearer 密钥；不填时自动派生 |
+| `ACCESS_TOKEN` | 否 | 仅兼容旧版 token 登录，不再推荐 |
 
 ### 数据库
 
@@ -68,7 +72,21 @@ npm run db:setup
 因为项目已经有历史演进。  
 对新部署来说，你真正关心的是“把当前 schema 正确建起来”，而不是先理解所有迁移历史。
 
-## 第 3 步：配置 OAuth
+## 第 3 步：配置 GitHub 登录
+
+你需要先创建一个 GitHub OAuth App，用于登录到 Origami 本身。
+
+回调地址：
+
+- 本地：`http://localhost:3000/api/auth/github/callback`
+- 生产：`https://your-domain/api/auth/github/callback`
+
+推荐：
+
+- 单用户公开部署时，设置 `GITHUB_ALLOWED_LOGIN`
+- 首次访问会进入 `/setup`，首个满足条件的 GitHub 用户会绑定为实例 owner
+
+## 第 4 步：配置邮箱 OAuth
 
 ### Gmail
 
@@ -112,7 +130,7 @@ Origami 目前使用这些 scopes：
 - 个人最小部署：先用环境变量默认 app
 - 想分环境 / 分租户 / 分 provider app：再逐步切到数据库版 app
 
-## 第 4 步：配置 IMAP/SMTP 邮箱
+## 第 5 步：配置 IMAP/SMTP 邮箱
 
 Origami 当前支持：
 
@@ -128,7 +146,7 @@ Origami 当前支持：
 - 授权码或密码
 - 使用 custom 时的 IMAP / SMTP host、port、secure 配置
 
-## 第 5 步：部署到 Vercel
+## 第 6 步：部署到 Vercel
 
 建议流程：
 
@@ -159,12 +177,14 @@ Origami 当前支持：
 Authorization: Bearer <CRON_SECRET>
 ```
 
+如果你没有显式填写 `CRON_SECRET`，服务会自动从 `AUTH_SECRET`（或 `ENCRYPTION_KEY`）派生一个等效 secret。**但如果你使用平台 cron（例如 Vercel Cron），仍然推荐显式配置 `CRON_SECRET`**，否则调度器端通常不知道该发哪个 Bearer token。
+
 ## 生产检查清单
 
 部署后建议逐项确认：
 
 - `/login` 可以访问
-- 正确的 `ACCESS_TOKEN` 能进入应用
+- GitHub 登录成功后能进入 `/setup` 或首页
 - `/accounts` 正常加载
 - Gmail OAuth callback 可用
 - Outlook OAuth callback 可用
@@ -187,4 +207,4 @@ Authorization: Bearer <CRON_SECRET>
 - Done / Archive / Snooze 仍是本地状态，不回写 provider
 - Read / Star 回写依赖 provider 能力与 scope
 - Outlook 当前仍限制单附件 < 3 MB
-- provider callback URL 必须与配置完全一致
+- GitHub / Gmail / Outlook callback URL 都必须与配置完全一致

@@ -9,8 +9,8 @@
 - Node.js 22+
 - 一个 Turso / libSQL 数据库
 - 一个 Cloudflare R2 bucket
-- 一组用于访问应用的 `ACCESS_TOKEN`
-- 如果要接 Gmail / Outlook：对应的 OAuth app
+- 一个 GitHub OAuth App（用于登录到 Origami）
+- 如果要接 Gmail / Outlook：对应的邮箱 OAuth app
 
 ## 第 1 步：安装依赖并复制环境变量模板
 
@@ -33,8 +33,8 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 ```txt
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-ACCESS_TOKEN=your-login-token
-CRON_SECRET=your-cron-secret
+GITHUB_CLIENT_ID=...
+GITHUB_CLIENT_SECRET=...
 ENCRYPTION_KEY=64-char-hex-key
 TURSO_DATABASE_URL=...
 TURSO_AUTH_TOKEN=...
@@ -42,6 +42,17 @@ R2_ACCESS_KEY_ID=...
 R2_SECRET_ACCESS_KEY=...
 R2_BUCKET_NAME=...
 R2_ENDPOINT=...
+```
+
+### 推荐再补上的变量
+
+```txt
+# 可选：只允许指定 GitHub 用户完成首次绑定 / 后续登录
+GITHUB_ALLOWED_LOGIN=your-github-login
+# 可选：独立 session 签名密钥；留空时默认复用 ENCRYPTION_KEY
+AUTH_SECRET=...
+# 可选但推荐：定时同步 Bearer secret（如果要接平台 cron，最好显式填写）
+CRON_SECRET=...
 ```
 
 ### 如果你希望开箱即用 Gmail / Outlook OAuth
@@ -76,10 +87,11 @@ npm run dev
 
 然后：
 
-1. 输入 `ACCESS_TOKEN`
-2. 进入 `/accounts`
-3. 添加 Gmail / Outlook / IMAP/SMTP 账号
-4. 回到首页检查是否能看到邮件列表
+1. 使用 GitHub 登录
+2. 完成 `/setup` 初始化
+3. 进入 `/accounts`
+4. 添加 Gmail / Outlook / IMAP/SMTP 账号
+5. 回到首页检查是否能看到邮件列表
 
 ## 第 5 步：验证完整性
 
@@ -104,10 +116,10 @@ npm run verify
 因为项目已经积累了一串历史 migration。  
 对于新库来说，你通常不需要感知这段历史，直接使用 `db:setup` 会更省心。
 
-### 为什么登录只要一个 token？
+### 为什么登录走 GitHub？
 
-因为 Origami 目前是单用户应用。  
-它用 `ACCESS_TOKEN` 保证最小可用的访问控制，而不是一开始就引入复杂用户系统。
+因为 Origami 现在更适合“单 owner、自托管”的使用方式。  
+GitHub OAuth 能在不引入完整多用户系统的前提下，提供比明文 token 更稳的登录和初始化绑定。
 
 ### 如果我只想先试，不想配 Gmail / Outlook？
 

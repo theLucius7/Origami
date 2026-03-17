@@ -57,6 +57,13 @@
       "when": 1773785400000,
       "tag": "0007_oauth_apps",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1773831600000,
+      "tag": "0008_app_installation_github_auth",
+      "breakpoints": true
     }
   ]
 }

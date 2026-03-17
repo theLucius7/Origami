@@ -5,14 +5,27 @@ import { accounts } from "@/lib/db/schema";
 import { decodeOAuthState } from "@/lib/oauth-state";
 import { exchangeOutlookCode } from "@/lib/providers/outlook";
 import { getAccountRecordByEmail } from "@/lib/queries/accounts";
+import { readSessionFromCookies } from "@/lib/session";
 import { eq } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
-  const state = decodeOAuthState(request.nextUrl.searchParams.get("state"));
 
   if (!code) {
     return NextResponse.json({ error: "Missing code" }, { status: 400 });
+  }
+
+  const session = await readSessionFromCookies(request.cookies);
+  if (!session) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  const stateParam = request.nextUrl.searchParams.get("state");
+  const state = stateParam
+    ? await decodeOAuthState(stateParam, { sessionGithubId: session.githubId })
+    : null;
+  if (stateParam && !state) {
+    return NextResponse.redirect(new URL("/accounts?error=invalid_oauth_state", request.url));
   }
 
   try {
