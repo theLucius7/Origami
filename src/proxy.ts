@@ -27,6 +27,13 @@ export async function proxy(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // In proxied/preview environments (e.g. Codespaces), redirects from a Server Action
+  // request can surface as an opaque "Invalid Server Actions request".
+  // Prefer an explicit 401 so the client gets a clear auth failure.
+  if (request.headers.get("next-action")) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   return NextResponse.redirect(new URL("/login", request.url));
 }
 

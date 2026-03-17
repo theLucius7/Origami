@@ -7,6 +7,15 @@ import {
   readSessionFromCookies,
 } from "@/lib/session";
 
+function withHttpsPreviewCookieCompat(request: NextRequest, opts: ReturnType<typeof getSessionCookieOptions>) {
+  const proto = request.headers.get("x-forwarded-proto") ?? request.nextUrl.protocol.replace(":", "");
+  const isHttps = proto === "https";
+  if (process.env.NODE_ENV !== "production" && isHttps) {
+    return { ...opts, secure: true, sameSite: "none" as const };
+  }
+  return opts;
+}
+
 export async function POST(request: NextRequest) {
   const session = await readSessionFromCookies(request.cookies);
   if (!session) {
@@ -19,7 +28,7 @@ export async function POST(request: NextRequest) {
   response.cookies.set(
     getSessionCookieName(),
     await createSessionCookieValue({ ...session, setupComplete: true }),
-    getSessionCookieOptions()
+    withHttpsPreviewCookieCompat(request, getSessionCookieOptions())
   );
   return response;
 }
