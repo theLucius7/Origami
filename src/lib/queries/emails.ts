@@ -45,28 +45,48 @@ function buildLikeSearchCondition(search: string): SQL<unknown> {
   )!;
 }
 
-function buildFtsSearchQuery(searchTerms: string[]): string | null {
-  const tokens = searchTerms
-    .flatMap((term) =>
-      term
-        .trim()
-        .split(/\s+/)
-        .map((token) => token.replace(/["'`*:^(){}\[\]]/g, "").trim())
-    )
+const FTS_RESERVED_KEYWORDS = new Set(["and", "or", "not", "near"]);
+
+function normalizeFtsToken(token: string): string | null {
+  const cleaned = token.replace(/["'`*:^(){}\[\]]/g, "").trim();
+  if (!cleaned) return null;
+  if (FTS_RESERVED_KEYWORDS.has(cleaned.toLowerCase())) return null;
+  if (!/^[\p{L}\p{N}_]+$/u.test(cleaned)) return null;
+  return cleaned;
+}
+
+export function buildFtsSearchQuery(searchTerms: string[]): string | null {
+  const rawTokens = searchTerms
+    .flatMap((term) => term.trim().split(/\s+/))
     .filter(Boolean)
     .slice(0, 8);
 
-  if (tokens.length === 0) return null;
+  if (rawTokens.length === 0) return null;
+
+  const tokens: string[] = [];
+  for (const rawToken of rawTokens) {
+    const normalized = normalizeFtsToken(rawToken);
+    if (!normalized) {
+      return null;
+    }
+    tokens.push(normalized);
+  }
+
   return tokens.map((token) => `${token}*`).join(" ");
 }
 
-function isFtsUnavailable(error: unknown): boolean {
+export function isFtsFallbackableError(error: unknown): boolean {
   if (!(error instanceof Error)) return false;
   const message = error.message.toLowerCase();
   return (
     message.includes("no such table: emails_fts") ||
     message.includes("no such module: fts5") ||
-    message.includes("fts5")
+    message.includes("fts5") ||
+    message.includes("malformed match expression") ||
+    message.includes("unable to use function match") ||
+    message.includes("unterminated string") ||
+    message.includes("syntax error") ||
+    message.includes("no such column:")
   );
 }
 
@@ -191,7 +211,7 @@ export async function listEmails(opts?: {
       try {
         return await runQuery(ftsWhere);
       } catch (error) {
-        if (!isFtsUnavailable(error)) {
+        if (!isFtsFallbackableError(error)) {
           throw error;
         }
       }
