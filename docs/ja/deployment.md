@@ -142,6 +142,15 @@ GITHUB_ALLOWED_LOGIN=your-github-login
 - `Mail.Send`
 - `offline_access`
 
+## さらに詳しいガイド
+
+このページの要約版だけでなく、ボタンごとの手順で見たい場合は次へ進んでください。
+
+- [GitHub Auth 詳細設定](/ja/github-auth)
+- [Cloudflare R2 / bucket 詳細設定](/ja/r2-storage)
+- [Gmail OAuth 詳細設定](/ja/gmail-oauth)
+- [Outlook OAuth 詳細設定](/ja/outlook-oauth)
+
 ## 本番チェック
 
 - GitHub サインイン後に `/setup` またはホームへ進める

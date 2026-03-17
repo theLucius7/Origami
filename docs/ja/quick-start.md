@@ -78,3 +78,11 @@ npm run verify
 ```
 
 lint、typecheck、test、app build、docs build をまとめて実行します。
+
+## 次に読むページ
+
+- 本番デプロイなら [デプロイ](/ja/deployment)
+- ログインを堅く設定したいなら [GitHub Auth 詳細設定](/ja/github-auth)
+- 添付保存をしっかり設定したいなら [Cloudflare R2 / bucket 詳細設定](/ja/r2-storage)
+- Gmail をもっと丁寧に設定したいなら [Gmail OAuth 詳細設定](/ja/gmail-oauth)
+- Outlook をもっと丁寧に設定したいなら [Outlook OAuth 詳細設定](/ja/outlook-oauth)

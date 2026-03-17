@@ -82,5 +82,9 @@ This runs lint, typecheck, tests, app build, and docs build in one path.
 ## Where to go next
 
 - Need production setup? Read [Deployment](/en/deployment)
+- Want a safer sign-in setup? Read [GitHub Auth detailed setup](/en/github-auth)
+- Want a clearer attachment storage setup? Read [Cloudflare R2 / bucket detailed setup](/en/r2-storage)
+- Want a fuller Gmail walkthrough? Read [Gmail OAuth detailed setup](/en/gmail-oauth)
+- Want a fuller Outlook walkthrough? Read [Outlook OAuth detailed setup](/en/outlook-oauth)
 - Need architectural context? Read [Architecture](/en/architecture)
 - Need product reasoning? Read [FAQ](/en/faq)

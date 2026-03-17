@@ -152,6 +152,15 @@ This prevents an unexpected user from claiming the installation first.
 - `Mail.Send`
 - `offline_access`
 
+## More detailed guides
+
+If you want button-by-button instructions instead of the summary on this page, continue with:
+
+- [GitHub Auth detailed setup](/en/github-auth)
+- [Cloudflare R2 / bucket detailed setup](/en/r2-storage)
+- [Gmail OAuth detailed setup](/en/gmail-oauth)
+- [Outlook OAuth detailed setup](/en/outlook-oauth)
+
 ## Production checklist
 
 - GitHub sign-in reaches `/setup` or the app home successfully

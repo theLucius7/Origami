@@ -65,3 +65,12 @@ Origami は **単一ユーザー向けの統合受信箱** です。
 3. [FAQ](/ja/faq)
 4. [アーキテクチャ](/ja/architecture)
 5. [プロジェクト構成](/ja/project-structure)
+
+## 詳細設定ガイド
+
+実際のデプロイまで進めるなら、次のページがより手順重視です。
+
+- [GitHub Auth 詳細設定](/ja/github-auth)
+- [Cloudflare R2 / bucket 詳細設定](/ja/r2-storage)
+- [Gmail OAuth 詳細設定](/ja/gmail-oauth)
+- [Outlook OAuth 詳細設定](/ja/outlook-oauth)
