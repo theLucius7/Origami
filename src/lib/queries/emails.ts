@@ -10,11 +10,14 @@ import {
   isNull,
   like,
   lte,
+  ne,
   or,
   sql,
   type SQL,
 } from "drizzle-orm";
 import { parseSearchQuery } from "@/lib/search-query-parser";
+
+const REMOTE_REMOVED_FOLDER = "REMOTE_REMOVED";
 
 export const emailSummaryColumns = {
   id: emails.id,
@@ -99,7 +102,11 @@ export async function buildEmailListConditions(opts: {
   const conditions: SQL<unknown>[] = [];
 
   if (opts.accountId) conditions.push(eq(emails.accountId, opts.accountId));
-  if (opts.folder) conditions.push(eq(emails.folder, opts.folder));
+  if (opts.folder) {
+    conditions.push(eq(emails.folder, opts.folder));
+  } else {
+    conditions.push(or(isNull(emails.folder), ne(emails.folder, REMOTE_REMOVED_FOLDER))!);
+  }
   if (opts.starred) conditions.push(eq(emails.isStarred, 1));
 
   const matchedAccountIds = await resolveAccountIds(parsed.accountTerms);
@@ -212,6 +219,7 @@ export const countUnreadEmails = cache(async function countUnreadEmails(accountI
   const conditions: SQL<unknown>[] = [
     eq(emails.isRead, 0),
     eq(emails.localArchived, 0),
+    or(isNull(emails.folder), ne(emails.folder, REMOTE_REMOVED_FOLDER))!,
     or(isNull(emails.localSnoozeUntil), lte(emails.localSnoozeUntil, now))!,
   ];
 

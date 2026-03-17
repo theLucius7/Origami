@@ -253,6 +253,7 @@ export class ImapSmtpProvider implements EmailProvider {
 
         return {
           emails,
+          removedRemoteIds: [],
           newCursor: maxUid > lastUid ? String(maxUid) : cursor,
         };
       }
@@ -286,6 +287,7 @@ export class ImapSmtpProvider implements EmailProvider {
 
       return {
         emails,
+        removedRemoteIds: [],
         newCursor: maxUid > 0 ? String(maxUid) : cursor,
       };
     });

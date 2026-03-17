@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { ActionError } from "@/lib/actions";
 import { getAccountWithProvider, persistProviderCredentialsIfNeeded } from "@/lib/account-providers";
@@ -7,6 +7,8 @@ import { accounts, attachments, emails, type Account } from "@/lib/db/schema";
 import type { SyncedAttachment, SyncedEmail } from "@/lib/providers/types";
 import { buildObjectKey, uploadAttachment } from "@/lib/r2";
 import { getAccountRecordById, listAccounts } from "@/lib/queries/accounts";
+
+const REMOTE_REMOVED_FOLDER = "REMOTE_REMOVED";
 
 async function persistAttachment(accountId: string, emailId: string, att: SyncedAttachment) {
   if (!att.content || att.content.length === 0) {
@@ -132,6 +134,18 @@ async function persistEmails(accountId: string, synced: SyncedEmail[]): Promise<
   return insertedCount;
 }
 
+async function applyRemovedRemoteIds(accountId: string, removedRemoteIds: string[]) {
+  const normalizedIds = [...new Set(removedRemoteIds.map((id) => id.trim()).filter(Boolean))];
+  if (normalizedIds.length === 0) {
+    return;
+  }
+
+  await db
+    .update(emails)
+    .set({ folder: REMOTE_REMOVED_FOLDER })
+    .where(and(eq(emails.accountId, accountId), inArray(emails.remoteId, normalizedIds)));
+}
+
 async function updateAccountSyncState(id: string, syncCursor: string | null) {
   await db
     .update(accounts)
@@ -154,6 +168,7 @@ export async function syncSingleAccount(account: Account) {
     metadataOnly: true,
   });
   const synced = await persistEmails(account.id, result.emails);
+  await applyRemovedRemoteIds(account.id, result.removedRemoteIds);
 
   await updateAccountSyncState(account.id, result.newCursor);
   await persistProviderCredentialsIfNeeded(account, provider);

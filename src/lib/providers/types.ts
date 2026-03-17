@@ -23,6 +23,7 @@ export interface SyncedAttachment {
 
 export interface SyncResult {
   emails: SyncedEmail[];
+  removedRemoteIds: string[];
   newCursor: string | null;
 }
 

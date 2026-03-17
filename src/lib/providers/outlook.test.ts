@@ -170,6 +170,7 @@ describe("OutlookProvider", () => {
     expect(result.newCursor).toBe(
       "https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages/delta?$deltatoken=seed-1"
     );
+    expect(result.removedRemoteIds).toEqual([]);
     expect(result.emails).toEqual([
       expect.objectContaining({
         remoteId: "msg-1",
@@ -235,6 +236,7 @@ describe("OutlookProvider", () => {
           isStarred: true,
         }),
       ],
+      removedRemoteIds: ["msg-deleted"],
       newCursor: "https://graph.microsoft.com/v1.0/me/mailFolders/inbox/messages/delta?$deltatoken=seed-2",
     });
   });

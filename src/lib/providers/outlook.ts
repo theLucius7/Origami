@@ -105,6 +105,16 @@ function extractActiveMessages(page: Record<string, unknown>): Array<Record<stri
   );
 }
 
+function extractRemovedRemoteIds(page: Record<string, unknown>): string[] {
+  const items = Array.isArray(page.value) ? page.value : [];
+  return items
+    .filter(
+      (item): item is Record<string, unknown> => Boolean(item) && typeof item === "object" && "@removed" in item
+    )
+    .map((item) => String(item.id ?? ""))
+    .filter(Boolean);
+}
+
 export async function getOutlookAuthUrl(state?: string, appId?: string): Promise<string> {
   const config = await resolveOutlookOAuthApp(appId);
   const params = new URLSearchParams({
@@ -387,6 +397,7 @@ export class OutlookProvider implements EmailProvider {
 
     return {
       emails,
+      removedRemoteIds: [],
       newCursor: deltaCursor,
     };
   }
@@ -395,9 +406,11 @@ export class OutlookProvider implements EmailProvider {
     const page = (await this.client.api(cursor).get()) as Record<string, unknown>;
     const items = extractActiveMessages(page);
     const emails = items.map((msg) => this.mapMessage(msg, Boolean(options.metadataOnly)));
+    const removedRemoteIds = extractRemovedRemoteIds(page);
 
     return {
       emails,
+      removedRemoteIds,
       newCursor: String(page["@odata.deltaLink"] ?? cursor),
     };
   }

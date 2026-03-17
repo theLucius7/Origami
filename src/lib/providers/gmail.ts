@@ -298,6 +298,7 @@ export class GmailProvider implements EmailProvider {
 
     return {
       emails,
+      removedRemoteIds: [],
       newCursor: historyRes.data.historyId ?? cursor,
     };
   }
@@ -321,7 +322,7 @@ export class GmailProvider implements EmailProvider {
     }
 
     const profile = await this.gmail.users.getProfile({ userId: "me" });
-    return { emails, newCursor: profile.data.historyId ?? null };
+    return { emails, removedRemoteIds: [], newCursor: profile.data.historyId ?? null };
   }
 
   private mapMessage(msg: gmail_v1.Schema$Message, metadataOnly: boolean): SyncedEmail {

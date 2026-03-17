@@ -28,7 +28,13 @@ const buildObjectKeyMock = vi.fn((accountId: string, emailId: string, filename: 
   `key:${accountId}:${emailId}:${filename}`
 );
 
-const emailsTable = { name: "emails", id: "emails.id", accountId: "emails.accountId", messageId: "emails.messageId" };
+const emailsTable = {
+  name: "emails",
+  id: "emails.id",
+  accountId: "emails.accountId",
+  messageId: "emails.messageId",
+  remoteId: "emails.remoteId",
+};
 const attachmentsTable = { name: "attachments" };
 const accountsTable = { name: "accounts", id: "accounts.id" };
 
@@ -129,6 +135,7 @@ describe("sync-service", () => {
           ],
         },
       ],
+      removedRemoteIds: [],
       newCursor: "cursor-2",
     });
 
@@ -201,6 +208,7 @@ describe("sync-service", () => {
           ],
         },
       ],
+      removedRemoteIds: [],
       newCursor: "cursor-3",
     });
 
@@ -239,5 +247,25 @@ describe("sync-service", () => {
         r2ObjectKey: "key:acc-1:generated-id:note.txt",
       })
     );
+  });
+
+  it("marks tombstoned remote messages as removed from inbox", async () => {
+    syncEmailsMock.mockResolvedValue({
+      emails: [],
+      removedRemoteIds: ["remote-deleted-1", "remote-deleted-2"],
+      newCursor: "cursor-4",
+    });
+
+    const { syncSingleAccount } = await import("./sync-service");
+    const result = await syncSingleAccount(account as never);
+
+    expect(result).toEqual({ synced: 0 });
+
+    const tombstoneUpdate = updateSetMock.mock.calls.find(
+      ([table, values]) =>
+        table === emailsTable &&
+        (values as { folder?: string }).folder === "REMOTE_REMOVED"
+    );
+    expect(tombstoneUpdate).toBeTruthy();
   });
 });
