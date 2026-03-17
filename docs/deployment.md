@@ -277,6 +277,15 @@ Authorization: Bearer <CRON_SECRET>
 - 新环境优先走 `db:setup`
 - 老账号如果要切换 OAuth app，按账号重新授权，不要只改数据库字段
 
+## 详细分步文档
+
+如果你不想只看这一页的摘要版，而是想按按钮一步一步操作，继续看：
+
+- [GitHub Auth 详细配置](/github-auth)
+- [Cloudflare R2 / Bucket 详细配置](/r2-storage)
+- [Gmail OAuth 详细配置](/gmail-oauth)
+- [Outlook OAuth 详细配置](/outlook-oauth)
+
 ## 已知注意事项
 
 - Done / Archive / Snooze 仍是本地状态，不回写 provider

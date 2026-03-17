@@ -105,3 +105,12 @@ Origami 支持在账号级开启回写。
 3. [FAQ](/faq)
 4. [架构说明](/architecture)
 5. [项目结构](/project-structure)
+
+## 详细配置专题
+
+如果你已经准备开始真正部署，下面这几页是“宝宝式教学”版本：
+
+- [GitHub Auth 详细配置](/github-auth)
+- [Cloudflare R2 / Bucket 详细配置](/r2-storage)
+- [Gmail OAuth 详细配置](/gmail-oauth)
+- [Outlook OAuth 详细配置](/outlook-oauth)

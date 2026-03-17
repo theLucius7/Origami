@@ -25,6 +25,13 @@
 - [架构说明](https://l7cp.de/Origami/architecture)
 - [FAQ](https://l7cp.de/Origami/faq)
 
+如果你已经准备开始真正部署，继续看这些“宝宝式教学”页面：
+
+- [GitHub Auth 详细配置](https://l7cp.de/Origami/github-auth)
+- [Cloudflare R2 / Bucket 详细配置](https://l7cp.de/Origami/r2-storage)
+- [Gmail OAuth 详细配置](https://l7cp.de/Origami/gmail-oauth)
+- [Outlook OAuth 详细配置](https://l7cp.de/Origami/outlook-oauth)
+
 ## 项目定位
 
 Origami 不是工单系统，也不是多角色协同 helpdesk。它更像是：

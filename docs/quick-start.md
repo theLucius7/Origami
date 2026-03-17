@@ -155,5 +155,9 @@ GitHub OAuth 能在不引入完整多用户系统的前提下，提供比明文 
 ## 下一步看什么
 
 - 要上线：看 [部署指南](/deployment)
+- 想把登录配得很稳：看 [GitHub Auth 详细配置](/github-auth)
+- 想把附件存储配清楚：看 [Cloudflare R2 / Bucket 详细配置](/r2-storage)
+- 想把 Gmail 接得更稳：看 [Gmail OAuth 详细配置](/gmail-oauth)
+- 想把 Outlook 接得更稳：看 [Outlook OAuth 详细配置](/outlook-oauth)
 - 想理解内部设计：看 [架构说明](/architecture)
 - 想知道为什么有些状态只保存在本地：看 [FAQ](/faq)

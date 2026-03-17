@@ -16,8 +16,9 @@ export default defineConfig({
         nav: [
           { text: "首页", link: "/" },
           { text: "快速开始", link: "/quick-start" },
-          { text: "架构", link: "/architecture" },
           { text: "部署", link: "/deployment" },
+          { text: "详细配置", link: "/github-auth" },
+          { text: "架构", link: "/architecture" },
           { text: "项目结构", link: "/project-structure" },
           { text: "FAQ", link: "/faq" },
           { text: "GitHub", link: "https://github.com/theLucius7/Origami" }
@@ -30,6 +31,15 @@ export default defineConfig({
               { text: "快速开始", link: "/quick-start" },
               { text: "部署", link: "/deployment" },
               { text: "FAQ", link: "/faq" }
+            ]
+          },
+          {
+            text: "详细配置",
+            items: [
+              { text: "GitHub Auth", link: "/github-auth" },
+              { text: "Cloudflare R2 / Bucket", link: "/r2-storage" },
+              { text: "Gmail OAuth", link: "/gmail-oauth" },
+              { text: "Outlook OAuth", link: "/outlook-oauth" }
             ]
           },
           {
