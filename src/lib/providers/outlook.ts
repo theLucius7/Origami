@@ -32,7 +32,7 @@ export function hasOutlookWriteBackScope(scopes?: string[]): boolean {
   return normalizeScopes(scopes).includes(OUTLOOK_REQUIRED_WRITEBACK_SCOPE);
 }
 
-export function getOutlookAuthUrl(): string {
+export function getOutlookAuthUrl(state?: string): string {
   const config = getOutlookProviderConfig();
   const params = new URLSearchParams({
     client_id: config.clientId,
@@ -41,6 +41,7 @@ export function getOutlookAuthUrl(): string {
     response_mode: "query",
     scope: "openid email User.Read Mail.Read Mail.ReadWrite Mail.Send offline_access",
     prompt: "consent",
+    ...(state ? { state } : {}),
   });
   return `https://login.microsoftonline.com/${config.tenant}/oauth2/v2.0/authorize?${params}`;
 }

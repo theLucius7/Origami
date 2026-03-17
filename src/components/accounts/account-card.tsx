@@ -8,16 +8,21 @@ import {
   updateAccountInitialFetchLimit,
   updateAccountWriteBackSettings,
 } from "@/app/actions/account";
+import { getGmailOAuthUrl, getOutlookOAuthUrl } from "@/app/actions/oauth";
+import { maybeShowWriteBackEnabledToastOnce } from "@/components/accounts/accounts-page-notifications";
 import type { AccountSettingsView } from "@/components/accounts/types";
+import { SyncAccountButton } from "@/components/sync/sync-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import { getProviderMeta } from "@/config/providers";
+import { useToast } from "@/hooks/use-toast";
 import { formatRelativeTime } from "@/lib/format";
-import { SyncAccountButton } from "@/components/sync/sync-button";
 
 export function AccountCard({ account }: { account: AccountSettingsView }) {
   const router = useRouter();
+  const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [fetchLimit, setFetchLimit] = useState(String(account.initialFetchLimit ?? 200));
   const provider = getProviderMeta(account.provider);
@@ -46,10 +51,31 @@ export function AccountCard({ account }: { account: AccountSettingsView }) {
           ? { syncReadBack: checked }
           : { syncStarBack: checked }
       );
+      if (checked) {
+        maybeShowWriteBackEnabledToastOnce(toast);
+      }
       router.refresh();
     });
   }
 
+  function handleReauthorize(target: "read" | "star") {
+    startTransition(async () => {
+      const options = {
+        intent: "writeback" as const,
+        enableReadBack: target === "read" || account.syncReadBack === 1,
+        enableStarBack: target === "star" || account.syncStarBack === 1,
+      };
+
+      const url = account.provider === "gmail"
+        ? await getGmailOAuthUrl(options)
+        : await getOutlookOAuthUrl(options);
+
+      window.location.href = url;
+    });
+  }
+
+  const readScopeMissing = !account.canWriteBackRead && account.provider !== "qq";
+  const starScopeMissing = !account.canWriteBackStar && account.provider !== "qq";
   const shouldShowReadNotice = account.syncReadBack === 1 && account.readBackNotice;
   const shouldShowStarNotice = account.syncStarBack === 1 && account.starBackNotice;
 
@@ -113,43 +139,71 @@ export function AccountCard({ account }: { account: AccountSettingsView }) {
           </div>
 
           <div className="grid gap-3 md:grid-cols-2">
-            <label className="flex items-start gap-3 rounded-md border bg-background p-3">
-              <input
-                type="checkbox"
-                className="mt-1 h-4 w-4"
-                checked={account.syncReadBack === 1}
-                disabled={isPending}
-                onChange={(event) => handleWriteBackToggle("syncReadBack", event.target.checked)}
-              />
-              <div>
-                <p className="text-sm font-medium">已读写回</p>
-                <p className="text-xs text-muted-foreground">
-                  在 Origami 标记已读时，尝试把远端邮件也标为已读。
-                </p>
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  当前状态：{account.syncReadBack === 1 ? "已开启" : "已关闭"}
-                </p>
+            <div className="rounded-md border bg-background p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium">已读状态回写</p>
+                  <p className="text-xs text-muted-foreground">
+                    标为已读时，同步将原邮箱中的邮件也标为已读，会修改原邮箱。
+                  </p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    当前状态：{account.syncReadBack === 1 ? "已开启" : "已关闭"}
+                  </p>
+                </div>
+                <Switch
+                  checked={account.syncReadBack === 1}
+                  disabled={isPending || readScopeMissing}
+                  onCheckedChange={(checked) => handleWriteBackToggle("syncReadBack", checked)}
+                  aria-label="已读状态回写"
+                />
               </div>
-            </label>
+              {readScopeMissing && (
+                <div className="mt-2 flex items-center gap-2 text-xs text-amber-700">
+                  <span>⚠️ 缺少写入权限</span>
+                  <Button
+                    variant="link"
+                    className="h-auto px-0 py-0 text-xs text-amber-800"
+                    onClick={() => handleReauthorize("read")}
+                    disabled={isPending}
+                  >
+                    需要重新授权
+                  </Button>
+                </div>
+              )}
+            </div>
 
-            <label className="flex items-start gap-3 rounded-md border bg-background p-3">
-              <input
-                type="checkbox"
-                className="mt-1 h-4 w-4"
-                checked={account.syncStarBack === 1}
-                disabled={isPending}
-                onChange={(event) => handleWriteBackToggle("syncStarBack", event.target.checked)}
-              />
-              <div>
-                <p className="text-sm font-medium">星标写回</p>
-                <p className="text-xs text-muted-foreground">
-                  在 Origami 加星标 / 去星标时，尝试同步远端星标状态。
-                </p>
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  当前状态：{account.syncStarBack === 1 ? "已开启" : "已关闭"}
-                </p>
+            <div className="rounded-md border bg-background p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium">星标回写</p>
+                  <p className="text-xs text-muted-foreground">
+                    加/取消星标时，同步修改原邮箱中的星标状态，会修改原邮箱。
+                  </p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    当前状态：{account.syncStarBack === 1 ? "已开启" : "已关闭"}
+                  </p>
+                </div>
+                <Switch
+                  checked={account.syncStarBack === 1}
+                  disabled={isPending || starScopeMissing}
+                  onCheckedChange={(checked) => handleWriteBackToggle("syncStarBack", checked)}
+                  aria-label="星标回写"
+                />
               </div>
-            </label>
+              {starScopeMissing && (
+                <div className="mt-2 flex items-center gap-2 text-xs text-amber-700">
+                  <span>⚠️ 缺少写入权限</span>
+                  <Button
+                    variant="link"
+                    className="h-auto px-0 py-0 text-xs text-amber-800"
+                    onClick={() => handleReauthorize("star")}
+                    disabled={isPending}
+                  >
+                    需要重新授权
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
 
           {(shouldShowReadNotice || shouldShowStarNotice) && (

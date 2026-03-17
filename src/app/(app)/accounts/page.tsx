@@ -1,10 +1,16 @@
 import { AddAccountDialog } from "@/components/accounts/add-account-dialog";
+import { AccountsPageNotifications } from "@/components/accounts/accounts-page-notifications";
 import { AccountsPanel } from "@/components/accounts/accounts-panel";
 import { Separator } from "@/components/ui/separator";
 import { getAccountWriteBackAvailability } from "@/lib/providers/writeBack";
 import { listAccounts } from "@/lib/queries/accounts";
 
-export default async function AccountsPage() {
+interface PageProps {
+  searchParams: Promise<{ success?: string; error?: string; writebackEnabled?: string }>;
+}
+
+export default async function AccountsPage({ searchParams }: PageProps) {
+  await searchParams;
   const accounts = await listAccounts();
   const accountViews = accounts.map((account) => ({
     ...account,
@@ -14,6 +20,7 @@ export default async function AccountsPage() {
   return (
     <div className="flex-1 overflow-auto">
       <div className="mx-auto max-w-2xl p-6">
+        <AccountsPageNotifications />
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold">邮箱账号</h1>

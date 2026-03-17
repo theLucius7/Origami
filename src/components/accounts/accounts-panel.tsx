@@ -4,11 +4,15 @@ import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { updateAllAccountsWriteBackSettings } from "@/app/actions/account";
 import { AccountCard } from "@/components/accounts/account-card";
+import { maybeShowWriteBackEnabledToastOnce } from "@/components/accounts/accounts-page-notifications";
 import type { AccountSettingsView } from "@/components/accounts/types";
 import { Card, CardContent } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/hooks/use-toast";
 
 export function AccountsPanel({ accounts }: { accounts: AccountSettingsView[] }) {
   const router = useRouter();
+  const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
   const allReadEnabled = accounts.every((account) => account.syncReadBack === 1);
@@ -21,6 +25,9 @@ export function AccountsPanel({ accounts }: { accounts: AccountSettingsView[] })
           ? { syncReadBack: checked }
           : { syncStarBack: checked }
       );
+      if (checked) {
+        maybeShowWriteBackEnabledToastOnce(toast);
+      }
       router.refresh();
     });
   }
@@ -37,37 +44,39 @@ export function AccountsPanel({ accounts }: { accounts: AccountSettingsView[] })
           </div>
 
           <div className="grid gap-3 md:grid-cols-2">
-            <label className="flex items-start gap-3 rounded-md border bg-background p-3">
-              <input
-                type="checkbox"
-                className="mt-1 h-4 w-4"
-                checked={allReadEnabled}
-                disabled={isPending}
-                onChange={(event) => toggleAll("syncReadBack", event.target.checked)}
-              />
-              <div>
-                <p className="text-sm font-medium">全局开启“已读写回”</p>
-                <p className="text-xs text-muted-foreground">
-                  当你在 Origami 标记已读时，尝试同步把远端邮件也标为已读。
-                </p>
+            <div className="rounded-md border bg-background p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium">全局开启“已读写回”</p>
+                  <p className="text-xs text-muted-foreground">
+                    当你在 Origami 标记已读时，尝试同步把远端邮件也标为已读。
+                  </p>
+                </div>
+                <Switch
+                  checked={allReadEnabled}
+                  disabled={isPending}
+                  onCheckedChange={(checked) => toggleAll("syncReadBack", checked)}
+                  aria-label="全局已读写回"
+                />
               </div>
-            </label>
+            </div>
 
-            <label className="flex items-start gap-3 rounded-md border bg-background p-3">
-              <input
-                type="checkbox"
-                className="mt-1 h-4 w-4"
-                checked={allStarEnabled}
-                disabled={isPending}
-                onChange={(event) => toggleAll("syncStarBack", event.target.checked)}
-              />
-              <div>
-                <p className="text-sm font-medium">全局开启“星标写回”</p>
-                <p className="text-xs text-muted-foreground">
-                  当你在 Origami 加星标/去星标时，尝试同步远端的星标状态。
-                </p>
+            <div className="rounded-md border bg-background p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium">全局开启“星标写回”</p>
+                  <p className="text-xs text-muted-foreground">
+                    当你在 Origami 加星标/去星标时，尝试同步远端的星标状态。
+                  </p>
+                </div>
+                <Switch
+                  checked={allStarEnabled}
+                  disabled={isPending}
+                  onCheckedChange={(checked) => toggleAll("syncStarBack", checked)}
+                  aria-label="全局星标写回"
+                />
               </div>
-            </label>
+            </div>
           </div>
         </CardContent>
       </Card>

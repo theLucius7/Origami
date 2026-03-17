@@ -42,7 +42,7 @@ function getOAuth2Client() {
   );
 }
 
-export function getGmailAuthUrl(): string {
+export function getGmailAuthUrl(state?: string): string {
   const oauth2 = getOAuth2Client();
   return oauth2.generateAuthUrl({
     access_type: "offline",
@@ -52,6 +52,7 @@ export function getGmailAuthUrl(): string {
       "https://www.googleapis.com/auth/gmail.send",
       "https://www.googleapis.com/auth/userinfo.email",
     ],
+    ...(state ? { state } : {}),
   });
 }
 
