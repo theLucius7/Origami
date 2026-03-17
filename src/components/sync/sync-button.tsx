@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
-import { syncAll, syncAccount } from "@/actions/sync";
+import { syncAll, syncAccount } from "@/app/actions/sync";
 
 export function SyncAllButton() {
   const router = useRouter();

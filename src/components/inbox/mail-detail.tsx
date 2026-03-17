@@ -22,7 +22,7 @@ import {
   markRead,
   snooze,
   toggleStar,
-} from "@/actions/email";
+} from "@/app/actions/email";
 import type { Email, Attachment } from "@/lib/db/schema";
 import { formatRelativeTime, formatFileSize } from "@/lib/format";
 import { SnoozeDialog } from "./snooze-dialog";

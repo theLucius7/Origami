@@ -1,5 +1,5 @@
 import { listSendCapableAccounts } from "@/lib/account-providers";
-import { ComposeForm } from "@/components/compose-form";
+import { ComposeForm } from "@/components/compose/compose-form";
 
 interface PageProps {
   searchParams: Promise<{ account?: string }>;

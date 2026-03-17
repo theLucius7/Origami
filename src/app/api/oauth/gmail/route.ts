@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { exchangeGmailCode } from "@/lib/providers/gmail";
-import { addOAuthAccount } from "@/actions/account";
+import { addOAuthAccount } from "@/app/actions/account";
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");

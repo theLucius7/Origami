@@ -22,7 +22,7 @@ import {
   markDone,
   setStarred,
   snooze,
-} from "@/actions/email";
+} from "@/app/actions/email";
 import type { Email, EmailListItem, Attachment } from "@/lib/db/schema";
 
 interface InboxViewProps {

@@ -1,4 +1,4 @@
-import { Sidebar } from "@/components/sidebar";
+import { Sidebar } from "@/components/layout/sidebar";
 import { listSendCapableAccounts } from "@/lib/account-providers";
 import { listAccounts } from "@/lib/queries/accounts";
 import { countUnreadEmails } from "@/lib/queries/emails";

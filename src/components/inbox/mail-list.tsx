@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Check, Star, Clock3, Archive, CheckCircle2 } from "lucide-react";
 import type { EmailListItem } from "@/lib/db/schema";
 import { formatRelativeTime } from "@/lib/format";
-import { getProviderMeta } from "@/lib/provider-meta";
+import { getProviderMeta } from "@/config/providers";
 
 interface MailListProps {
   emails: EmailListItem[];

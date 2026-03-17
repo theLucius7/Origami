@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { getSentMessageDetailRecord } from "@/lib/queries/sent-messages";
-import { SentDetail } from "@/components/sent-detail";
+import { SentDetail } from "@/components/sent/sent-detail";
 import { Button } from "@/components/ui/button";
 
 interface PageProps {

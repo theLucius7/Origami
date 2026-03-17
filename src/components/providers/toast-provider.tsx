@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useMemo, useState } from "react";
 
 interface ToastItem {
   id: string;
@@ -13,7 +13,7 @@ interface ToastContextValue {
   toast: (input: Omit<ToastItem, "id">) => void;
 }
 
-const ToastContext = createContext<ToastContextValue | null>(null);
+export const ToastContext = createContext<ToastContextValue | null>(null);
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
@@ -50,12 +50,4 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       </div>
     </ToastContext.Provider>
   );
-}
-
-export function useToast() {
-  const value = useContext(ToastContext);
-  if (!value) {
-    throw new Error("useToast must be used within ToastProvider");
-  }
-  return value;
 }

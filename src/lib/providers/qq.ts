@@ -1,5 +1,6 @@
 import { ImapFlow } from "imapflow";
 import { simpleParser } from "mailparser";
+import { getQqProviderConfig } from "@/config/providers.server";
 import type {
   EmailProvider,
   SendMailParams,
@@ -56,10 +57,11 @@ export class QQProvider implements EmailProvider {
   }
 
   async syncEmails(cursor: string | null, options: SyncOptions = {}): Promise<SyncResult> {
+    const config = getQqProviderConfig();
     const client = new ImapFlow({
-      host: "imap.qq.com",
-      port: 993,
-      secure: true,
+      host: config.host,
+      port: config.port,
+      secure: config.secure,
       auth: {
         user: this.creds.email,
         pass: this.creds.authCode,
@@ -152,10 +154,11 @@ export class QQProvider implements EmailProvider {
     const uid = parseInt(remoteId, 10);
     if (!Number.isFinite(uid)) return null;
 
+    const config = getQqProviderConfig();
     const client = new ImapFlow({
-      host: "imap.qq.com",
-      port: 993,
-      secure: true,
+      host: config.host,
+      port: config.port,
+      secure: config.secure,
       auth: {
         user: this.creds.email,
         pass: this.creds.authCode,

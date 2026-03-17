@@ -1,4 +1,5 @@
 import { google, type gmail_v1 } from "googleapis";
+import { getGmailProviderConfig } from "@/config/providers.server";
 import { buildMimeMessage, encodeMimeMessageBase64Url } from "./mime";
 import type {
   EmailProvider,
@@ -16,13 +17,6 @@ interface GmailCredentials {
   scopes?: string[];
 }
 
-const GMAIL_SEND_SCOPES = [
-  "https://mail.google.com/",
-  "https://www.googleapis.com/auth/gmail.modify",
-  "https://www.googleapis.com/auth/gmail.compose",
-  "https://www.googleapis.com/auth/gmail.send",
-];
-
 function normalizeScopes(scopes?: string[] | string): string[] {
   const list = Array.isArray(scopes) ? scopes : scopes?.split(/\s+/) ?? [];
   return [...new Set(list.map((scope) => scope.trim()).filter(Boolean))];
@@ -30,14 +24,15 @@ function normalizeScopes(scopes?: string[] | string): string[] {
 
 function hasGmailSendScope(scopes?: string[]): boolean {
   const normalized = normalizeScopes(scopes);
-  return GMAIL_SEND_SCOPES.some((scope) => normalized.includes(scope));
+  return getGmailProviderConfig().sendScopes.some((scope) => normalized.includes(scope));
 }
 
 function getOAuth2Client() {
+  const config = getGmailProviderConfig();
   return new google.auth.OAuth2(
-    process.env.GMAIL_CLIENT_ID,
-    process.env.GMAIL_CLIENT_SECRET,
-    `${process.env.NEXT_PUBLIC_APP_URL}/api/oauth/gmail`
+    config.clientId,
+    config.clientSecret,
+    config.redirectUrl
   );
 }
 

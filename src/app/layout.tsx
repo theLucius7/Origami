@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ToastProvider } from "@/components/toast-provider";
+import { ToastProvider } from "@/components/providers/toast-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {

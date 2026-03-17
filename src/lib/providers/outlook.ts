@@ -1,4 +1,5 @@
 import { Client } from "@microsoft/microsoft-graph-client";
+import { getOutlookProviderConfig } from "@/config/providers.server";
 import type {
   EmailProvider,
   SendMailParams,
@@ -15,40 +16,38 @@ interface OutlookCredentials {
   scopes?: string[];
 }
 
-const TENANT = "common";
-const TOKEN_URL = `https://login.microsoftonline.com/${TENANT}/oauth2/v2.0/token`;
-const OUTLOOK_REQUIRED_SEND_SCOPE = "mail.send";
-
 function normalizeScopes(scopes?: string[] | string): string[] {
   const list = Array.isArray(scopes) ? scopes : scopes?.split(/\s+/) ?? [];
   return [...new Set(list.map((scope) => scope.trim().toLowerCase()).filter(Boolean))];
 }
 
 function hasOutlookSendScope(scopes?: string[]): boolean {
-  return normalizeScopes(scopes).includes(OUTLOOK_REQUIRED_SEND_SCOPE);
+  return normalizeScopes(scopes).includes(getOutlookProviderConfig().requiredSendScope);
 }
 
 export function getOutlookAuthUrl(): string {
+  const config = getOutlookProviderConfig();
   const params = new URLSearchParams({
-    client_id: process.env.OUTLOOK_CLIENT_ID!,
+    client_id: config.clientId,
     response_type: "code",
-    redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/api/oauth/outlook`,
+    redirect_uri: config.redirectUrl,
     response_mode: "query",
     scope: "openid email User.Read Mail.Read Mail.Send offline_access",
     prompt: "consent",
   });
-  return `https://login.microsoftonline.com/${TENANT}/oauth2/v2.0/authorize?${params}`;
+  return `https://login.microsoftonline.com/${config.tenant}/oauth2/v2.0/authorize?${params}`;
 }
 
 export async function exchangeOutlookCode(code: string) {
-  const res = await fetch(TOKEN_URL, {
+  const config = getOutlookProviderConfig();
+  const res = await fetch(config.tokenUrl, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
-      client_id: process.env.OUTLOOK_CLIENT_ID!,
-      client_secret: process.env.OUTLOOK_CLIENT_SECRET!,
+      client_id: config.clientId,
+      client_secret: config.clientSecret,
       code,
-      redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/api/oauth/outlook`,
+      redirect_uri: config.redirectUrl,
       grant_type: "authorization_code",
     }),
   });
@@ -71,12 +70,13 @@ export async function exchangeOutlookCode(code: string) {
 }
 
 async function refreshTokens(refreshToken: string) {
-  const res = await fetch(TOKEN_URL, {
+  const config = getOutlookProviderConfig();
+  const res = await fetch(config.tokenUrl, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
-      client_id: process.env.OUTLOOK_CLIENT_ID!,
-      client_secret: process.env.OUTLOOK_CLIENT_SECRET!,
+      client_id: config.clientId,
+      client_secret: config.clientSecret,
       refresh_token: refreshToken,
       grant_type: "refresh_token",
     }),

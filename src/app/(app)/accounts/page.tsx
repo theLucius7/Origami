@@ -1,6 +1,6 @@
 import { listAccounts } from "@/lib/queries/accounts";
-import { AccountCard } from "@/components/account-card";
-import { AddAccountDialog } from "@/components/add-account-dialog";
+import { AccountCard } from "@/components/accounts/account-card";
+import { AddAccountDialog } from "@/components/accounts/add-account-dialog";
 import { Separator } from "@/components/ui/separator";
 
 export default async function AccountsPage() {

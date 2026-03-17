@@ -6,10 +6,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Trash2 } from "lucide-react";
-import { removeAccount, updateAccountInitialFetchLimit } from "@/actions/account";
-import { SyncAccountButton } from "./sync-button";
+import { removeAccount, updateAccountInitialFetchLimit } from "@/app/actions/account";
+import { SyncAccountButton } from "@/components/sync/sync-button";
 import { formatRelativeTime } from "@/lib/format";
-import { getProviderMeta } from "@/lib/provider-meta";
+import { getProviderMeta } from "@/config/providers";
 import type { Account } from "@/lib/db/schema";
 
 export function AccountCard({ account }: { account: Account }) {

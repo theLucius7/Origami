@@ -13,8 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus } from "lucide-react";
-import { addQQAccount } from "@/actions/account";
-import { getGmailOAuthUrl, getOutlookOAuthUrl } from "@/actions/oauth";
+import { addQQAccount } from "@/app/actions/account";
+import { getGmailOAuthUrl, getOutlookOAuthUrl } from "@/app/actions/oauth";
 
 export function AddAccountDialog() {
   const router = useRouter();

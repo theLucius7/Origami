@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getHydratedEmailDetail } from "@/lib/services/email-service";
-import { MailDetail } from "@/components/mail-detail";
+import { MailDetail } from "@/components/inbox/mail-detail";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";

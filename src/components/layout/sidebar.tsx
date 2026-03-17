@@ -13,9 +13,9 @@ import {
   Send,
 } from "lucide-react";
 import type { Account } from "@/lib/db/schema";
-import { getProviderMeta } from "@/lib/provider-meta";
-import { SyncAllButton } from "./sync-button";
-import { ComposeLink } from "./compose-link";
+import { getProviderMeta } from "@/config/providers";
+import { ComposeLink } from "@/components/compose/compose-link";
+import { SyncAllButton } from "@/components/sync/sync-button";
 
 interface SidebarProps {
   accounts: Account[];

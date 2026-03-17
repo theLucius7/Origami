@@ -1,6 +1,6 @@
 import { listAccounts } from "@/lib/queries/accounts";
 import { listEmails } from "@/lib/queries/emails";
-import { InboxView } from "@/components/inbox-view";
+import { InboxView } from "@/components/inbox/inbox-view";
 
 interface PageProps {
   searchParams: Promise<{

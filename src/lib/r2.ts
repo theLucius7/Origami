@@ -1,28 +1,27 @@
 import {
-  S3Client,
-  PutObjectCommand,
-  GetObjectCommand,
   DeleteObjectCommand,
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
 } from "@aws-sdk/client-s3";
+import { getR2Config } from "@/config/r2";
 
 let _s3: S3Client | null = null;
 
 function getS3() {
   if (!_s3) {
+    const config = getR2Config();
     _s3 = new S3Client({
-      region: "auto",
-      endpoint: process.env.R2_ENDPOINT!,
-      credentials: {
-        accessKeyId: process.env.R2_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
-      },
+      region: config.region,
+      endpoint: config.endpoint,
+      credentials: config.credentials,
     });
   }
   return _s3;
 }
 
 function getBucket() {
-  return process.env.R2_BUCKET_NAME!;
+  return getR2Config().bucketName;
 }
 
 export async function uploadAttachment(
