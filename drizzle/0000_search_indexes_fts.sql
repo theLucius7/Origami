@@ -1,3 +1,48 @@
+CREATE TABLE IF NOT EXISTS `accounts` (
+  `id` text PRIMARY KEY NOT NULL,
+  `provider` text NOT NULL,
+  `email` text NOT NULL,
+  `display_name` text,
+  `credentials` text NOT NULL,
+  `sync_cursor` text,
+  `last_synced_at` integer,
+  `created_at` integer DEFAULT (unixepoch())
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS `accounts_email_unique` ON `accounts` (`email`);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `emails` (
+  `id` text PRIMARY KEY NOT NULL,
+  `account_id` text NOT NULL,
+  `message_id` text,
+  `subject` text,
+  `sender` text,
+  `recipients` text,
+  `snippet` text,
+  `body_text` text,
+  `body_html` text,
+  `is_read` integer DEFAULT 0,
+  `is_starred` integer DEFAULT 0,
+  `received_at` integer,
+  `folder` text DEFAULT 'INBOX',
+  `raw_headers` text,
+  `created_at` integer DEFAULT (unixepoch()),
+  FOREIGN KEY (`account_id`) REFERENCES `accounts`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS `account_message_idx` ON `emails` (`account_id`, `message_id`);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `attachments` (
+  `id` text PRIMARY KEY NOT NULL,
+  `email_id` text NOT NULL,
+  `filename` text,
+  `content_type` text,
+  `size` integer,
+  `r2_object_key` text NOT NULL,
+  `created_at` integer DEFAULT (unixepoch()),
+  FOREIGN KEY (`email_id`) REFERENCES `emails`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS emails_received_at_idx ON emails(received_at DESC);
 --> statement-breakpoint
 CREATE INDEX IF NOT EXISTS emails_account_received_idx ON emails(account_id, received_at DESC);
