@@ -62,7 +62,13 @@ Create a Turso database and get:
 - database URL
 - auth token
 
-Then run one of these from a trusted environment:
+Recommended for a fresh database:
+
+```bash
+npm run db:setup
+```
+
+Alternative paths:
 
 ```bash
 npm run db:migrate
@@ -72,7 +78,8 @@ npm run db:push
 
 Notes:
 
-- `db:migrate` replays the migration chain
+- `db:setup` is the recommended one-command path for a brand-new database
+- `db:migrate` replays the historical migration chain
 - `db:push` uses the project wrapper that keeps SQLite FTS push behavior clean
 
 ## 3. Configure Cloudflare R2
@@ -171,7 +178,7 @@ Then:
 1. Import the repository into Vercel
 2. Add all required environment variables
 3. Set `NEXT_PUBLIC_APP_URL` to the final production URL
-4. Initialize the target database with `npm run db:migrate`
+4. Initialize the target database with `npm run db:setup` (or `npm run db:migrate` if you explicitly want the full migration replay)
 5. Deploy
 
 ### Scheduled sync

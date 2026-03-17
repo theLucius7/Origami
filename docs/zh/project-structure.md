@@ -8,6 +8,29 @@ Origami 目前采用的是一种**混合式 Next.js App Router 结构**：
 - 运行时 / 配置辅助代码在 `src/config`
 - 共享客户端 hooks 在 `src/hooks`
 
+## 仓库根目录布局
+
+```text
+.
+├── docs/                # VitePress 文档站
+├── drizzle/             # 历史 SQL migration 与 journal
+├── scripts/             # db 初始化 / benchmark seed 等辅助脚本
+├── src/                 # 应用源码
+├── .env.example         # 环境变量模板
+├── drizzle.config.ts    # Drizzle 配置
+├── eslint.config.mjs    # 当前实际生效的 ESLint flat config
+├── next.config.ts       # Next.js 配置
+├── package.json         # 脚本与依赖
+├── vercel.json          # Vercel cron / 部署配置
+└── ...
+```
+
+### 根目录说明
+
+- 根目录里的大多数文件其实都是标准的 Next.js / Vercel / TypeScript 配置文件，不是项目特有的“脏东西”。
+- `drizzle/` 保留的是历史 migration 链，主要用于升级；如果是全新数据库，推荐直接走 `npm run db:setup` 这条快捷初始化路径。
+- `.eslintrc.json` 已不再使用，项目现在以 `eslint.config.mjs` 为准。
+
 ## 顶层源码布局
 
 ```text

@@ -62,7 +62,13 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 - database URL
 - auth token
 
-然后在可信环境执行以下其中之一：
+对于全新数据库，推荐直接执行：
+
+```bash
+npm run db:setup
+```
+
+其他可选路径：
 
 ```bash
 npm run db:migrate
@@ -72,7 +78,8 @@ npm run db:push
 
 说明：
 
-- `db:migrate` 会回放 migration 链
+- `db:setup` 是面向全新数据库的推荐单命令初始化路径
+- `db:migrate` 会回放历史 migration 链
 - `db:push` 使用项目里的包装脚本，以更稳妥地处理 SQLite FTS 场景
 
 ## 3. 配置 Cloudflare R2
@@ -171,7 +178,7 @@ npm run dev
 1. 在 Vercel 中导入仓库
 2. 配置所有必需环境变量
 3. 将 `NEXT_PUBLIC_APP_URL` 设为最终生产 URL
-4. 用 `npm run db:migrate` 初始化目标数据库
+4. 用 `npm run db:setup` 初始化目标数据库（如果你明确想回放完整 migration 历史，也可以用 `npm run db:migrate`）
 5. 部署
 
 ### 定时同步

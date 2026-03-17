@@ -68,9 +68,10 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 Fill in `.env`, then initialize the database:
 
 ```bash
-npm run db:migrate
-# or: npm run db:push
+npm run db:setup
 ```
+
+For a fresh database, `db:setup` is the recommended one-command path. Keep `db:migrate` for replaying the historical migration chain or upgrading an existing environment.
 
 Start local development:
 
@@ -146,7 +147,8 @@ See the full architecture write-up: [`docs/architecture.md`](./docs/architecture
 | `npm run test` | Run Vitest test suite |
 | `npm run lint` | Run ESLint |
 | `npm run audit:prod` | Audit production dependencies only |
-| `npm run db:migrate` | Apply migration chain |
+| `npm run db:setup` | Recommended one-command setup for a fresh database |
+| `npm run db:migrate` | Replay the historical migration chain |
 | `npm run db:push` | Push current schema with SQLite FTS-safe wrapper |
 | `npm run db:studio` | Open Drizzle Studio |
 | `npm run docs:dev` | Start VitePress docs locally |
@@ -170,7 +172,7 @@ npm run docs:build
 2. Create a Cloudflare R2 bucket and S3-compatible credentials
 3. Configure Gmail / Outlook OAuth apps if you want those providers
 4. Add environment variables in Vercel
-5. Run `npm run db:migrate` (or `npm run db:push`) against the target database
+5. For a fresh deployment, run `npm run db:setup` against the target database (use `npm run db:migrate` only if you explicitly want to replay the full migration history)
 6. Deploy the app to Vercel
 7. Let `vercel.json` trigger scheduled sync every 15 minutes
 

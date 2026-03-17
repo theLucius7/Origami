@@ -12,6 +12,7 @@
     "docs:preview": "vitepress preview docs --host 0.0.0.0",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:setup": "node scripts/db-push.mjs",
     "db:push": "node scripts/db-push.mjs",
     "db:push:raw": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
