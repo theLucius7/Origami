@@ -1,6 +1,6 @@
 # 部署指南
 
-如果你只想走最短路径：**填好 `.env` → `npm run db:setup` → 部署到 Vercel → 在 `/accounts` 里接邮箱。**
+如果你只想走最短路径：**填好 `.env` → `npm run db:setup` → 部署到 Vercel → GitHub 登录完成 `/setup` → 在 `/accounts` 里接邮箱。**
 
 这份文档会把这条路径展开，并把关键环境变量、OAuth 与生产校验说明清楚。
 
@@ -24,7 +24,6 @@
 | `GITHUB_ALLOWED_LOGIN` | 否 | 限制允许完成首次绑定 / 登录的 GitHub 用户名 |
 | `AUTH_SECRET` | 否 | session 签名密钥；不填时回退到 `ENCRYPTION_KEY` |
 | `CRON_SECRET` | 否 | `/api/cron/sync` 的 Bearer 密钥；不填时自动派生 |
-| `ACCESS_TOKEN` | 否 | 仅兼容旧版 token 登录，不再推荐 |
 
 ### 数据库
 

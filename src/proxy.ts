@@ -23,14 +23,6 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const token =
-    request.cookies.get("origami_token")?.value ??
-    request.headers.get("authorization")?.replace("Bearer ", "");
-
-  if (token && process.env.ACCESS_TOKEN && token === process.env.ACCESS_TOKEN) {
-    return NextResponse.next();
-  }
-
   if (pathname.startsWith("/api/")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { Mail, Github } from "lucide-react";
-import { LegacyTokenLogin } from "@/components/auth/legacy-token-login";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { hasGitHubOAuthConfig, isLegacyAccessTokenEnabled } from "@/lib/secrets";
+import { hasGitHubOAuthConfig } from "@/lib/secrets";
 
 const errorMessages: Record<string, string> = {
   github_state: "GitHub 登录状态校验失败，请重试。",
@@ -19,7 +18,6 @@ export default async function LoginPage({
 }) {
   const params = await searchParams;
   const githubEnabled = hasGitHubOAuthConfig();
-  const legacyEnabled = isLegacyAccessTokenEnabled();
   const error = params.error ? errorMessages[params.error] ?? "登录失败，请重试。" : null;
 
   return (
@@ -50,19 +48,9 @@ export default async function LoginPage({
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 
-          {legacyEnabled && (
-            <>
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">兼容旧登录方式</span>
-                </div>
-              </div>
-              <LegacyTokenLogin />
-            </>
-          )}
+          <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+            这是单 owner 实例：登录依赖 GitHub OAuth，邮箱账号的 Gmail / Outlook OAuth 仅用于接入邮箱本身，和应用登录是分开的。
+          </div>
         </CardContent>
       </Card>
     </div>

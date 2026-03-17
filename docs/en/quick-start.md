@@ -9,7 +9,7 @@ You will usually need:
 - Node.js 22+
 - a Turso / libSQL database
 - a Cloudflare R2 bucket
-- an `ACCESS_TOKEN`
+- a GitHub OAuth App for signing in to Origami
 - Gmail / Outlook OAuth apps if you want those providers
 
 ## 1. Install and create `.env`
@@ -24,7 +24,8 @@ Put the generated value into `ENCRYPTION_KEY`, then fill the rest of `.env`.
 
 ## 2. Minimum environment groups
 
-- **App:** `NEXT_PUBLIC_APP_URL`, `ACCESS_TOKEN`, `CRON_SECRET`, `ENCRYPTION_KEY`
+- **App:** `NEXT_PUBLIC_APP_URL`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `ENCRYPTION_KEY`
+- **Recommended hardening:** `GITHUB_ALLOWED_LOGIN`, `AUTH_SECRET`, `CRON_SECRET`
 - **Database:** `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`
 - **Storage:** `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_ENDPOINT`
 - **Optional OAuth defaults:** `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `OUTLOOK_CLIENT_ID`, `OUTLOOK_CLIENT_SECRET`
@@ -44,7 +45,7 @@ Use `db:migrate` only when you intentionally want to replay the historical migra
 npm run dev
 ```
 
-Open `http://localhost:3000`, sign in with `ACCESS_TOKEN`, then add accounts in `/accounts`.
+Open `http://localhost:3000`, sign in with GitHub, finish `/setup`, then add accounts in `/accounts`.
 
 ## 5. Verify before shipping
 

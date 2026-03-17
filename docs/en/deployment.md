@@ -16,9 +16,12 @@ Shortest path: fill `.env`, run `npm run db:setup`, deploy to Vercel, then conne
 | Variable | Required | Notes |
 |---|---:|---|
 | `NEXT_PUBLIC_APP_URL` | Yes | public app URL used in OAuth callbacks |
-| `ACCESS_TOKEN` | Yes | single-user login token |
-| `CRON_SECRET` | Yes | bearer token for `/api/cron/sync` |
+| `GITHUB_CLIENT_ID` | Yes | GitHub OAuth app client id |
+| `GITHUB_CLIENT_SECRET` | Yes | GitHub OAuth app client secret |
 | `ENCRYPTION_KEY` | Yes | 64-char hex AES-256-GCM key |
+| `GITHUB_ALLOWED_LOGIN` | No | optional allowed GitHub login |
+| `AUTH_SECRET` | No | session signing secret; falls back to `ENCRYPTION_KEY` |
+| `CRON_SECRET` | No | bearer token for `/api/cron/sync`; explicit value recommended |
 
 ### Database
 
@@ -78,7 +81,7 @@ Alternative commands:
 
 ## Production checklist
 
-- login works with `ACCESS_TOKEN`
+- GitHub sign-in reaches `/setup` or the app home successfully
 - `/accounts` loads
 - OAuth callbacks work
 - IMAP/SMTP accounts can be added

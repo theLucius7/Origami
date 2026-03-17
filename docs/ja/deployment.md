@@ -17,9 +17,12 @@
 | 変数 | 必須 | 説明 |
 |---|---:|---|
 | `NEXT_PUBLIC_APP_URL` | はい | OAuth callback に使う公開 URL |
-| `ACCESS_TOKEN` | はい | 単一ユーザー用ログイントークン |
-| `CRON_SECRET` | はい | `/api/cron/sync` 用 Bearer トークン |
+| `GITHUB_CLIENT_ID` | はい | GitHub OAuth app client id |
+| `GITHUB_CLIENT_SECRET` | はい | GitHub OAuth app client secret |
 | `ENCRYPTION_KEY` | はい | 64 文字の 16 進 AES-256-GCM キー |
+| `GITHUB_ALLOWED_LOGIN` | いいえ | 許可する GitHub login を制限する任意設定 |
+| `AUTH_SECRET` | いいえ | session 署名鍵。未設定時は `ENCRYPTION_KEY` にフォールバック |
+| `CRON_SECRET` | いいえ | `/api/cron/sync` 用 Bearer トークン。明示設定を推奨 |
 
 ### Database
 
@@ -70,7 +73,7 @@ npm run db:setup
 
 ## 本番チェック
 
-- `ACCESS_TOKEN` でログインできる
+- GitHub サインイン後に `/setup` またはホームへ進める
 - `/accounts` が開く
 - OAuth callback が動く
 - IMAP/SMTP アカウント追加ができる

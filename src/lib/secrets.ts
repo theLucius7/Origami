@@ -52,7 +52,3 @@ export function getGitHubOAuthConfig() {
 export function getAllowedGitHubLogin(): string | null {
   return normalizeSecret(process.env.GITHUB_ALLOWED_LOGIN)?.toLowerCase() ?? null;
 }
-
-export function isLegacyAccessTokenEnabled(): boolean {
-  return Boolean(normalizeSecret(process.env.ACCESS_TOKEN));
-}

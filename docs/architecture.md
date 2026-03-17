@@ -186,7 +186,8 @@ Compose form
 - OAuth client secret 只保留在服务端
 - 下载通过服务端代理，避免暴露原始对象 key
 - `CRON_SECRET` 保护同步入口
-- `ACCESS_TOKEN` 保护应用访问
+- GitHub owner session 保护应用访问
+- 邮箱 OAuth callback state 会签名并绑定当前登录 session
 
 ## 哪些是故意没做的
 

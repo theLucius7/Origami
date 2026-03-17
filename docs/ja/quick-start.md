@@ -9,7 +9,7 @@
 - Node.js 22+
 - Turso / libSQL データベース
 - Cloudflare R2 バケット
-- `ACCESS_TOKEN`
+- Origami にログインするための GitHub OAuth App
 - Gmail / Outlook を使うなら対応する OAuth app
 
 ## 1. インストールと `.env` 作成
@@ -24,7 +24,8 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 ## 2. 最低限必要な環境変数
 
-- **App:** `NEXT_PUBLIC_APP_URL`, `ACCESS_TOKEN`, `CRON_SECRET`, `ENCRYPTION_KEY`
+- **App:** `NEXT_PUBLIC_APP_URL`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `ENCRYPTION_KEY`
+- **Recommended hardening:** `GITHUB_ALLOWED_LOGIN`, `AUTH_SECRET`, `CRON_SECRET`
 - **Database:** `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`
 - **Storage:** `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_ENDPOINT`
 - **Optional OAuth defaults:** `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `OUTLOOK_CLIENT_ID`, `OUTLOOK_CLIENT_SECRET`
@@ -44,7 +45,7 @@ npm run db:setup
 npm run dev
 ```
 
-`http://localhost:3000` を開き、`ACCESS_TOKEN` でログインし、`/accounts` でアカウントを追加します。
+`http://localhost:3000` を開き、GitHub でログインして `/setup` を完了し、その後 `/accounts` でアカウントを追加します。
 
 ## 5. リリース前の確認
 
