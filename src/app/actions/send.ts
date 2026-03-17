@@ -15,6 +15,7 @@ import {
   getAccountWithProvider,
   persistProviderCredentialsIfNeeded,
 } from "@/lib/account-providers";
+import { revalidateMailboxPages } from "@/lib/revalidate";
 import {
   getSentMessageDetailRecord,
   getSentMessageRecordById,
@@ -222,6 +223,8 @@ export async function sendMailAction(input: SendMailActionInput): Promise<SendMa
     result.sentAt,
     uploadedAttachments
   );
+
+  revalidateMailboxPages();
 
   return {
     ...result,

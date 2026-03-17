@@ -1,305 +1,138 @@
-# Gmail OAuth: Detailed Setup
+# Gmail OAuth Detailed Setup
 
-This page explains: **how to connect a Gmail account into Origami**.
+This page covers **how to connect Gmail to a production Origami instance**.
 
-This is not GitHub sign-in:
+GitHub sign-in gets you into Origami. Gmail OAuth lets Origami access your Gmail mailbox.
 
-- **GitHub sign-in**: lets you enter the Origami app
-- **Gmail OAuth**: lets Origami access your Gmail mailbox
-
-If your current goal is:
-
-> “I can already sign in to Origami. Now I want Gmail to actually connect.”
-
-this is the page you want.
-
----
-
-## First, what do you need in the end?
-
-If you start with the simplest environment-variable setup, you eventually need these values in `.env`:
+## Final `.env` values you need
 
 ```txt
+NEXT_PUBLIC_APP_URL=https://mail.example.com
 GMAIL_CLIENT_ID=...
 GMAIL_CLIENT_SECRET=...
 ```
 
-You will usually also have:
+## Official reference
 
-```txt
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-```
+- Enable Google Workspace APIs  
+  <https://developers.google.com/workspace/guides/enable-apis>
+- Configure the OAuth consent screen  
+  <https://developers.google.com/workspace/guides/configure-oauth-consent>
+- Create OAuth credentials  
+  <https://developers.google.com/workspace/guides/create-credentials>
+- Gmail scopes reference  
+  <https://developers.google.com/workspace/gmail/api/auth/scopes>
 
-because the Google OAuth redirect URI must match your Origami address.
-
----
-
-## Which Gmail scopes does Origami currently request?
-
-Based on the current code, Origami mainly requests:
+## Gmail scopes Origami currently requests
 
 - `https://www.googleapis.com/auth/gmail.modify`
 - `https://www.googleapis.com/auth/gmail.send`
 - `https://www.googleapis.com/auth/userinfo.email`
 
-Related code:
-
-- `src/lib/providers/gmail.ts`
-
-Official scope reference:
-
-- <https://developers.google.com/workspace/gmail/api/auth/scopes>
-
----
-
-## Two configuration methods: know which one you want first
-
-### Option A: env-backed default Gmail app (recommended for the first run)
-
-Put these into `.env`:
+## Write this cheat sheet first
 
 ```txt
-GMAIL_CLIENT_ID=...
-GMAIL_CLIENT_SECRET=...
-```
-
-Then Origami uses that app as the default Gmail OAuth app.
-
-### Option B: DB-backed Gmail app
-
-If you do not want Gmail OAuth credentials in environment variables, you can first sign in to Origami with GitHub and then create a database-managed OAuth app in `/accounts`.
-
-### What do I recommend for the first setup?
-
-**Start with option A.**
-
-Because it has:
-
-- the fewest moving parts
-- the shortest flow
-- the easiest debugging path
-
-Once Gmail works, you can move to DB-managed apps later if you want.
-
----
-
-## Official references
-
-- Enable Google Workspace APIs  
-  <https://developers.google.com/workspace/guides/enable-apis>
-- Configure OAuth consent screen  
-  <https://developers.google.com/workspace/guides/configure-oauth-consent>
-- Create access credentials  
-  <https://developers.google.com/workspace/guides/create-credentials>
-- Gmail API Node.js quickstart  
-  <https://developers.google.com/workspace/gmail/api/quickstart/nodejs>
-- Gmail API scopes  
-  <https://developers.google.com/workspace/gmail/api/auth/scopes>
-
----
-
-## Before you start, write these values down
-
-### Local development
-
-```txt
-App URL
-http://localhost:3000
-
-Google OAuth Redirect URI
-http://localhost:3000/api/oauth/gmail
-
-Project name
-Origami Gmail Local
-
-App name on consent screen
-Origami Gmail Local
-```
-
-### Production
-
-```txt
-App URL
+Production app URL
 https://mail.example.com
 
 Google OAuth Redirect URI
 https://mail.example.com/api/oauth/gmail
 
-Project name
+Google Cloud Project name
 Origami Gmail Production
 
-App name on consent screen
+Consent Screen App name
 Origami Gmail Production
 ```
 
-> Practical advice: use **one Google Cloud project for local** and **another one for production**.
+## Where you will switch back and forth
 
----
+### Place A: Google Cloud Console
 
-## If the UI does not look exactly like this page
+You will:
 
-Google Cloud Console changes more often than almost any other admin UI. Focus on these keywords:
+- create or choose a project
+- enable Gmail API
+- configure the OAuth consent screen
+- create a Web OAuth client
 
-- `Google Cloud Console`
-- `APIs & Services`
-- `Gmail API`
-- `Google Auth platform`
-- `Branding`
-- `Audience`
-- `Data Access`
-- `OAuth client ID`
-- `Web application`
+### Place B: your Origami `.env`
 
-If your screen looks different from this guide, it does not automatically mean you are in the wrong place. Quite often it just means Google changed the UI again.
+You will fill back:
 
----
+```txt
+NEXT_PUBLIC_APP_URL=
+GMAIL_CLIENT_ID=
+GMAIL_CLIENT_SECRET=
+```
 
-## Baby-step guide: create a Gmail OAuth app from scratch
+## Click-by-click setup
 
-### Step 1: open Google Cloud Console
+### 1. Open Google Cloud Console
 
 Open:
 
 - <https://console.cloud.google.com/>
 
----
+### 2. Create or switch to a dedicated project
 
-### Step 2: create or choose a Google Cloud project
+Recommended project name:
 
-If you do not already have one:
+```txt
+Origami Gmail Production
+```
 
-1. click the project selector at the top
-2. click **New Project**
-3. choose a clear name such as:
-   - `Origami Gmail Local`
-   - `Origami Gmail Production`
-4. create it and switch into that project
+### 3. Enable Gmail API
 
-> Recommended: use separate projects for local and production.
+Click:
 
----
+1. **APIs & Services**
+2. **Library**
+3. search for `Gmail API`
+4. open it
+5. click **Enable**
 
-### Step 3: enable the Gmail API
+### 4. Configure the OAuth consent screen
 
-Console path:
+Typical path:
 
-- **APIs & Services** → **Library**
-
-Then search for:
-
-- `Gmail API`
-
-Open it and click:
-
-- **Enable**
-
-Official docs:
-
-- <https://developers.google.com/workspace/guides/enable-apis>
-
-### At this point, only one thing matters
-
-In this project, **Gmail API must already be Enabled**.
-
----
-
-### Step 4: configure the OAuth consent screen
-
-This step is essential. Without it, Google OAuth usually will not work correctly.
-
-In Google’s newer UI, the common path is something like:
-
-- **Google Auth platform** → **Branding**
-- **Audience**
-- **Data Access**
-
-Official docs:
-
-- <https://developers.google.com/workspace/guides/configure-oauth-consent>
-
-### 4.1 What should I put in Branding?
+1. **Google Auth platform**
+2. **Branding**
+3. **Audience**
+4. **Data Access**
 
 Recommended values:
 
-- **App name**: `Origami Gmail Local` / `Origami Gmail Production`
+- **App name**: `Origami Gmail Production`
 - **User support email**: your email
 - **Developer contact email**: your email
 
-These mostly help you recognize which app you are authorizing later.
+For a self-hosted personal instance, `External` is usually the right audience, and the Google account you will use should be added to **Test users**.
 
-### 4.2 Which Audience should I choose?
+### 5. Create the OAuth Client ID
 
-#### Case 1: personal self-hosted use / testing
-
-This is the most common case:
-
-- choose **External**
-- add your own Google account under **Test users**
-
-That is usually the best fit for a self-hosted personal tool.
-
-#### Case 2: only inside your own Google Workspace organization
-
-Then you can consider:
-
-- **Internal**
-
-but only if that is really your situation.
-
-### 4.3 How should I think about Data Access / Scopes?
-
-The goal is not to enable every Google API in the world.
-
-The goal is simply to make sure your OAuth app can request the scopes Origami actually needs:
-
-- `gmail.modify`
-- `gmail.send`
-- `userinfo.email`
-
----
-
-### Step 5: create an OAuth Client ID
-
-Official docs:
-
-- <https://developers.google.com/workspace/guides/create-credentials>
-
-Create:
+Choose:
 
 - **OAuth client ID**
-- application type = **Web application**
+- app type: **Web application**
 
-> Do not choose Desktop app. Origami is a server-side web app.
-
-### What redirect URI should I use?
-
-It must exactly match Origami:
-
-- local: `http://localhost:3000/api/oauth/gmail`
-- production: `https://your-domain/api/oauth/gmail`
-
-This is one of the easiest places to make a mistake.
-
-If you are doing local development now, do not leave the production domain here. If you are doing production now, do not leave `localhost` here.
-
-After creation, copy:
-
-- Client ID → `GMAIL_CLIENT_ID`
-- Client Secret → `GMAIL_CLIENT_SECRET`
-
----
-
-## `.env` examples
-
-### Local
+The redirect URI must be exactly:
 
 ```txt
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-GMAIL_CLIENT_ID=xxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com
-GMAIL_CLIENT_SECRET=GOCSPX-xxxxxxxxxxxxxxxxxxxx
+https://mail.example.com/api/oauth/gmail
 ```
 
-### Production
+The most common mistakes are:
+
+- using the homepage URL instead of the callback
+- forgetting `/api/oauth/gmail`
+- using a domain that does not match `NEXT_PUBLIC_APP_URL`
+
+### 6. Save Client ID and Client Secret
+
+Copy both values immediately.
+
+## Now go back to `.env`
 
 ```txt
 NEXT_PUBLIC_APP_URL=https://mail.example.com
@@ -307,136 +140,58 @@ GMAIL_CLIENT_ID=xxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com
 GMAIL_CLIENT_SECRET=GOCSPX-xxxxxxxxxxxxxxxxxxxx
 ```
 
----
+## Check before testing
 
-## After configuration, verify these items in order
+Make sure:
 
-Check them one by one:
+- the current Google Cloud project is the correct one
+- Gmail API is enabled
+- the consent screen is configured
+- the OAuth client type is **Web application**
+- the redirect URI equals `<APP_URL>/api/oauth/gmail`
+- the `.env` client id and secret come from this exact client
 
-- Are you in the correct Google Cloud project?
-- Is **Gmail API** already **Enabled**?
-- Is the consent screen configured?
-- If you are doing personal self-hosting, did you choose **External**?
-- Is your Google account listed under **Test users**?
-- Is the OAuth client type **Web application**?
-- Is the redirect URI exactly `<APP_URL>/api/oauth/gmail`?
-- Do `.env` values `GMAIL_CLIENT_ID` / `GMAIL_CLIENT_SECRET` come from that exact client?
+## How to verify it works
 
-If these eight items are correct, Gmail OAuth is usually fine.
+After deployment:
 
----
+1. sign in to Origami
+2. open `/accounts`
+3. choose to add a Gmail account
+4. approve the Google consent flow
+5. return to Origami
 
-## Step 6: connect Gmail inside Origami
+Expected result:
 
-1. run Origami
-2. finish GitHub sign-in first
-3. open `/accounts`
-4. choose Add Gmail account
-5. if the default env app is configured, Origami will use it directly
-6. complete the Google authorization flow
-7. return to Origami
+- the Gmail account appears in `/accounts`
+- sync works
+- reading works
+- sending works
 
----
-
-## What matters most about Google verification?
-
-A lot of people get intimidated here, but for single-user self-hosted use it is often much simpler than it looks.
-
-### If you only use it yourself for testing
-
-A common and very normal pattern is:
-
-- keep the app in testing mode
-- set Audience to **External**
-- add your own Google account as a **Test user**
-
-That is usually enough for self-use.
-
-### If you want to publish it for many outside users
-
-Then you need to read Google’s requirements around sensitive and restricted scopes much more carefully. Origami requests `gmail.modify`, which is a higher-privilege scope.
-
-For a self-hosted single-user tool, my advice is very simple:
-
-> start with your own project, your own account, and yourself listed as a test user.
-
----
-
-## How should you verify that it really works?
-
-Run through this chain once:
-
-1. click “Add Gmail account” in Origami
-2. the browser jumps to Google authorization
-3. you can see the app name you configured
-4. choose your account and approve
-5. Google sends you back to Origami
-6. `/accounts` shows the new Gmail account
-7. sync, read, send, or write-back features work normally
-
-If that whole chain works, Gmail OAuth is basically configured correctly.
-
----
-
-## Most common problems, and how to recognize them quickly
+## Common errors
 
 ### 1. `redirect_uri_mismatch`
 
-Always check these three first:
+Always compare these three values first:
 
-- the redirect URI in your Google OAuth client
+- the redirect URI in Google Cloud
 - `NEXT_PUBLIC_APP_URL`
-- the actual callback path `/api/oauth/gmail`
+- the actual callback `/api/oauth/gmail`
 
-All three must line up.
+### 2. the consent screen opens, but the flow does not return correctly
 
-### 2. the consent page opens, but authorization does not return correctly
+That usually means the redirect URI is wrong, or the wrong client was copied into `.env`.
 
-This is usually still a redirect URI problem, or a local-vs-production client mix-up.
-
-### 3. you see “app not verified” or testing restrictions
+### 3. you see testing / app not verified warnings
 
 Check:
 
-- whether the app is **External**
-- whether the Google account you are using is listed in **Test users**
+- the audience is `External`
+- the Google account is included in **Test users**
 
-### 4. authorization succeeded, but sending later says permission is missing
+### 4. authorization succeeds, but sending fails with permission errors
 
-Check the scopes:
+Check the required scopes:
 
 - `gmail.send`
 - `gmail.modify`
-
-Origami’s send flow and parts of write-back depend on those scopes.
-
-### 5. I enabled the API, but it still does not work
-
-Recheck these often-missed parts:
-
-- are you looking at the correct project?
-- is the consent screen actually complete?
-- is the OAuth client type really **Web application**?
-
-A lot of the time, the problem is not “Gmail API is disabled”; it is the OAuth app layer still being incomplete.
-
----
-
-## What I recommend in practice
-
-If you ask me for the safest Gmail setup, I would recommend:
-
-1. separate Google Cloud projects for local and production
-2. one Web OAuth client per environment
-3. keep redirect URIs clearly environment-specific
-4. for personal use, use **External + Test users**
-5. start with the env-backed default app before moving to DB-managed apps
-
-This is the lowest-friction path and the easiest to debug.
-
----
-
-## What to read next
-
-- [Outlook OAuth detailed setup](/en/outlook-oauth)
-- [Cloudflare R2 / bucket detailed setup](/en/r2-storage)

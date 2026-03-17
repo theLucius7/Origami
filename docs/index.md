@@ -4,7 +4,7 @@ layout: home
 hero:
   name: Origami
   text: 面向个人与单席位团队的统一收件箱
-  tagline: 聚合 Gmail、Outlook 与国内 IMAP/SMTP 邮箱，强调自托管、隐私与低心智负担。
+  tagline: 聚合 Gmail、Outlook 与国内 IMAP/SMTP 邮箱，提供适合自托管场景的统一收件、分拣、发信与同步能力。
   actions:
     - theme: brand
       text: 快速开始
@@ -18,51 +18,52 @@ hero:
 
 features:
   - title: 统一收件箱
-    details: 多个邮箱聚合到同一时间线，减少来回切换账号的成本。
-  - title: 本地优先 triage
-    details: Done、Archive、Snooze 保持在 Origami 本地；Read / Star 可按账号选择回写。
+    details: 将多个邮箱汇总到同一时间线，减少来回切换账号的成本。
+  - title: 本地优先的整理模型
+    details: Done、Archive、Snooze 保持在 Origami 本地，Read / Star 可按账号选择回写。
   - title: 发信与已发送记录
-    details: 可通过 Gmail、Outlook 与 IMAP/SMTP 邮箱发新邮件，并保存本地 sent history。
+    details: 可通过 Gmail、Outlook 与 IMAP/SMTP 邮箱发信，并保留本地 sent history。
   - title: metadata-first 同步
-    details: 先抓标题、发件人、摘要，正文与附件在打开详情时再补齐。
+    details: 首次同步优先抓取标题、发件人和摘要，正文与附件在需要时再补齐。
   - title: OAuth app 管理
-    details: Gmail / Outlook 既支持环境变量默认 app，也支持数据库中托管的 app 配置。
+    details: Gmail 与 Outlook 同时支持环境变量默认 app 和数据库托管 app。
   - title: 自托管友好
-    details: 面向 Vercel + Turso + R2 组合，同时保留足够透明的部署与数据路径。
+    details: 默认围绕 Vercel、Turso 与 R2 组织部署路径，数据路径明确，运维成本可控。
 ---
 
-## Origami 是什么
+## 产品定位
 
-Origami 是一个**单用户统一收件箱**。  
-它不是企业工单系统，也不打算模拟所有 provider 的原生行为，而是专注解决一个更具体的问题：
+Origami 是一个**单用户统一收件箱**。
 
-> 当你同时管理多个邮箱时，如何在一个界面里完成收件、分拣、搜索、发信与同步，而不失去对数据与部署方式的掌控？
+它不追求复刻各个邮箱服务的全部原生能力，也不试图变成复杂的客服平台。它解决的是更具体的问题：
 
-它尤其适合：
+> 用一个界面管理多个邮箱账号，并在自托管前提下完成收件、整理、搜索、发信与同步。
 
-- 个人多邮箱场景
-- 自媒体 / 独立开发者 / 自由职业者
-- 小团队里只有一个人处理收件箱
-- 想自己部署、而不想上重型客服系统的人
+适用场景包括：
 
-## 核心能力一览
+- 个人多邮箱管理
+- 独立开发者、自媒体与自由职业者
+- 只有单一操作员的小团队
+- 希望保留部署控制权与数据控制权的自托管用户
+
+## 核心能力
 
 ### 邮箱接入
 
 - Gmail（OAuth）
 - Outlook（OAuth）
-- QQ / 163 / 126 / Yeah / 自定义 IMAP/SMTP 邮箱
+- QQ / 163 / 126 / Yeah / 自定义 IMAP/SMTP
 
 ### 本地生产力层
 
-Origami 会把以下状态定义为**本地状态**：
+Origami 将以下状态定义为本地状态：
 
 - Done
 - Archive
 - Snooze
 - Local sent history
 
-这样做的意义是：统一、稳定、可预测。
+这种设计的目标是让跨 provider 行为保持一致。
 
 ### 选择性回写
 
@@ -71,8 +72,7 @@ Origami 会把以下状态定义为**本地状态**：
 - Read
 - Star
 
-Origami 支持在账号级开启回写。  
-如果 provider 不支持、scope 缺失或暂时失败，本地操作依然能继续完成。
+Origami 支持按账号开启回写。即使 provider 不支持或 scope 不足，本地操作仍可继续完成。
 
 ## Provider 支持矩阵
 
@@ -83,34 +83,26 @@ Origami 支持在账号级开启回写。
 | QQ | ✅ | ✅ | IMAP/SMTP 授权码 | Read / Star |
 | 通用 IMAP/SMTP | ✅ | ✅ | 用户名 + 密码 / 授权码 | 视 IMAP 标记能力而定 |
 
-## 为什么要做成“单用户”
-
-因为这个项目的目标不是做复杂协作，而是让一个人把多个邮箱管理清楚。
-
-单用户带来的直接好处：
-
-- 鉴权模型更简单
-- 配置成本更低
-- 数据路径更透明
-- UI 和数据模型都可以围绕“一个操作员”优化
-
-如果后续要发展多用户能力，也应该建立在这个核心模型已经稳定的前提下，而不是一开始就把项目做成一个臃肿平台。
-
 ## 推荐阅读顺序
 
-如果你第一次接触 Origami，推荐按下面顺序看：
+如果你的目标是部署一套可直接使用的生产实例，建议按以下顺序阅读：
 
 1. [快速开始](/quick-start)
 2. [部署指南](/deployment)
-3. [FAQ](/faq)
-4. [架构说明](/architecture)
-5. [项目结构](/project-structure)
+3. [Turso 数据库详细配置](/turso)
+4. [Cloudflare R2 / Bucket 详细配置](/r2-storage)
+5. [GitHub Auth 详细配置](/github-auth)
+6. [Gmail OAuth 详细配置](/gmail-oauth)
+7. [Outlook OAuth 详细配置](/outlook-oauth)
 
-## 详细配置专题
+## 开发文档
 
-如果你已经准备开始真正部署，下面这几页是“宝宝式教学”版本：
+本地开发、调试与贡献流程已单独拆分，不再放在主部署路径中：
 
-- [GitHub Auth 详细配置](/github-auth)
-- [Cloudflare R2 / Bucket 详细配置](/r2-storage)
-- [Gmail OAuth 详细配置](/gmail-oauth)
-- [Outlook OAuth 详细配置](/outlook-oauth)
+- [开发与调试](/development)
+
+## 进一步阅读
+
+- [FAQ](/faq)
+- [架构说明](/architecture)
+- [项目结构](/project-structure)

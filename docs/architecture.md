@@ -130,6 +130,12 @@ Sync trigger
 - Outlook：Graph delta / nextLink
 - IMAP：UID / 基于邮箱列表状态推进
 
+当前同步模型还有几个刻意的行为：
+
+- provider 会尽量保留远端 `isRead / isStarred`，避免重复同步把本地状态洗回默认值
+- Outlook delta 中的 `@removed` tombstone 会被转换为本地 `REMOTE_REMOVED` 状态，因此远端已删除或已移出 Inbox 的邮件不会继续留在主列表
+- 如果同一个 remote message 后续重新回到 Inbox，同步仍然可以把它重新带回可见列表
+
 ## 邮件详情补抓
 
 当用户打开详情页时：
@@ -140,6 +146,14 @@ Sync trigger
 4. 必要时把附件对象写入 R2
 
 这使得 Origami 在真实使用时更像“快列表 + 懒展开”，而不是“先把全世界拉完再给你看”。
+
+与此同时，数据库会显式记录：
+
+- 正文补抓状态（pending / hydrated / failed）
+- 最近一次补抓错误
+- 已读 / 星标写回的 pending / success / failed
+
+这些状态会聚合到账号页，方便你直接看出某个账号最近是正文补抓异常，还是远端写回权限 / 调用失败。
 
 ## 发信流程
 

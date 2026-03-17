@@ -7,6 +7,7 @@ import { MailDetail } from "./mail-detail";
 import { SnoozeDialog } from "./snooze-dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import {
   Archive,
   CheckCircle2,
@@ -39,6 +40,7 @@ export function InboxView({
   starred,
 }: InboxViewProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [emails, setEmails] = useState(initialEmails);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -55,21 +57,30 @@ export function InboxView({
   const doSearch = useCallback(
     (query: string) => {
       startTransition(async () => {
-        const results = await getEmails({
-          accountId,
-          search: query || undefined,
-          starred,
-        });
-        setEmails(results);
-        setSelectedIds([]);
-        if (selectedId && !results.some((email) => email.id === selectedId)) {
-          setSelectedId(null);
-          setSelectedEmail(null);
-          setSelectedAttachments([]);
+        try {
+          const results = await getEmails({
+            accountId,
+            search: query || undefined,
+            starred,
+          });
+          setEmails(results);
+          setSelectedIds([]);
+          if (selectedId && !results.some((email) => email.id === selectedId)) {
+            setSelectedId(null);
+            setSelectedEmail(null);
+            setSelectedAttachments([]);
+          }
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "搜索失败，请换个关键词重试。";
+          toast({
+            title: "搜索失败",
+            description: message,
+            variant: "error",
+          });
         }
       });
     },
-    [accountId, selectedId, starred]
+    [accountId, selectedId, starred, toast]
   );
 
   function handleSearchSubmit(e: React.FormEvent) {

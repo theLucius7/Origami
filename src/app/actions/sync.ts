@@ -1,6 +1,7 @@
 "use server";
 
 import { runActionResult } from "@/lib/actions";
+import { revalidateMailboxPages } from "@/lib/revalidate";
 import { syncAccountById, syncAllAccounts } from "@/lib/services/sync-service";
 
 export async function syncAccount(accountId: string) {
@@ -10,6 +11,7 @@ export async function syncAccount(accountId: string) {
     return { ok: false as const, synced: 0, error: result.errorMessage };
   }
 
+  revalidateMailboxPages();
   return { ok: true as const, synced: result.data.synced };
 }
 
@@ -20,5 +22,6 @@ export async function syncAll() {
     return { ok: false as const, results: [], error: result.errorMessage };
   }
 
+  revalidateMailboxPages();
   return { ok: true as const, results: result.data.results };
 }

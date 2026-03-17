@@ -7,6 +7,8 @@ export interface SyncedEmail {
   snippet: string;
   bodyText: string | null;
   bodyHtml: string | null;
+  isRead: boolean;
+  isStarred: boolean;
   receivedAt: number; // unix timestamp
   folder: string;
   attachments: SyncedAttachment[];
@@ -21,6 +23,7 @@ export interface SyncedAttachment {
 
 export interface SyncResult {
   emails: SyncedEmail[];
+  removedRemoteIds: string[];
   newCursor: string | null;
 }
 
@@ -31,6 +34,10 @@ export interface SyncOptions {
 
 export interface ProviderCapabilities {
   canSend: boolean;
+  canWriteBackRead?: boolean;
+  canWriteBackStar?: boolean;
+  readWriteBackNotice?: string | null;
+  starWriteBackNotice?: string | null;
 }
 
 export interface SendMailParams {

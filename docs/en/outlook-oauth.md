@@ -1,42 +1,29 @@
-# Outlook OAuth: Detailed Setup
+# Outlook OAuth Detailed Setup
 
-This page explains: **how to connect Outlook / Microsoft 365 mailboxes into Origami**.
+This page covers **how to connect Outlook / Microsoft 365 to a production Origami instance**.
 
-This is different from GitHub sign-in:
+GitHub sign-in gets you into Origami. Outlook OAuth lets Origami access the mailbox.
 
-- **GitHub sign-in**: gets you into Origami
-- **Outlook OAuth**: gives Origami access to your Outlook mailbox
-
-If your current goal is:
-
-> “I can already sign in to Origami. Now I want Outlook or Microsoft 365 to actually connect.”
-
-this is the page you want.
-
----
-
-## First, what do you need in the end?
-
-If you start with the simplest environment-variable setup, you eventually need these values in `.env`:
+## Final `.env` values you need
 
 ```txt
+NEXT_PUBLIC_APP_URL=https://mail.example.com
 OUTLOOK_CLIENT_ID=...
 OUTLOOK_CLIENT_SECRET=...
 ```
 
-You will usually also have:
+## Official reference
 
-```txt
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-```
+- Register an Entra application  
+  <https://learn.microsoft.com/en-us/entra/identity-platform/quickstart-register-app>
+- Add a redirect URI  
+  <https://learn.microsoft.com/en-us/entra/identity-platform/how-to-add-redirect-uri>
+- Manage client secrets  
+  <https://learn.microsoft.com/en-us/entra/identity-platform/how-to-add-credentials>
+- Microsoft Graph permissions reference  
+  <https://learn.microsoft.com/en-us/graph/permissions-reference>
 
-because the Microsoft OAuth redirect URI must match your Origami address.
-
----
-
-## Which Microsoft scopes does Origami currently request?
-
-Based on the current code, Origami requests:
+## Scopes Origami currently requests
 
 - `openid`
 - `email`
@@ -46,96 +33,10 @@ Based on the current code, Origami requests:
 - `Mail.Send`
 - `offline_access`
 
-Related code:
-
-- `src/lib/providers/outlook.ts`
-
----
-
-## One important detail first: the default env Outlook app uses `tenant=common`
-
-The current environment-variable-backed default Outlook app uses:
-
-- `https://login.microsoftonline.com/common/oauth2/v2.0/authorize`
-
-That makes it more suitable for:
-
-- personal Outlook / Hotmail / Live accounts
-- multi-tenant scenarios where you do not want to hardcode a single organization tenant
-
-If you want to lock everything to one specific organization tenant, the cleaner path is usually:
-
-- finish GitHub sign-in first
-- create a **DB-backed Outlook OAuth app** in `/accounts`
-- set the tenant explicitly there
-
----
-
-## Two configuration methods
-
-### Option A: env-backed default Outlook app (recommended for the first run)
-
-Put these into `.env`:
+## Write this cheat sheet first
 
 ```txt
-OUTLOOK_CLIENT_ID=...
-OUTLOOK_CLIENT_SECRET=...
-```
-
-### Option B: DB-backed Outlook app
-
-If you later need:
-
-- different tenants
-- multiple apps across environments
-- more explicit app management
-
-use a DB-managed Outlook app inside Origami.
-
-### What do I recommend for the first setup?
-
-**Start with option A.**
-
-Because it has:
-
-- the shortest path
-- the fewest variables
-- the easiest debugging story
-
----
-
-## Official references
-
-- Register an app in Microsoft Entra  
-  <https://learn.microsoft.com/en-us/entra/identity-platform/quickstart-register-app>
-- Add a redirect URI  
-  <https://learn.microsoft.com/en-us/entra/identity-platform/how-to-add-redirect-uri>
-- Add / manage credentials  
-  <https://learn.microsoft.com/en-us/entra/identity-platform/how-to-add-credentials>
-- Microsoft Graph permissions reference  
-  <https://learn.microsoft.com/en-us/graph/permissions-reference>
-
----
-
-## Before you start, write these values down
-
-### Local development
-
-```txt
-App URL
-http://localhost:3000
-
-Microsoft Redirect URI
-http://localhost:3000/api/oauth/outlook
-
-App registration name
-Origami Outlook Local
-```
-
-### Production
-
-```txt
-App URL
+Production app URL
 https://mail.example.com
 
 Microsoft Redirect URI
@@ -145,125 +46,94 @@ App registration name
 Origami Outlook Production
 ```
 
-> Practical advice: use separate app registrations for local and production.
+## Where you will switch back and forth
 
----
+### Place A: Microsoft Entra admin center
 
-## If the UI does not look exactly like this page
+You will:
 
-Microsoft Entra changes names and menu positions too. Focus on these keywords:
+- register an app
+- configure Authentication
+- create a Client Secret
+- add Microsoft Graph permissions
 
-- `Microsoft Entra admin center`
-- `App registrations`
-- `New registration`
-- `Authentication`
-- `Certificates & secrets`
-- `API permissions`
-- `Delegated permissions`
-- `Grant admin consent`
+### Place B: your Origami `.env`
 
-Sometimes even `Entra ID` labels vary a bit. As long as you are in the app registration area, you are usually in the right place.
+You will fill back:
 
----
+```txt
+NEXT_PUBLIC_APP_URL=
+OUTLOOK_CLIENT_ID=
+OUTLOOK_CLIENT_SECRET=
+```
 
-## Baby-step guide: create an Outlook OAuth app from scratch
+## Click-by-click setup
 
-### Step 1: open Microsoft Entra admin center
+### 1. Open Microsoft Entra Admin Center
 
 Open:
 
 - <https://entra.microsoft.com>
 
----
+### 2. Register the application
 
-### Step 2: register the application
+Click:
 
-Go to:
+1. **Entra ID**
+2. **App registrations**
+3. **New registration**
 
-- **Entra ID** → **App registrations** → **New registration**
+Recommended name:
 
-Official docs:
+```txt
+Origami Outlook Production
+```
 
-- <https://learn.microsoft.com/en-us/entra/identity-platform/quickstart-register-app>
+For broad compatibility, choose a supported account type that includes both organizational and personal Microsoft accounts.
 
-#### What should I use for Name?
+### 3. Add the Web redirect URI
 
-Use an environment-specific name:
+Click:
 
-- `Origami Outlook Local`
-- `Origami Outlook Production`
+1. **Manage**
+2. **Authentication**
+3. **Add a platform**
+4. choose **Web**
 
-#### Which Supported account types should I choose?
+The redirect URI must be exactly:
 
-This is one of the easiest places to hesitate.
+```txt
+https://mail.example.com/api/oauth/outlook
+```
 
-##### If you want to use the env-backed default Outlook app
+The most common mistakes are:
 
-A broader choice usually makes more sense, such as:
+- using the homepage URL instead of the callback
+- forgetting `/api/oauth/outlook`
+- using a domain that does not match `NEXT_PUBLIC_APP_URL`
 
-- **Accounts in any organizational directory and personal Microsoft accounts**
+### 4. Create the Client Secret
 
-That matches the default `tenant=common` behavior better.
+Click:
 
-##### If you only want one company / organization tenant
+1. **Certificates & secrets**
+2. **New client secret**
 
-You can absolutely narrow the app down. But in that case, a DB-backed Outlook app inside Origami is usually the cleaner long-term choice.
+Then save:
 
----
+- Application (client) ID
+- Client secret Value
 
-### Step 3: add a Web redirect URI
+### 5. Add Microsoft Graph permissions
 
-After registration, go to:
+Click:
 
-- **Manage** → **Authentication**
-- **Add a platform**
-- choose **Web**
+1. **API permissions**
+2. **Add a permission**
+3. **Microsoft Graph**
+4. **Delegated permissions**
 
-Official docs:
-
-- <https://learn.microsoft.com/en-us/entra/identity-platform/how-to-add-redirect-uri>
-
-### What redirect URI should I use?
-
-It must exactly match Origami:
-
-- local: `http://localhost:3000/api/oauth/outlook`
-- production: `https://your-domain/api/oauth/outlook`
-
-It must include `/api/oauth/outlook` exactly.
-
----
-
-### Step 4: create the Client Secret
-
-Go to:
-
-- **Certificates & secrets**
-- **New client secret**
-
-Official docs:
-
-- <https://learn.microsoft.com/en-us/entra/identity-platform/how-to-add-credentials>
-
-Save these values:
-
-- Application (client) ID → `OUTLOOK_CLIENT_ID`
-- Client secret Value → `OUTLOOK_CLIENT_SECRET`
-
-> Important: the full client secret value is usually shown only once.
-
----
-
-### Step 5: add Microsoft Graph permissions
-
-Go to:
-
-- **API permissions**
-- **Add a permission**
-- **Microsoft Graph**
-- **Delegated permissions**
-
-Then add the permissions Origami needs:
+Add:
 
 - `openid`
 - `email`
@@ -273,44 +143,9 @@ Then add the permissions Origami needs:
 - `Mail.Send`
 - `offline_access`
 
-Official reference:
+If your tenant requires it, also handle **Grant admin consent** here.
 
-- <https://learn.microsoft.com/en-us/graph/permissions-reference>
-
-### The goal on this page is simple
-
-You do not need to learn every Graph permission.
-
-You only need to make sure:
-
-> this app has at least the delegated permissions that Origami needs.
-
----
-
-### Step 6: do I need Grant admin consent?
-
-That depends on your tenant policy.
-
-Common cases:
-
-- **personal Microsoft account / self-testing**: user consent is often enough
-- **company or school tenant**: an admin may need to click **Grant admin consent**
-
-If user consent gets blocked by organization policy, this is one of the first places to check.
-
----
-
-## Step 7: put the values into `.env`
-
-### Local
-
-```txt
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-OUTLOOK_CLIENT_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-OUTLOOK_CLIENT_SECRET=xxxxxxxxxxxxxxxxxxxxxxxx
-```
-
-### Production
+## Now go back to `.env`
 
 ```txt
 NEXT_PUBLIC_APP_URL=https://mail.example.com
@@ -318,114 +153,53 @@ OUTLOOK_CLIENT_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 OUTLOOK_CLIENT_SECRET=xxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
----
+## Check before testing
 
-## After configuration, verify these items in order
+Make sure:
 
-Check them one by one:
+- the current app registration is the correct one
+- the Web redirect URI equals `<APP_URL>/api/oauth/outlook`
+- the client id and secret in `.env` come from this app
+- `Mail.Read`, `Mail.ReadWrite`, and `Mail.Send` are present in Graph permissions
 
-- Are you looking at the correct app registration?
-- Are the **Supported account types** correct for your use case?
-- Does **Authentication** contain the exact Web redirect URI `<APP_URL>/api/oauth/outlook`?
-- Do `OUTLOOK_CLIENT_ID` / `OUTLOOK_CLIENT_SECRET` come from that exact app?
-- Does **API permissions** include `Mail.Read`, `Mail.ReadWrite`, and `Mail.Send`?
-- If you are in an organization tenant, do you also need admin consent?
+## How to verify it works
 
-If these items are correct, Outlook OAuth usually works.
+After deployment:
 
----
+1. sign in to Origami
+2. open `/accounts`
+3. choose to add an Outlook account
+4. complete the Microsoft consent flow
+5. return to Origami
 
-## Step 8: connect Outlook inside Origami
+Expected result:
 
-1. run Origami
-2. finish GitHub sign-in first
-3. open `/accounts`
-4. add an Outlook account
-5. complete the Microsoft authorization flow
-6. return to Origami
+- the Outlook account appears in `/accounts`
+- sync works
+- reading works
+- sending works
 
----
-
-## How should you verify that it really works?
-
-Run through this chain once:
-
-1. click “Add Outlook account” in Origami
-2. the browser jumps to Microsoft sign-in / consent
-3. choose the account and approve
-4. Microsoft sends you back to Origami
-5. `/accounts` shows the new Outlook account
-6. sync, read, send, or write-back features work normally
-
-If this whole chain works, Outlook OAuth is basically configured correctly.
-
----
-
-## Most common problems, and how to recognize them quickly
+## Common errors
 
 ### 1. `AADSTS50011` / redirect URI mismatch
 
-This is the classic one. Check these first:
+Check these first:
 
 - the Web redirect URI in Entra
 - `NEXT_PUBLIC_APP_URL`
-- Origami’s actual callback path `/api/oauth/outlook`
+- the actual callback `/api/oauth/outlook`
 
-All of them must match.
+### 2. Microsoft sign-in succeeds, but the return to Origami fails
 
-### 2. Microsoft sign-in works, but returning to Origami fails
+Usually the client id, client secret, or redirect URI is wrong.
 
-Check:
+### 3. sending fails with missing permission errors
 
-- whether local and production client IDs were mixed up
-- whether the client secret was copied incorrectly
-- whether the redirect URI forgot `/api/oauth/outlook`
-
-### 3. sending later reports missing permission
-
-Make sure these permissions are present:
+Check that these permissions are present:
 
 - `Mail.Send`
 - `Mail.ReadWrite`
 
-Origami’s send and write-back flows rely on them.
+### 4. authorization is blocked inside an organization
 
-### 4. personal Microsoft accounts cannot authorize
-
-Usually check **Supported account types** first.
-
-If you want Outlook.com / Hotmail support but configured the app for a single organization only, you will run into strange issues.
-
-### 5. users in a company tenant cannot complete consent
-
-That is often a tenant-policy or admin-consent issue, not necessarily an Origami bug.
-
-### 6. I only want one tenant, but the default env app feels awkward
-
-That is not your imagination. The default env app uses `tenant=common`.
-
-If you really want to hard-bind one organization tenant, the cleaner path is usually:
-
-- use a DB-backed Outlook app
-- set the tenant explicitly inside Origami
-
----
-
-## What I recommend in practice
-
-If you ask me for the safest Outlook setup, I would recommend:
-
-1. separate app registrations for local and production
-2. use the env-backed default app only for the simplest path
-3. if a specific tenant matters, prefer a DB-backed Outlook app
-4. keep redirect URIs clearly environment-specific
-5. add all required permissions before testing inside Origami
-
-This is the least confusing path in the long run.
-
----
-
-## What to read next
-
-- [Gmail OAuth detailed setup](/en/gmail-oauth)
-- [Cloudflare R2 / bucket detailed setup](/en/r2-storage)
+That is often a tenant policy or admin consent issue, not an Origami issue.

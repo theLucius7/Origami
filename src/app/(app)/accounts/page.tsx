@@ -6,7 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { DEFAULT_OAUTH_APP_ID } from "@/lib/oauth-apps.shared";
 import { listOAuthAppOptions } from "@/lib/oauth-apps";
 import { getAccountWriteBackAvailability } from "@/lib/providers/writeBack";
-import { listAccounts } from "@/lib/queries/accounts";
+import { EMPTY_ACCOUNT_RUNTIME_HEALTH, listAccountRuntimeHealth, listAccounts } from "@/lib/queries/accounts";
 
 interface PageProps {
   searchParams: Promise<{ success?: string; error?: string; writebackEnabled?: string }>;
@@ -15,6 +15,7 @@ interface PageProps {
 export default async function AccountsPage({ searchParams }: PageProps) {
   await searchParams;
   const accounts = await listAccounts();
+  const runtimeHealthByAccount = await listAccountRuntimeHealth();
   const oauthAppOptions = await listOAuthAppOptions();
   const gmailOAuthApps = oauthAppOptions.filter((app) => app.provider === "gmail");
   const outlookOAuthApps = oauthAppOptions.filter((app) => app.provider === "outlook");
@@ -41,6 +42,8 @@ export default async function AccountsPage({ searchParams }: PageProps) {
 
     return {
       ...account,
+      ...EMPTY_ACCOUNT_RUNTIME_HEALTH,
+      ...runtimeHealthByAccount.get(account.id),
       oauthAppLabel,
       ...getAccountWriteBackAvailability(account),
     };

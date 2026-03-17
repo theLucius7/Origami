@@ -1,173 +1,166 @@
 # Deployment
 
-Shortest path: fill `.env`, run `npm run db:setup`, deploy to Vercel, then connect accounts in `/accounts`.
+This page describes the **standard production deployment flow** for Origami.
 
-## Recommended stack
+Default scope:
+
+- single instance
+- single owner
+- public internet access
+- Vercel + Turso + Cloudflare R2
+
+For the shortest path, start with:
+
+- [Quick Start](/en/quick-start)
+
+For local development and debugging, read:
+
+- [Development](/en/development)
+
+## Production baseline
+
+Recommended stack:
 
 - **Runtime:** Vercel
 - **Database:** Turso / libSQL
 - **Object storage:** Cloudflare R2
-- **Providers:** Gmail API, Microsoft Graph, domestic IMAP/SMTP
+- **Sign-in:** GitHub OAuth App
+- **Mailbox providers:** Gmail OAuth, Outlook OAuth, IMAP/SMTP
+
+## Production domain
+
+Pick the final production URL first, for example:
+
+```txt
+https://mail.example.com
+```
+
+Use the same domain in:
+
+- `NEXT_PUBLIC_APP_URL`
+- GitHub OAuth callback
+- Gmail OAuth callback
+- Outlook OAuth callback
+
+These must stay aligned.
 
 ## Environment variables
 
-### App
-
-| Variable | Required | Notes |
-|---|---:|---|
-| `NEXT_PUBLIC_APP_URL` | Yes | public app URL used in OAuth callbacks |
-| `GITHUB_CLIENT_ID` | Yes | GitHub OAuth app client id |
-| `GITHUB_CLIENT_SECRET` | Yes | GitHub OAuth app client secret |
-| `ENCRYPTION_KEY` | Yes | 64-char hex AES-256-GCM key |
-| `GITHUB_ALLOWED_LOGIN` | No | optional allowed GitHub login |
-| `AUTH_SECRET` | No | session signing secret; falls back to `ENCRYPTION_KEY` |
-| `CRON_SECRET` | No | bearer token for `/api/cron/sync`; explicit value recommended |
-
-### Database
-
-| Variable | Required | Notes |
-|---|---:|---|
-| `TURSO_DATABASE_URL` | Yes | Turso / libSQL URL |
-| `TURSO_AUTH_TOKEN` | Yes | Turso token |
-
-### Storage
-
-| Variable | Required | Notes |
-|---|---:|---|
-| `R2_ACCESS_KEY_ID` | Yes | R2 access key |
-| `R2_SECRET_ACCESS_KEY` | Yes | R2 secret key |
-| `R2_BUCKET_NAME` | Yes | attachment bucket |
-| `R2_ENDPOINT` | Yes | S3-compatible endpoint |
-
-### Optional default OAuth apps
-
-| Variable | Required | Notes |
-|---|---:|---|
-| `GMAIL_CLIENT_ID` | No | default Gmail app |
-| `GMAIL_CLIENT_SECRET` | No | default Gmail app |
-| `OUTLOOK_CLIENT_ID` | No | default Outlook app |
-| `OUTLOOK_CLIENT_SECRET` | No | default Outlook app |
-
-## Database bootstrap
-
-For a fresh database:
-
-```bash
-npm run db:setup
-```
-
-Alternative commands:
-
-- `npm run db:migrate`
-- `npm run db:push`
-
-## GitHub auth setup
-
-Create a GitHub OAuth App for signing in to Origami itself.
-
-### What to put into the GitHub OAuth App
-
-In GitHub → **Settings** → **Developer settings** → **OAuth Apps** → **New OAuth App**:
-
-- **Application name**: `Origami Local` / `Origami Production`
-- **Homepage URL**: your app URL
-- **Authorization callback URL**: `<APP_URL>/api/auth/github/callback`
-
-Examples:
-
-- Local
-  - Homepage URL: `http://localhost:3000`
-  - Callback URL: `http://localhost:3000/api/auth/github/callback`
-- Production
-  - Homepage URL: `https://mail.example.com`
-  - Callback URL: `https://mail.example.com/api/auth/github/callback`
-
-Then copy the generated values into:
+Required production example:
 
 ```txt
-GITHUB_CLIENT_ID=...
-GITHUB_CLIENT_SECRET=...
-```
+NEXT_PUBLIC_APP_URL=https://mail.example.com
 
-### Recommended GitHub auth patterns
-
-#### Pattern A: one OAuth App for local development
-
-Good for quick local testing:
-
-```txt
-NEXT_PUBLIC_APP_URL=http://localhost:3000
 GITHUB_CLIENT_ID=...
 GITHUB_CLIENT_SECRET=...
 GITHUB_ALLOWED_LOGIN=your-github-login
+
+ENCRYPTION_KEY=64-char-hex-key
+AUTH_SECRET=64-char-hex-key
+CRON_SECRET=64-char-hex-key
+
+TURSO_DATABASE_URL=...
+TURSO_AUTH_TOKEN=...
+
+R2_ACCESS_KEY_ID=...
+R2_SECRET_ACCESS_KEY=...
+R2_BUCKET_NAME=origami-attachments-prod
+R2_ENDPOINT=https://<ACCOUNT_ID>.r2.cloudflarestorage.com
 ```
 
-#### Pattern B: separate local and production apps (recommended)
-
-Use different GitHub OAuth Apps for:
-
-- local: `http://localhost:3000/api/auth/github/callback`
-- production: `https://your-domain/api/auth/github/callback`
-
-This keeps callback URLs and secret rotation cleaner.
-
-#### Pattern C: public single-user deployment with `GITHUB_ALLOWED_LOGIN`
-
-If the app is reachable from the public internet, set:
+Optional default OAuth apps:
 
 ```txt
-GITHUB_ALLOWED_LOGIN=your-github-login
+GMAIL_CLIENT_ID=...
+GMAIL_CLIENT_SECRET=...
+OUTLOOK_CLIENT_ID=...
+OUTLOOK_CLIENT_SECRET=...
 ```
 
-This prevents an unexpected user from claiming the installation first.
+## OAuth requirements
 
-### First-owner binding notes
+### GitHub
 
-- The first successful allowed login becomes the installation owner
-- Later logins are checked against the stored GitHub user id
-- Renaming your GitHub login does not break access if it is still the same account
+Configure:
 
-### Common pitfalls
+- **Homepage URL:** `https://mail.example.com`
+- **Authorization callback URL:** `https://mail.example.com/api/auth/github/callback`
 
-- `NEXT_PUBLIC_APP_URL` must match the URL you configured in GitHub
-- the callback URL must end with `/api/auth/github/callback`
-- if you change domains, update both GitHub and your environment variables
-- if you want auth signing independent from credential encryption, set `AUTH_SECRET`
+Set `GITHUB_ALLOWED_LOGIN` for public deployments.
 
-## OAuth setup
+### Gmail
 
-### Gmail scopes
+Redirect URI:
 
-- `gmail.modify`
-- `gmail.send`
-- `userinfo.email`
+```txt
+https://mail.example.com/api/oauth/gmail
+```
 
-### Outlook scopes
+### Outlook
 
-- `openid`
-- `email`
-- `User.Read`
-- `Mail.Read`
-- `Mail.ReadWrite`
-- `Mail.Send`
-- `offline_access`
+Redirect URI:
 
-## More detailed guides
+```txt
+https://mail.example.com/api/oauth/outlook
+```
 
-If you want button-by-button instructions instead of the summary on this page, continue with:
+Detailed guides:
 
 - [GitHub Auth detailed setup](/en/github-auth)
-- [Cloudflare R2 / bucket detailed setup](/en/r2-storage)
 - [Gmail OAuth detailed setup](/en/gmail-oauth)
 - [Outlook OAuth detailed setup](/en/outlook-oauth)
 
+## Database initialization
+
+```bash
+npm install
+npm run db:setup
+```
+
+Use `db:setup` for a fresh production database.
+
+## Vercel deployment flow
+
+1. import the repository into Vercel
+2. configure production environment variables
+3. bind the production domain
+4. deploy the app
+5. sign in and complete first setup
+
+## Scheduled sync
+
+`vercel.json` already defines `/api/cron/sync`.
+
+Production requests should send:
+
+```http
+Authorization: Bearer <CRON_SECRET>
+```
+
+Set `CRON_SECRET` explicitly in production.
+
 ## Production checklist
 
-- GitHub sign-in reaches `/setup` or the app home successfully
+Verify the following after deployment:
+
+- the production domain opens successfully
+- GitHub sign-in returns to Origami
 - `/accounts` loads
-- OAuth callbacks work
+- Gmail OAuth works
+- Outlook OAuth works
 - IMAP/SMTP accounts can be added
 - sync works
-- attachments upload/download correctly
+- attachments upload and download correctly
 - compose works
-- `npm run verify` passes before deployment
+- scheduled sync can call `/api/cron/sync`
+
+## Release validation
+
+```bash
+npm run verify
+```
+
+## Related pages
+
+- [Quick Start](/en/quick-start)
+- [Development](/en/development)

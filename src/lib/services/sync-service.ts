@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { ActionError } from "@/lib/actions";
 import { getAccountWithProvider, persistProviderCredentialsIfNeeded } from "@/lib/account-providers";
@@ -8,7 +8,13 @@ import type { SyncedAttachment, SyncedEmail } from "@/lib/providers/types";
 import { buildObjectKey, uploadAttachment } from "@/lib/r2";
 import { getAccountRecordById, listAccounts } from "@/lib/queries/accounts";
 
+const REMOTE_REMOVED_FOLDER = "REMOTE_REMOVED";
+
 async function persistAttachment(accountId: string, emailId: string, att: SyncedAttachment) {
+  if (!att.content || att.content.length === 0) {
+    return;
+  }
+
   const attId = nanoid();
   const key = buildObjectKey(accountId, emailId, att.filename);
 
@@ -23,44 +29,121 @@ async function persistAttachment(accountId: string, emailId: string, att: Synced
   });
 }
 
+async function findExistingEmail(accountId: string, messageId: string) {
+  const rows = await db
+    .select({ id: emails.id })
+    .from(emails)
+    .where(and(eq(emails.accountId, accountId), eq(emails.messageId, messageId)))
+    .limit(1);
+
+  return rows[0]?.id ?? null;
+}
+
+function buildEmailRow(accountId: string, mail: SyncedEmail) {
+  return {
+    accountId,
+    remoteId: mail.remoteId,
+    messageId: mail.messageId,
+    subject: mail.subject,
+    sender: mail.sender,
+    recipients: JSON.stringify(mail.recipients),
+    snippet: mail.snippet,
+    isRead: mail.isRead ? 1 : 0,
+    isStarred: mail.isStarred ? 1 : 0,
+    receivedAt: mail.receivedAt,
+    folder: mail.folder,
+  };
+}
+
+function buildHydrationState(mail: SyncedEmail) {
+  const hasHydratedPayload = mail.bodyText !== null || mail.bodyHtml !== null;
+
+  if (!hasHydratedPayload) {
+    return {
+      hydrationStatus: "metadata",
+      hydratedAt: null,
+      hydrationError: null,
+    };
+  }
+
+  return {
+    hydrationStatus: "hydrated",
+    hydratedAt: Math.floor(Date.now() / 1000),
+    hydrationError: null,
+  };
+}
+
+async function upsertEmail(accountId: string, mail: SyncedEmail) {
+  const emailId = nanoid();
+  const emailRow = buildEmailRow(accountId, mail);
+
+  try {
+    await db.insert(emails).values({
+      id: emailId,
+      ...emailRow,
+      bodyText: mail.bodyText,
+      bodyHtml: mail.bodyHtml,
+      ...buildHydrationState(mail),
+      localDone: 0,
+      localArchived: 0,
+      localLabels: "[]",
+    });
+
+    return { emailId, inserted: true };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!message.includes("UNIQUE constraint")) {
+      throw error;
+    }
+
+    const existingEmailId = await findExistingEmail(accountId, mail.messageId);
+    if (!existingEmailId) {
+      return { emailId, inserted: false };
+    }
+
+    await db
+      .update(emails)
+      .set({
+        ...emailRow,
+        ...(mail.bodyText !== null || mail.bodyHtml !== null
+          ? {
+              bodyText: mail.bodyText,
+              bodyHtml: mail.bodyHtml,
+              ...buildHydrationState(mail),
+            }
+          : {}),
+      })
+      .where(eq(emails.id, existingEmailId));
+
+    return { emailId: existingEmailId, inserted: false };
+  }
+}
+
 async function persistEmails(accountId: string, synced: SyncedEmail[]): Promise<number> {
-  let count = 0;
+  let insertedCount = 0;
 
   for (const mail of synced) {
-    const emailId = nanoid();
-    try {
-      await db.insert(emails).values({
-        id: emailId,
-        accountId,
-        remoteId: mail.remoteId,
-        messageId: mail.messageId,
-        subject: mail.subject,
-        sender: mail.sender,
-        recipients: JSON.stringify(mail.recipients),
-        snippet: mail.snippet,
-        bodyText: mail.bodyText,
-        bodyHtml: mail.bodyHtml,
-        isRead: 0,
-        isStarred: 0,
-        localDone: 0,
-        localArchived: 0,
-        localLabels: "[]",
-        receivedAt: mail.receivedAt,
-        folder: mail.folder,
-      });
-      count++;
+    const { emailId, inserted } = await upsertEmail(accountId, mail);
+    if (inserted) insertedCount++;
 
-      for (const att of mail.attachments) {
-        await persistAttachment(accountId, emailId, att);
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      if (message.includes("UNIQUE constraint")) continue;
-      throw error;
+    for (const att of mail.attachments) {
+      await persistAttachment(accountId, emailId, att);
     }
   }
 
-  return count;
+  return insertedCount;
+}
+
+async function applyRemovedRemoteIds(accountId: string, removedRemoteIds: string[]) {
+  const normalizedIds = [...new Set(removedRemoteIds.map((id) => id.trim()).filter(Boolean))];
+  if (normalizedIds.length === 0) {
+    return;
+  }
+
+  await db
+    .update(emails)
+    .set({ folder: REMOTE_REMOVED_FOLDER })
+    .where(and(eq(emails.accountId, accountId), inArray(emails.remoteId, normalizedIds)));
 }
 
 async function updateAccountSyncState(id: string, syncCursor: string | null) {
@@ -85,6 +168,7 @@ export async function syncSingleAccount(account: Account) {
     metadataOnly: true,
   });
   const synced = await persistEmails(account.id, result.emails);
+  await applyRemovedRemoteIds(account.id, result.removedRemoteIds);
 
   await updateAccountSyncState(account.id, result.newCursor);
   await persistProviderCredentialsIfNeeded(account, provider);

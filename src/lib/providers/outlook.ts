@@ -23,6 +23,11 @@ interface OutlookCredentials {
   oauthApp?: ResolvedOutlookOAuthApp;
 }
 
+const OUTLOOK_SYNC_SELECT = "id,internetMessageId,subject,from,toRecipients,receivedDateTime,bodyPreview,body,hasAttachments,isRead,flag";
+const OUTLOOK_ATTACHMENT_EXPAND = "attachments($select=id,name,contentType,size)";
+const OUTLOOK_MESSAGES_BASE = "/me/mailFolders/inbox/messages";
+const OUTLOOK_MESSAGES_DELTA_BASE = "/me/mailFolders/inbox/messages/delta";
+
 function normalizeScopes(scopes?: string[] | string): string[] {
   const list = Array.isArray(scopes) ? scopes : scopes?.split(/\s+/) ?? [];
   return [...new Set(list.map((scope) => scope.trim().toLowerCase()).filter(Boolean))];
@@ -46,6 +51,68 @@ function resolveSyncOutlookOAuthApp(appId?: string, oauthApp?: ResolvedOutlookOA
     throw new Error(`OAuth app \"${normalizedAppId}\" requires async resolution before constructing OutlookProvider.`);
   }
   return getDefaultOutlookOAuthAppSync();
+}
+
+function getFlagStatus(msg: Record<string, unknown>) {
+  return String((msg.flag as { flagStatus?: string } | undefined)?.flagStatus ?? "notFlagged").toLowerCase();
+}
+
+function buildOutlookListUrl(options: SyncOptions): string {
+  const params = new URLSearchParams({
+    $orderby: "receivedDateTime desc",
+    $select: OUTLOOK_SYNC_SELECT,
+  });
+
+  if (options.limit) {
+    params.set("$top", String(options.limit));
+  }
+
+  if (!options.metadataOnly) {
+    params.set("$expand", OUTLOOK_ATTACHMENT_EXPAND);
+  }
+
+  return `${OUTLOOK_MESSAGES_BASE}?${params.toString()}`;
+}
+
+function buildOutlookDeltaUrl(options: SyncOptions, receivedAfter?: number | null): string {
+  const params = new URLSearchParams({
+    $select: OUTLOOK_SYNC_SELECT,
+  });
+
+  if (options.limit) {
+    params.set("$top", String(options.limit));
+  }
+
+  if (!options.metadataOnly) {
+    params.set("$expand", OUTLOOK_ATTACHMENT_EXPAND);
+  }
+
+  if (receivedAfter) {
+    params.set("$filter", `receivedDateTime ge ${new Date(receivedAfter * 1000).toISOString()}`);
+  }
+
+  return `${OUTLOOK_MESSAGES_DELTA_BASE}?${params.toString()}`;
+}
+
+function isOutlookDeltaCursor(cursor: string): boolean {
+  return cursor.includes("/delta") || cursor.includes("$deltatoken=") || cursor.includes("deltaToken=");
+}
+
+function extractActiveMessages(page: Record<string, unknown>): Array<Record<string, unknown>> {
+  const items = Array.isArray(page.value) ? page.value : [];
+  return items.filter(
+    (item): item is Record<string, unknown> => Boolean(item) && typeof item === "object" && !("@removed" in item)
+  );
+}
+
+function extractRemovedRemoteIds(page: Record<string, unknown>): string[] {
+  const items = Array.isArray(page.value) ? page.value : [];
+  return items
+    .filter(
+      (item): item is Record<string, unknown> => Boolean(item) && typeof item === "object" && "@removed" in item
+    )
+    .map((item) => String(item.id ?? ""))
+    .filter(Boolean);
 }
 
 export async function getOutlookAuthUrl(state?: string, appId?: string): Promise<string> {
@@ -137,8 +204,14 @@ export class OutlookProvider implements EmailProvider {
   }
 
   getCapabilities() {
+    const canWriteBack = hasOutlookWriteBackScope(this.creds.scopes);
+
     return {
       canSend: hasOutlookSendScope(this.creds.scopes),
+      canWriteBackRead: canWriteBack,
+      canWriteBackStar: canWriteBack,
+      readWriteBackNotice: canWriteBack ? null : `需要重新授权以启用写回功能（需要 Outlook Delegated 权限：${OUTLOOK_REQUIRED_WRITEBACK_SCOPE}）`,
+      starWriteBackNotice: canWriteBack ? null : `需要重新授权以启用写回功能（需要 Outlook Delegated 权限：${OUTLOOK_REQUIRED_WRITEBACK_SCOPE}）`,
     };
   }
 
@@ -157,16 +230,15 @@ export class OutlookProvider implements EmailProvider {
   }
 
   async syncEmails(cursor: string | null, options: SyncOptions = {}): Promise<SyncResult> {
-    return this.withRefresh(() => this._sync(cursor, options));
+    return this.withRefresh(() => this.sync(cursor, options));
   }
 
   async fetchEmail(remoteId: string): Promise<SyncedEmail | null> {
     return this.withRefresh(async () => {
       const msg = await this.client
         .api(`/me/messages/${remoteId}`)
-        .select(
-          "id,internetMessageId,subject,from,toRecipients,receivedDateTime,bodyPreview,body,hasAttachments"
-        )
+        .select(OUTLOOK_SYNC_SELECT)
+        .expand(OUTLOOK_ATTACHMENT_EXPAND)
         .get();
 
       return this.mapMessage(msg, false);
@@ -199,21 +271,15 @@ export class OutlookProvider implements EmailProvider {
               contentType: params.htmlBody ? "HTML" : "Text",
               content: params.htmlBody || params.textBody || "",
             },
-            toRecipients: params.to.map((address) => ({
-              emailAddress: { address },
-            })),
+            toRecipients: params.to.map((address) => ({ emailAddress: { address } })),
             ...(params.cc?.length
               ? {
-                  ccRecipients: params.cc.map((address) => ({
-                    emailAddress: { address },
-                  })),
+                  ccRecipients: params.cc.map((address) => ({ emailAddress: { address } })),
                 }
               : {}),
             ...(params.bcc?.length
               ? {
-                  bccRecipients: params.bcc.map((address) => ({
-                    emailAddress: { address },
-                  })),
+                  bccRecipients: params.bcc.map((address) => ({ emailAddress: { address } })),
                 }
               : {}),
             ...(params.attachments?.length
@@ -295,7 +361,7 @@ export class OutlookProvider implements EmailProvider {
     try {
       return await fn();
     } catch (err: unknown) {
-      const e = err as { statusCode?: number; code?: string; message?: string };
+      const e = err as { statusCode?: number; code?: string };
       if (e.statusCode === 401 || e.code === "InvalidAuthenticationToken") {
         const next = await refreshTokens(this.creds.refreshToken, this.creds.oauthApp!);
         this.creds = { ...this.creds, ...next };
@@ -306,23 +372,60 @@ export class OutlookProvider implements EmailProvider {
     }
   }
 
-  private async _sync(cursor: string | null, options: SyncOptions): Promise<SyncResult> {
-    let url = "/me/mailFolders/inbox/messages?$orderby=receivedDateTime desc";
-    if (options.limit) url += `&$top=${options.limit}`;
-    if (!options.metadataOnly) {
-      url += "&$expand=attachments($select=id,name,contentType,size)";
-    }
-    if (cursor) {
-      url = cursor;
+  private async sync(cursor: string | null, options: SyncOptions): Promise<SyncResult> {
+    if (!cursor) {
+      return this.initialSync(options);
     }
 
-    const page = await this.client.api(url).get();
-    const items = (page.value ?? []) as Array<Record<string, unknown>>;
+    if (!isOutlookDeltaCursor(cursor)) {
+      return this.initialSync(options);
+    }
+
+    return this.deltaSync(cursor, options);
+  }
+
+  private async initialSync(options: SyncOptions): Promise<SyncResult> {
+    const page = (await this.client.api(buildOutlookListUrl(options)).get()) as Record<string, unknown>;
+    const items = extractActiveMessages(page);
     const emails = items.map((msg) => this.mapMessage(msg, Boolean(options.metadataOnly)));
+    const oldestReceivedAt = emails.reduce<number | null>((min, email) => {
+      if (!Number.isFinite(email.receivedAt)) return min;
+      if (min === null) return email.receivedAt;
+      return Math.min(min, email.receivedAt);
+    }, null);
+    const deltaCursor = await this.bootstrapDeltaCursor(options, oldestReceivedAt);
+
     return {
       emails,
-      newCursor: (page["@odata.nextLink"] as string) ?? null,
+      removedRemoteIds: [],
+      newCursor: deltaCursor,
     };
+  }
+
+  private async deltaSync(cursor: string, options: SyncOptions): Promise<SyncResult> {
+    const page = (await this.client.api(cursor).get()) as Record<string, unknown>;
+    const items = extractActiveMessages(page);
+    const emails = items.map((msg) => this.mapMessage(msg, Boolean(options.metadataOnly)));
+    const removedRemoteIds = extractRemovedRemoteIds(page);
+
+    return {
+      emails,
+      removedRemoteIds,
+      newCursor: String(page["@odata.deltaLink"] ?? cursor),
+    };
+  }
+
+  private async bootstrapDeltaCursor(options: SyncOptions, oldestReceivedAt: number | null) {
+    let nextUrl: string | null = buildOutlookDeltaUrl(options, oldestReceivedAt);
+    let deltaLink: string | null = null;
+
+    while (nextUrl) {
+      const page = (await this.client.api(nextUrl).get()) as Record<string, unknown>;
+      deltaLink = typeof page["@odata.deltaLink"] === "string" ? String(page["@odata.deltaLink"]) : deltaLink;
+      nextUrl = typeof page["@odata.nextLink"] === "string" ? String(page["@odata.nextLink"]) : null;
+    }
+
+    return deltaLink;
   }
 
   private mapMessage(msg: Record<string, unknown>, metadataOnly: boolean): SyncedEmail {
@@ -330,7 +433,7 @@ export class OutlookProvider implements EmailProvider {
     const attachments: SyncedAttachment[] = attachmentsRaw.map((att) => ({
       filename: String(att.name ?? "untitled"),
       contentType: String(att.contentType ?? "application/octet-stream"),
-      size: typeof att.size === "number" ? att.size : undefined,
+      size: typeof att.size === "number" ? att.size : 0,
       content: Buffer.alloc(0),
     }));
 
@@ -343,16 +446,24 @@ export class OutlookProvider implements EmailProvider {
           .filter(Boolean)
       : [];
 
+    const bodyContent = String((msg.body as { content?: string } | undefined)?.content ?? "");
+    const receivedDateTime = String(msg.receivedDateTime ?? "");
+    const receivedAt = Number.isNaN(new Date(receivedDateTime).getTime())
+      ? Math.floor(Date.now() / 1000)
+      : Math.floor(new Date(receivedDateTime).getTime() / 1000);
+
     return {
       remoteId: String(msg.id),
       messageId: String(msg.internetMessageId ?? msg.id),
       subject: String(msg.subject ?? "(无主题)"),
-      sender: String((msg.from as { emailAddress?: { address?: string } })?.emailAddress?.address ?? ""),
+      sender: String((msg.from as { emailAddress?: { address?: string } } | undefined)?.emailAddress?.address ?? ""),
       recipients: toRecipients,
       snippet: String(msg.bodyPreview ?? ""),
-      bodyText: metadataOnly ? null : String((msg.body as { content?: string })?.content ?? ""),
-      bodyHtml: metadataOnly ? null : String((msg.body as { content?: string })?.content ?? ""),
-      receivedAt: Math.floor(new Date(String(msg.receivedDateTime)).getTime() / 1000),
+      bodyText: metadataOnly ? null : bodyContent,
+      bodyHtml: metadataOnly ? null : bodyContent,
+      isRead: Boolean(msg.isRead),
+      isStarred: getFlagStatus(msg) === "flagged",
+      receivedAt,
       folder: "INBOX",
       attachments,
     };

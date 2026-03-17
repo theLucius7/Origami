@@ -25,8 +25,12 @@ export function AccountsPanel({
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
-  const allReadEnabled = accounts.every((account) => account.syncReadBack === 1);
-  const allStarEnabled = accounts.every((account) => account.syncStarBack === 1);
+  const eligibleReadAccounts = accounts.filter((account) => account.canWriteBackRead);
+  const eligibleStarAccounts = accounts.filter((account) => account.canWriteBackStar);
+  const allReadEnabled =
+    eligibleReadAccounts.length > 0 && eligibleReadAccounts.every((account) => account.syncReadBack === 1);
+  const allStarEnabled =
+    eligibleStarAccounts.length > 0 && eligibleStarAccounts.every((account) => account.syncStarBack === 1);
 
   function toggleAll(key: "syncReadBack" | "syncStarBack", checked: boolean) {
     startTransition(async () => {
@@ -49,7 +53,7 @@ export function AccountsPanel({
           <div>
             <h2 className="text-sm font-semibold">全局写回开关</h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              这里的“全局”是批量设置：切换后会直接更新所有账号的对应开关。默认全部关闭；写回失败会静默降级，不影响本地 triage。
+              这里的“全局”是批量设置：默认只会影响当前具备对应写回能力 / 权限的账号；没有权限的账号会被自动跳过。写回失败会静默降级，不影响本地 triage。
             </p>
           </div>
 
@@ -61,10 +65,13 @@ export function AccountsPanel({
                   <p className="text-xs text-muted-foreground">
                     当你在 Origami 标记已读时，尝试同步把远端邮件也标为已读。
                   </p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    仅作用于 {eligibleReadAccounts.length}/{accounts.length} 个可写回账号
+                  </p>
                 </div>
                 <Switch
                   checked={allReadEnabled}
-                  disabled={isPending}
+                  disabled={isPending || eligibleReadAccounts.length === 0}
                   onCheckedChange={(checked) => toggleAll("syncReadBack", checked)}
                   aria-label="全局已读写回"
                 />
@@ -78,10 +85,13 @@ export function AccountsPanel({
                   <p className="text-xs text-muted-foreground">
                     当你在 Origami 加星标/去星标时，尝试同步远端的星标状态。
                   </p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    仅作用于 {eligibleStarAccounts.length}/{accounts.length} 个可写回账号
+                  </p>
                 </div>
                 <Switch
                   checked={allStarEnabled}
-                  disabled={isPending}
+                  disabled={isPending || eligibleStarAccounts.length === 0}
                   onCheckedChange={(checked) => toggleAll("syncStarBack", checked)}
                   aria-label="全局星标写回"
                 />

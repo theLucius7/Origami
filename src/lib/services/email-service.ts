@@ -6,6 +6,10 @@ import { buildObjectKey, uploadAttachment } from "@/lib/r2";
 import { getAccountWithProvider, persistProviderCredentialsIfNeeded } from "@/lib/account-providers";
 import { getEmailRecordById, listEmailAttachments } from "@/lib/queries/emails";
 
+function nowUnix() {
+  return Math.floor(Date.now() / 1000);
+}
+
 async function persistAttachment(
   accountId: string,
   emailId: string,
@@ -16,6 +20,10 @@ async function persistAttachment(
     content: Buffer;
   }
 ) {
+  if (!att.content || att.content.length === 0) {
+    return;
+  }
+
   const attId = nanoid();
   const key = buildObjectKey(accountId, emailId, att.filename);
 
@@ -30,8 +38,19 @@ async function persistAttachment(
   });
 }
 
+async function setHydrationState(
+  emailId: string,
+  patch: {
+    hydrationStatus: string;
+    hydratedAt?: number | null;
+    hydrationError?: string | null;
+  }
+) {
+  await db.update(emails).set(patch).where(eq(emails.id, emailId));
+}
+
 export async function hydrateEmailIfNeeded(email: Email): Promise<Email> {
-  if ((email.bodyText && email.bodyText.length > 0) || (email.bodyHtml && email.bodyHtml.length > 0)) {
+  if (email.hydrationStatus === "hydrated") {
     return email;
   }
 
@@ -39,25 +58,53 @@ export async function hydrateEmailIfNeeded(email: Email): Promise<Email> {
     return email;
   }
 
+  await setHydrationState(email.id, {
+    hydrationStatus: "hydrating",
+    hydrationError: null,
+  });
+
   try {
     const resolved = await getAccountWithProvider(email.accountId);
-    if (!resolved) return email;
+    if (!resolved) {
+      await setHydrationState(email.id, {
+        hydrationStatus: "failed",
+        hydratedAt: nowUnix(),
+        hydrationError: "账号不存在或 provider 初始化失败。",
+      });
+      return (await getEmailRecordById(email.id)) ?? email;
+    }
 
     const { account, provider } = resolved;
     const fetched = await provider.fetchEmail(email.remoteId);
-    if (!fetched) return email;
+    if (!fetched) {
+      await setHydrationState(email.id, {
+        hydrationStatus: "failed",
+        hydratedAt: nowUnix(),
+        hydrationError: "远端未找到这封邮件，可能已被删除或移动。",
+      });
+      return (await getEmailRecordById(email.id)) ?? email;
+    }
 
     await persistProviderCredentialsIfNeeded(account, provider);
 
     await db
       .update(emails)
       .set({
+        remoteId: fetched.remoteId,
+        messageId: fetched.messageId,
         subject: fetched.subject,
         sender: fetched.sender,
         recipients: JSON.stringify(fetched.recipients),
         snippet: fetched.snippet,
         bodyText: fetched.bodyText,
         bodyHtml: fetched.bodyHtml,
+        hydrationStatus: "hydrated",
+        hydratedAt: nowUnix(),
+        hydrationError: null,
+        isRead: fetched.isRead ? 1 : 0,
+        isStarred: fetched.isStarred ? 1 : 0,
+        receivedAt: fetched.receivedAt,
+        folder: fetched.folder,
       })
       .where(eq(emails.id, email.id));
 
@@ -70,8 +117,14 @@ export async function hydrateEmailIfNeeded(email: Email): Promise<Email> {
 
     return (await getEmailRecordById(email.id)) ?? email;
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     console.error("Failed to hydrate email body:", error);
-    return email;
+    await setHydrationState(email.id, {
+      hydrationStatus: "failed",
+      hydratedAt: nowUnix(),
+      hydrationError: message,
+    });
+    return (await getEmailRecordById(email.id)) ?? email;
   }
 }
 

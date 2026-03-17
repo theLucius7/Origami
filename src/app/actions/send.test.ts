@@ -9,6 +9,7 @@ const mockAccount = {
 };
 
 const insertedRows: Array<{ table: unknown; payload: unknown }> = [];
+const revalidateMailboxPagesMock = vi.fn();
 
 const schemaMock = {
   accounts: { name: "accounts", id: "accounts.id" },
@@ -30,6 +31,9 @@ vi.mock("@/lib/db/schema", () => schemaMock);
 vi.mock("@/lib/account-providers", () => ({
   getAccountWithProvider: vi.fn(async () => ({ account: mockAccount, provider: providerMock })),
   persistProviderCredentialsIfNeeded: vi.fn(async () => undefined),
+}));
+vi.mock("@/lib/revalidate", () => ({
+  revalidateMailboxPages: revalidateMailboxPagesMock,
 }));
 vi.mock("@/lib/queries/sent-messages", () => ({
   getSentMessageDetailRecord: vi.fn(),
@@ -71,6 +75,7 @@ vi.mock("@/lib/db", () => ({
 describe("sendMailAction", () => {
   beforeEach(() => {
     insertedRows.length = 0;
+    revalidateMailboxPagesMock.mockClear();
     providerMock.getCapabilities.mockClear();
     providerMock.sendMail.mockClear();
     providerMock.getCapabilities.mockReturnValue({ canSend: true });
@@ -126,6 +131,7 @@ describe("sendMailAction", () => {
       ccRecipients: JSON.stringify(["cc@example.com"]),
       bccRecipients: JSON.stringify(["bcc@example.com"]),
     });
+    expect(revalidateMailboxPagesMock).toHaveBeenCalledTimes(1);
   });
 
   it("returns insufficient-scope style error when account is not send-capable", async () => {

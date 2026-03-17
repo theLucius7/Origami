@@ -20,17 +20,19 @@
 
 推荐先读：
 
-- [快速开始](https://l7cp.de/Origami/quick-start)
-- [部署指南](https://l7cp.de/Origami/deployment)
+- [快速开始（生产环境）](https://l7cp.de/Origami/quick-start)
+- [部署指南（生产环境）](https://l7cp.de/Origami/deployment)
+- [开发环境说明](https://l7cp.de/Origami/development)
 - [架构说明](https://l7cp.de/Origami/architecture)
 - [FAQ](https://l7cp.de/Origami/faq)
 
-如果你已经准备开始真正部署，继续看这些“宝宝式教学”页面：
+如果你已经准备开始真正部署，推荐按这个顺序看这些“宝宝式教学”页面：
 
-- [GitHub Auth 详细配置](https://l7cp.de/Origami/github-auth)
-- [Cloudflare R2 / Bucket 详细配置](https://l7cp.de/Origami/r2-storage)
-- [Gmail OAuth 详细配置](https://l7cp.de/Origami/gmail-oauth)
-- [Outlook OAuth 详细配置](https://l7cp.de/Origami/outlook-oauth)
+1. [Turso 数据库详细配置](https://l7cp.de/Origami/turso)
+2. [Cloudflare R2 / Bucket 详细配置](https://l7cp.de/Origami/r2-storage)
+3. [GitHub Auth 详细配置](https://l7cp.de/Origami/github-auth)
+4. [Gmail OAuth 详细配置](https://l7cp.de/Origami/gmail-oauth)
+5. [Outlook OAuth 详细配置](https://l7cp.de/Origami/outlook-oauth)
 
 ## 项目定位
 
@@ -70,11 +72,12 @@ Origami 不是工单系统，也不是多角色协同 helpdesk。它更像是：
 | QQ | ✅ | ✅ | IMAP/SMTP 授权码 | ✅ |
 | 通用 IMAP/SMTP | ✅ | ✅ | 用户名 + 密码 / 授权码 | ✅（基于 IMAP 标记能力） |
 
-## Golden Path：最短上手路径
+## Golden Path：生产环境最短路径
 
-如果你只是想尽快把项目跑起来，按这一条路径走，不需要先理解历史 migration。
+README 默认只放**正式部署**路径，不再把 `localhost` 混进主流程。  
+如果你要本地开发，请直接看：<https://l7cp.de/Origami/development>
 
-### 1. 准备环境变量
+### 1. 准备生产环境变量
 
 ```bash
 cp .env.example .env
@@ -82,7 +85,7 @@ npm install
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-把生成的 64 位十六进制字符串填到 `ENCRYPTION_KEY`，然后补齐 `.env` 中其余字段。
+把生成的 64 位十六进制字符串填到 `ENCRYPTION_KEY`，再补齐 `.env`。
 
 最少通常需要这些分组：
 
@@ -94,29 +97,23 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 更详细的变量解释见：<https://l7cp.de/Origami/deployment>
 
-### GitHub Auth in 60 seconds
-
-如果你只想最快把登录配起来，照着做：
+### 2. 用正式域名创建 GitHub OAuth App
 
 1. 在 GitHub 打开 **Settings → Developer settings → OAuth Apps → New OAuth App**
 2. 填：
-   - **Homepage URL** = `http://localhost:3000`（本地）或你的正式域名
-   - **Authorization callback URL** = `<你的地址>/api/auth/github/callback`
+   - **Homepage URL** = `https://mail.example.com`
+   - **Authorization callback URL** = `https://mail.example.com/api/auth/github/callback`
 3. 生成 client secret
 4. 填到 `.env`：
 
 ```txt
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=https://mail.example.com
 GITHUB_CLIENT_ID=...
 GITHUB_CLIENT_SECRET=...
 GITHUB_ALLOWED_LOGIN=your-github-login
 ```
 
-5. 启动后用 GitHub 登录，完成 `/setup`
-
-推荐：**本地开发**和**生产环境**各用一个单独的 GitHub OAuth App，避免 callback URL 混在一起。
-
-### 2. 初始化数据库
+### 3. 初始化数据库
 
 ```bash
 npm run db:setup
@@ -125,19 +122,12 @@ npm run db:setup
 对于**全新数据库**，这是推荐入口。  
 `db:migrate` 仍保留，用于历史迁移链回放或升级场景。
 
-### 3. 本地启动
+### 4. 部署并完成初始化
 
-```bash
-npm run dev
-```
-
-然后打开：
-
-- <http://localhost:3000>
-
+把仓库导入 Vercel，填入生产环境变量，部署后打开你的正式域名。  
 首次会进入 GitHub 登录与 `/setup` 初始化流程。完成后去 `/accounts` 添加邮箱账号。
 
-### 4. 发版前统一验证
+### 5. 发版前统一验证
 
 ```bash
 npm run verify

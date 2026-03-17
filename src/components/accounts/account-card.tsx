@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2 } from "lucide-react";
+import { AlertCircle, Clock3, Trash2 } from "lucide-react";
 import {
   removeAccount,
   updateAccountInitialFetchLimit,
@@ -98,6 +98,13 @@ export function AccountCard({ account, oauthApps }: AccountCardProps) {
   const hostSummary = isMailboxAccount && preset?.key === "custom"
     ? `IMAP ${account.imapHost ?? "-"}:${account.imapPort ?? "-"} · SMTP ${account.smtpHost ?? "-"}:${account.smtpPort ?? "-"}`
     : null;
+  const hasRuntimeAttention =
+    account.hydrationPendingCount > 0 ||
+    account.hydrationFailedCount > 0 ||
+    account.readWriteBackPendingCount > 0 ||
+    account.readWriteBackFailedCount > 0 ||
+    account.starWriteBackPendingCount > 0 ||
+    account.starWriteBackFailedCount > 0;
 
   return (
     <Card>
@@ -286,6 +293,86 @@ export function AccountCard({ account, oauthApps }: AccountCardProps) {
               <p className="font-medium">当前账号已开启写回，但授权仍需补齐</p>
               {shouldShowReadNotice && <p className="mt-1">- 已读写回：{account.readBackNotice}</p>}
               {shouldShowStarNotice && <p className="mt-1">- 星标写回：{account.starBackNotice}</p>}
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-3 rounded-md border p-3">
+          <div>
+            <p className="text-sm font-medium">运行状态</p>
+            <p className="text-xs text-muted-foreground">
+              这里汇总这个账号最近的正文补拉和远端写回异常，排障时不用再一封封点进去看。
+            </p>
+          </div>
+
+          {hasRuntimeAttention ? (
+            <div className="grid gap-3 md:grid-cols-3">
+              <div className="rounded-md border bg-background p-3">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <AlertCircle className="h-4 w-4" />
+                  正文补拉
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  失败 {account.hydrationFailedCount} 封 · 进行中 {account.hydrationPendingCount} 封
+                </p>
+                {account.latestHydrationError && (
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    <p className="line-clamp-2 text-foreground/90">最近异常：{account.latestHydrationError}</p>
+                    {account.latestHydrationAt && (
+                      <p className="mt-1 flex items-center gap-1">
+                        <Clock3 className="h-3 w-3" />
+                        {formatRelativeTime(account.latestHydrationAt)}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-md border bg-background p-3">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <AlertCircle className="h-4 w-4" />
+                  已读写回
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  失败 {account.readWriteBackFailedCount} 封 · 进行中 {account.readWriteBackPendingCount} 封
+                </p>
+                {account.latestReadWriteBackError && (
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    <p className="line-clamp-2 text-foreground/90">最近异常：{account.latestReadWriteBackError}</p>
+                    {account.latestReadWriteBackAt && (
+                      <p className="mt-1 flex items-center gap-1">
+                        <Clock3 className="h-3 w-3" />
+                        {formatRelativeTime(account.latestReadWriteBackAt)}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="rounded-md border bg-background p-3">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <AlertCircle className="h-4 w-4" />
+                  星标写回
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  失败 {account.starWriteBackFailedCount} 封 · 进行中 {account.starWriteBackPendingCount} 封
+                </p>
+                {account.latestStarWriteBackError && (
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    <p className="line-clamp-2 text-foreground/90">最近异常：{account.latestStarWriteBackError}</p>
+                    {account.latestStarWriteBackAt && (
+                      <p className="mt-1 flex items-center gap-1">
+                        <Clock3 className="h-3 w-3" />
+                        {formatRelativeTime(account.latestStarWriteBackAt)}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900">
+              目前没有需要关注的正文补拉 / 写回异常。
             </div>
           )}
         </div>

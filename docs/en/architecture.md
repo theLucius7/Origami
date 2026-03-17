@@ -75,6 +75,22 @@ sync trigger
   -> update cursor + lastSyncedAt
 ```
 
+Important sync semantics:
+
+- provider sync preserves remote `isRead` / `isStarred` whenever possible, so repeated sync does not reset mailbox state back to defaults
+- Outlook delta `@removed` tombstones are converted into a local `REMOTE_REMOVED` state, so messages deleted remotely or moved out of Inbox stop appearing in the default Inbox list
+- if the same remote message later returns to Inbox, normal sync can make it visible again
+
+## Hydration and runtime state
+
+Origami explicitly tracks:
+
+- body hydration state (`pending` / `hydrated` / `failed`)
+- the latest hydration error
+- read-back / star-back state (`pending` / `success` / `failed`)
+
+Those signals are aggregated on the Accounts page, so you can quickly tell whether an account is failing on body hydration, permission scope, or write-back execution.
+
 ## Sending flow
 
 ```text

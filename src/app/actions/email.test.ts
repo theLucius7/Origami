@@ -9,6 +9,7 @@ const selectFromMock = vi.fn(() => ({ innerJoin: selectInnerJoinMock }));
 const selectMock = vi.fn(() => ({ from: selectFromMock }));
 const writeBackReadMock = vi.fn();
 const writeBackStarMock = vi.fn();
+const revalidateMailboxPagesMock = vi.fn();
 
 const emailsTable = {
   id: "emails.id",
@@ -49,6 +50,10 @@ vi.mock("@/lib/services/email-service", () => ({
   hydrateEmailIfNeeded: vi.fn(),
 }));
 
+vi.mock("@/lib/revalidate", () => ({
+  revalidateMailboxPages: revalidateMailboxPagesMock,
+}));
+
 describe("email actions write-back integration", () => {
   beforeEach(() => {
     updateWhereMock.mockReset();
@@ -61,6 +66,7 @@ describe("email actions write-back integration", () => {
     selectMock.mockClear();
     writeBackReadMock.mockReset();
     writeBackStarMock.mockReset();
+    revalidateMailboxPagesMock.mockClear();
   });
 
   it("markRead does not await remote write-back", async () => {
@@ -90,6 +96,7 @@ describe("email actions write-back integration", () => {
       expect.objectContaining({ provider: "gmail", syncReadBack: 1 }),
       "gmail-remote-1"
     );
+    expect(revalidateMailboxPagesMock).toHaveBeenCalledTimes(1);
 
     release();
   });
@@ -117,6 +124,7 @@ describe("email actions write-back integration", () => {
       "qq-uid-1",
       true
     );
+    expect(revalidateMailboxPagesMock).toHaveBeenCalledTimes(1);
 
     warnSpy.mockRestore();
   });

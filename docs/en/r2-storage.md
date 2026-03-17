@@ -1,61 +1,29 @@
-# Cloudflare R2 / Bucket: Detailed Setup
+# Cloudflare R2 / Bucket Detailed Setup
 
-This page explains one thing only: **how to configure attachment storage for Origami**.
+This page covers one thing only: **how to configure attachment storage for a production Origami instance**.
 
-Origami stores attachments in Cloudflare R2 instead of pushing binary blobs directly into the database. For email attachments, that is the saner design.
+Origami stores attachments in Cloudflare R2 instead of the database.
 
----
-
-## First, what do you need in the end?
-
-You will eventually put these values into `.env`:
-
-```txt
-R2_ACCESS_KEY_ID=...
-R2_SECRET_ACCESS_KEY=...
-R2_BUCKET_NAME=origami-attachments
-R2_ENDPOINT=https://<ACCOUNT_ID>.r2.cloudflarestorage.com
-```
-
-It is also useful to keep:
+## Final `.env` values you need
 
 ```txt
 R2_ACCOUNT_ID=...
+R2_ACCESS_KEY_ID=...
+R2_SECRET_ACCESS_KEY=...
+R2_BUCKET_NAME=origami-attachments-prod
+R2_ENDPOINT=https://<ACCOUNT_ID>.r2.cloudflarestorage.com
 ```
 
-The runtime does not strictly require it today, but it is very helpful when debugging.
+## Official reference
 
----
-
-## Official references
-
-- Cloudflare R2: Create buckets  
+- Create an R2 bucket  
   <https://developers.cloudflare.com/r2/buckets/create-buckets/>
-- Cloudflare R2: API tokens / authentication  
+- R2 API tokens / S3 auth  
   <https://developers.cloudflare.com/r2/api/tokens/>
-- Cloudflare: Find your account ID  
+- Find your Cloudflare Account ID  
   <https://developers.cloudflare.com/fundamentals/account/find-account-and-zone-ids/>
 
----
-
-## The plain-English mental model
-
-Origami really only needs four things from R2:
-
-1. **one bucket name**
-2. **one Access Key ID**
-3. **one Secret Access Key**
-4. **one S3-compatible endpoint**
-
-If those four values are correct, Origami can upload and download attachments.
-
-So even though the Cloudflare dashboard has many concepts, the values you actually need to bring back to `.env` are very small in number.
-
----
-
-## Before you start, write these values down
-
-It helps to write down what you plan to use first:
+## Write this cheat sheet first
 
 ```txt
 Cloudflare Account ID = ...
@@ -63,187 +31,96 @@ Bucket name = origami-attachments-prod
 R2 endpoint = https://<ACCOUNT_ID>.r2.cloudflarestorage.com
 ```
 
-If you want separate environments, I strongly recommend names like:
+## Where you will switch back and forth
 
-- development: `origami-attachments-dev`
-- production: `origami-attachments-prod`
+### Place A: Cloudflare Dashboard
 
-> Strong recommendation: use separate buckets for development and production.
+You will:
 
----
+- find the Account ID
+- create the bucket
+- create an R2 API token
+- copy the Access Key ID and Secret Access Key
 
-## If the UI does not look exactly like this page
+### Place B: your Origami `.env`
 
-Cloudflare also changes dashboard layouts from time to time. These keywords matter most:
+You will fill back:
 
-- `R2 Object Storage`
-- `Buckets`
-- `Manage R2 API tokens`
-- `Account ID`
+```txt
+R2_ACCOUNT_ID=
+R2_ACCESS_KEY_ID=
+R2_SECRET_ACCESS_KEY=
+R2_BUCKET_NAME=
+R2_ENDPOINT=
+```
 
-If the navigation hierarchy looks slightly different, trust search and page titles more than the exact menu position in this guide.
+## Click-by-click setup
 
----
-
-## Baby-step guide: configure R2 from scratch
-
-### Step 1: sign in to the Cloudflare dashboard
+### 1. Open Cloudflare Dashboard
 
 Open:
 
 - <https://dash.cloudflare.com/>
 
-Sign in to your Cloudflare account.
+Make sure you are in the correct Cloudflare account.
 
----
+### 2. Find the Account ID
 
-### Step 2: find your Account ID
+Locate:
 
-If you do not know your Account ID yet:
+- **Account ID**
 
-1. open Cloudflare Dashboard
-2. go to **Account home** or **Workers & Pages**
-3. find **Account ID**
-4. copy it
-
-Official docs:
-
-- <https://developers.cloudflare.com/fundamentals/account/find-account-and-zone-ids/>
-
-You will use it later to build `R2_ENDPOINT`:
-
-```txt
-https://<ACCOUNT_ID>.r2.cloudflarestorage.com
-```
-
-### At this point, write these two lines down
+Save it as:
 
 ```txt
 R2_ACCOUNT_ID=<your Account ID>
+```
+
+Then derive the endpoint:
+
+```txt
 R2_ENDPOINT=https://<your Account ID>.r2.cloudflarestorage.com
 ```
 
----
+### 3. Open R2 and create the bucket
 
-### Step 3: create a bucket
-
-Go to:
+Open:
 
 - **R2 Object Storage**
 
-Then create a bucket.
-
-Recommended names:
-
-- `origami-attachments-dev`
-- `origami-attachments-prod`
-
-This makes the environment obvious immediately.
-
-### The two most important things at this step are not advanced options
-
-They are simply:
-
-1. **use a clear environment-specific name**
-2. **remember the exact bucket name you created**
-
-Later you will copy that exact value into:
+Create a bucket named:
 
 ```txt
-R2_BUCKET_NAME=origami-attachments-prod
+origami-attachments-prod
 ```
 
-Official docs:
+The important part here is simply:
 
-- <https://developers.cloudflare.com/r2/buckets/create-buckets/>
+1. the bucket was created successfully
+2. you keep the exact bucket name
 
----
+### 4. Create the R2 API token
 
-### Step 4: create an R2 API token
+Open:
 
-In Cloudflare Dashboard, go to:
-
-- **R2 Object Storage**
 - **Manage R2 API tokens**
 
-You will usually see entries like:
+Create a key pair for the bucket. The minimum recommended permission set for Origami is:
 
-- **Create Account API token**
-- **Create User API token**
+- **Object Read & Write**
 
-For personal use, either can work. The safest least-privilege idea is:
+The scope should include the target bucket.
 
-- grant only **Object Read & Write**
-- scope it only to the bucket you just created
+### 5. Save the Access Key and Secret Access Key
 
-That way Origami can read and write objects in that bucket, and nothing more.
-
-Official docs:
-
-- <https://developers.cloudflare.com/r2/api/tokens/>
-
----
-
-### Step 5: save Access Key ID and Secret Access Key
-
-After the token is created, Cloudflare shows:
+Cloudflare will show:
 
 - **Access Key ID**
 - **Secret Access Key**
 
-Save both and put them into:
+Copy both immediately.
 
-```txt
-R2_ACCESS_KEY_ID=...
-R2_SECRET_ACCESS_KEY=...
-```
-
-> Important: the secret is often not shown again in full. Save it immediately.
-
----
-
-### Step 6: put the bucket name into `.env`
-
-If the bucket you created is the production bucket:
-
-```txt
-R2_BUCKET_NAME=origami-attachments-prod
-```
-
-If you are configuring development, use the dev bucket name instead.
-
-One of the easiest mistakes here is:
-
-- the token points to the prod bucket
-- but `.env` contains the dev bucket name
-
-That looks like a tiny mismatch, but it leads directly to upload failures.
-
----
-
-### Step 7: put the endpoint into `.env`
-
-`R2_ENDPOINT` always has this format:
-
-```txt
-https://<ACCOUNT_ID>.r2.cloudflarestorage.com
-```
-
-Example:
-
-```txt
-R2_ENDPOINT=https://1234567890abcdef1234567890abcdef.r2.cloudflarestorage.com
-```
-
-If you want, also keep `R2_ACCOUNT_ID`:
-
-```txt
-R2_ACCOUNT_ID=1234567890abcdef1234567890abcdef
-```
-
----
-
-## Minimal `.env` example
+## Now go back to `.env`
 
 ```txt
 R2_ACCOUNT_ID=1234567890abcdef1234567890abcdef
@@ -253,114 +130,56 @@ R2_BUCKET_NAME=origami-attachments-prod
 R2_ENDPOINT=https://1234567890abcdef1234567890abcdef.r2.cloudflarestorage.com
 ```
 
----
+## Check before testing
 
-## After configuration, verify these items in order
+Make sure:
 
-Check them one by one:
+- `R2_ACCOUNT_ID` is the Account ID you copied
+- `R2_ENDPOINT` equals `https://<ACCOUNT_ID>.r2.cloudflarestorage.com`
+- `R2_BUCKET_NAME` exactly matches the bucket you created
+- the access key and secret were not swapped
+- the token includes **Object Read & Write**
+- the token scope includes the target bucket
 
-- Is `R2_ACCOUNT_ID` from the correct Cloudflare account?
-- Is `R2_ENDPOINT` exactly `https://<ACCOUNT_ID>.r2.cloudflarestorage.com`?
-- Is `R2_BUCKET_NAME` the exact bucket name you created?
-- Did you accidentally swap `R2_ACCESS_KEY_ID` and `R2_SECRET_ACCESS_KEY`?
-- Does the token have at least **Object Read & Write** permission?
-- Does the token scope include that bucket?
+## How to verify it works
 
-If these six items are all correct, the R2 setup is usually fine.
+After deployment, test this flow inside Origami:
 
----
+1. open compose
+2. upload a small attachment
+3. complete the send or save flow
+4. open the message details and try downloading the attachment
 
-## How should you verify that it really works?
+Expected result:
 
-The easiest real-world test is:
+- upload succeeds
+- send or save succeeds
+- attachment download works
 
-1. run Origami
-2. sign in
-3. open compose
-4. upload a small attachment
-5. complete the send or save flow
-6. later try downloading that attachment again
+## Common errors
 
-If both upload and download work, your R2 configuration is basically correct.
+### 1. `R2_ENDPOINT` is wrong
 
----
-
-## Most common problems, and how to recognize them quickly
-
-### 1. wrong endpoint
-
-This is the most common one.
-
-`R2_ENDPOINT` must be the full value:
+The correct format is only:
 
 ```txt
 https://<ACCOUNT_ID>.r2.cloudflarestorage.com
 ```
 
-Do not forget:
+### 2. the access key and secret were swapped
 
-- `https://`
-- `.r2.cloudflarestorage.com`
+Check:
 
-### 2. Access Key and Secret are swapped
+- `R2_ACCESS_KEY_ID` is not `R2_SECRET_ACCESS_KEY`
 
-Also very common.
+### 3. the token lacks object read/write permission
 
-Remember:
+If the permission is too small, attachment upload usually fails.
 
-- `R2_ACCESS_KEY_ID` is not the same as `R2_SECRET_ACCESS_KEY`
+### 4. the bucket name is wrong
 
-### 3. the token does not have object read/write permission
+Check that `R2_BUCKET_NAME` exactly matches the bucket name shown in Cloudflare.
 
-If the token is too restricted, Origami may still boot, but attachment upload will fail.
+### 5. the Account ID belongs to a different Cloudflare account
 
-Minimum recommendation:
-
-- **Object Read & Write**
-- scoped to the target bucket
-
-### 4. the bucket name points to the wrong environment
-
-Examples:
-
-- production points to the dev bucket
-- the bucket was never created
-- the token only covers prod, but `.env` names a different bucket
-
-These failures often look like a generic upload error, but the real cause is bucket or permission mismatch.
-
-### 5. the Account ID belongs to another Cloudflare account
-
-If you manage multiple Cloudflare accounts, copying the wrong Account ID is easy.
-
-Then you get a very annoying situation:
-
-- the endpoint looks valid
-- the token also looks real
-- but the endpoint, token, and bucket do not belong to the same account
-
-### 6. assuming the bucket must be public
-
-It usually does **not** need to be public.
-
-Origami uploads and downloads attachments through the server side; you do not need to expose the bucket publicly.
-
----
-
-## What I recommend in practice
-
-If you ask me for the safest setup, I would recommend:
-
-1. separate `origami-attachments-dev` and `origami-attachments-prod`
-2. token permission = **Object Read & Write** only
-3. scope the token to a single bucket
-4. keep `R2_ACCOUNT_ID` in `.env` for easier debugging
-
-This is boring in the best way: simple and hard to mess up.
-
----
-
-## What to read next
-
-- [Gmail OAuth detailed setup](/en/gmail-oauth)
-- [Outlook OAuth detailed setup](/en/outlook-oauth)
+This is a classic mismatch when multiple accounts exist.

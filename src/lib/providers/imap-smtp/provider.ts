@@ -12,11 +12,11 @@ import type {
 } from "@/lib/providers/types";
 import type { ImapSmtpRuntimeConfig } from "./types";
 
-function formatAddresses(
-  value:
-    | Array<{ name?: string | null; address?: string | null }>
-    | undefined
-): string[] {
+const IMAP_FLAG_WRITEBACK_NOTICE = "基于 IMAP flags 的 best effort 写回：依赖服务端 flags 能力与邮箱实现，不保证每个 provider 都完全一致。";
+
+type ImapFlags = Set<string> | string[] | undefined;
+
+function formatAddresses(value: Array<{ name?: string | null; address?: string | null }> | undefined): string[] {
   return (value ?? [])
     .map((entry) => {
       const address = entry.address ?? "";
@@ -31,6 +31,12 @@ function normalizeDate(value?: Date | string | null): Date | null {
   if (value instanceof Date) return value;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function hasFlag(flags: ImapFlags, expected: string): boolean {
+  if (!flags) return false;
+  if (flags instanceof Set) return flags.has(expected);
+  return flags.includes(expected);
 }
 
 export class ImapSmtpProvider implements EmailProvider {
@@ -83,7 +89,13 @@ export class ImapSmtpProvider implements EmailProvider {
   }
 
   getCapabilities() {
-    return { canSend: true };
+    return {
+      canSend: true,
+      canWriteBackRead: true,
+      canWriteBackStar: true,
+      readWriteBackNotice: IMAP_FLAG_WRITEBACK_NOTICE,
+      starWriteBackNotice: IMAP_FLAG_WRITEBACK_NOTICE,
+    };
   }
 
   async sendMail(params: SendMailParams): Promise<SendMailResult> {
@@ -215,6 +227,7 @@ export class ImapSmtpProvider implements EmailProvider {
           {
             uid: true,
             envelope: true,
+            flags: true,
             internalDate: true,
             source: options.metadataOnly ? false : true,
           },
@@ -231,7 +244,7 @@ export class ImapSmtpProvider implements EmailProvider {
 
           const email = options.metadataOnly ?? true
             ? this.mapMetadataMessage(msg)
-            : await this.mapFullMessage(msg.uid, msg.source, msg.internalDate);
+            : await this.mapFullMessage(msg.uid, msg.source, msg.internalDate, msg.flags);
 
           emails.push(email);
           if (msg.uid > maxUid) maxUid = msg.uid;
@@ -240,6 +253,7 @@ export class ImapSmtpProvider implements EmailProvider {
 
         return {
           emails,
+          removedRemoteIds: [],
           newCursor: maxUid > lastUid ? String(maxUid) : cursor,
         };
       }
@@ -254,6 +268,7 @@ export class ImapSmtpProvider implements EmailProvider {
           {
             uid: true,
             envelope: true,
+            flags: true,
             internalDate: true,
             source: options.metadataOnly ? false : true,
           },
@@ -264,7 +279,7 @@ export class ImapSmtpProvider implements EmailProvider {
 
         const email = options.metadataOnly ?? true
           ? this.mapMetadataMessage(msg)
-          : await this.mapFullMessage(msg.uid, msg.source, msg.internalDate);
+          : await this.mapFullMessage(msg.uid, msg.source, msg.internalDate, msg.flags);
 
         emails.push(email);
         if (uid > maxUid) maxUid = uid;
@@ -272,6 +287,7 @@ export class ImapSmtpProvider implements EmailProvider {
 
       return {
         emails,
+        removedRemoteIds: [],
         newCursor: maxUid > 0 ? String(maxUid) : cursor,
       };
     });
@@ -284,17 +300,18 @@ export class ImapSmtpProvider implements EmailProvider {
     return this.withInboxClient(async (client) => {
       const msg = await client.fetchOne(
         uid,
-        { uid: true, internalDate: true, source: true },
+        { uid: true, flags: true, internalDate: true, source: true },
         { uid: true }
       );
 
       if (!msg || !msg.source) return null;
-      return this.mapFullMessage(msg.uid, msg.source, msg.internalDate);
+      return this.mapFullMessage(msg.uid, msg.source, msg.internalDate, msg.flags);
     });
   }
 
   private mapMetadataMessage(msg: {
     uid: number;
+    flags?: ImapFlags;
     envelope?: {
       subject?: string;
       from?: Array<{ name?: string | null; address?: string | null }>;
@@ -323,6 +340,8 @@ export class ImapSmtpProvider implements EmailProvider {
       snippet: msg.envelope?.subject ?? "",
       bodyText: null,
       bodyHtml: null,
+      isRead: hasFlag(msg.flags, "\\Seen"),
+      isStarred: hasFlag(msg.flags, "\\Flagged"),
       receivedAt,
       folder: "INBOX",
       attachments: [],
@@ -332,7 +351,8 @@ export class ImapSmtpProvider implements EmailProvider {
   private async mapFullMessage(
     uid: number,
     source: Buffer | undefined,
-    internalDate?: Date | string
+    internalDate?: Date | string,
+    flags?: ImapFlags
   ): Promise<SyncedEmail> {
     const parsed = source ? await simpleParser(source) : null;
     const attachments: SyncedAttachment[] = (parsed?.attachments ?? []).map((att) => ({
@@ -357,6 +377,8 @@ export class ImapSmtpProvider implements EmailProvider {
       snippet: (parsed?.text ?? "").slice(0, 200),
       bodyText: parsed?.text ?? "",
       bodyHtml: parsed?.html || parsed?.textAsHtml || "",
+      isRead: hasFlag(flags, "\\Seen"),
+      isStarred: hasFlag(flags, "\\Flagged"),
       receivedAt: parsed?.date
         ? Math.floor(parsed.date.getTime() / 1000)
         : normalizedInternalDate

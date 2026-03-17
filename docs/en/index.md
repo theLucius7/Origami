@@ -4,7 +4,7 @@ layout: home
 hero:
   name: Origami
   text: A unified inbox for individuals and single-operator teams
-  tagline: Aggregate Gmail, Outlook, and domestic IMAP/SMTP mailboxes with a self-hosted, privacy-friendly workflow.
+  tagline: Aggregate Gmail, Outlook, and IMAP/SMTP mailboxes in one self-hosted workflow for triage, search, sync, and sending.
   actions:
     - theme: brand
       text: Quick Start
@@ -18,39 +18,28 @@ hero:
 
 features:
   - title: Unified inbox
-    details: See multiple mailboxes in one timeline instead of bouncing between tabs.
+    details: View multiple mailboxes in one timeline instead of switching tabs and accounts.
   - title: Local-first triage
-    details: Done, Archive, and Snooze stay local, while Read / Star can optionally sync back.
-  - title: Compose + sent history
-    details: Send through Gmail, Outlook, and IMAP/SMTP accounts with a local sent history view.
+    details: Done, Archive, and Snooze stay local, while Read / Star can sync back per account.
+  - title: Compose and sent history
+    details: Send through Gmail, Outlook, and IMAP/SMTP accounts with local sent history.
   - title: Metadata-first sync
-    details: Initial sync is lightweight; full bodies and attachments are fetched when needed.
+    details: Initial sync stays lightweight; bodies and attachments are fetched on demand.
   - title: OAuth app management
     details: Gmail and Outlook support both env-backed default apps and DB-managed apps.
   - title: Self-hosting friendly
-    details: Designed around Vercel + Turso + R2 with explicit operational paths.
+    details: The documentation is organized around a production path using Vercel, Turso, and R2.
 ---
 
-## What Origami is
+## Product scope
 
 Origami is a **single-user unified inbox**.
-It is not a helpdesk platform, and it does not try to imitate every provider-specific mailbox feature.
 
-Its goal is narrower and more practical:
+It is not a helpdesk suite and it does not aim to reproduce every provider-specific mailbox feature. Its goal is narrower:
 
-> help one operator manage multiple email accounts in one place, with local productivity features and predictable deployment.
+> give one operator a clear place to read, triage, search, send, and sync across multiple mailboxes.
 
-## Core capabilities
-
-- Gmail, Outlook, QQ, and generic IMAP/SMTP mailbox support
-- DB-backed and env-backed OAuth app management
-- Local Done / Archive / Snooze model
-- Optional Read / Star write-back
-- Compose flow with attachment upload and local sent history
-- Metadata-first sync with lazy detail hydration
-- Scheduled sync via Vercel Cron
-
-## Provider matrix
+## Provider support
 
 | Provider | Read | Send | Auth model | Write-back |
 |---|---|---|---|---|
@@ -61,17 +50,24 @@ Its goal is narrower and more practical:
 
 ## Recommended reading order
 
+For a production deployment, read in this order:
+
 1. [Quick Start](/en/quick-start)
 2. [Deployment](/en/deployment)
-3. [FAQ](/en/faq)
-4. [Architecture](/en/architecture)
-5. [Project Structure](/en/project-structure)
+3. [Turso database detailed setup](/en/turso)
+4. [Cloudflare R2 / bucket detailed setup](/en/r2-storage)
+5. [GitHub Auth detailed setup](/en/github-auth)
+6. [Gmail OAuth detailed setup](/en/gmail-oauth)
+7. [Outlook OAuth detailed setup](/en/outlook-oauth)
 
-## Detailed setup guides
+## Development docs
 
-If you are moving from a quick test to a real deployment, these are the more step-by-step pages:
+Local development and debugging are documented separately:
 
-- [GitHub Auth detailed setup](/en/github-auth)
-- [Cloudflare R2 / bucket detailed setup](/en/r2-storage)
-- [Gmail OAuth detailed setup](/en/gmail-oauth)
-- [Outlook OAuth detailed setup](/en/outlook-oauth)
+- [Development](/en/development)
+
+## Further reading
+
+- [FAQ](/en/faq)
+- [Architecture](/en/architecture)
+- [Project Structure](/en/project-structure)

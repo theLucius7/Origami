@@ -17,34 +17,36 @@ export default defineConfig({
           { text: "首页", link: "/" },
           { text: "快速开始", link: "/quick-start" },
           { text: "部署", link: "/deployment" },
-          { text: "详细配置", link: "/github-auth" },
+          { text: "详细配置", link: "/turso" },
+          { text: "开发", link: "/development" },
           { text: "架构", link: "/architecture" },
-          { text: "项目结构", link: "/project-structure" },
           { text: "FAQ", link: "/faq" },
           { text: "GitHub", link: "https://github.com/theLucius7/Origami" }
         ],
         sidebar: [
           {
-            text: "开始使用",
+            text: "生产部署",
             items: [
               { text: "概览", link: "/" },
               { text: "快速开始", link: "/quick-start" },
-              { text: "部署", link: "/deployment" },
+              { text: "部署指南", link: "/deployment" },
               { text: "FAQ", link: "/faq" }
             ]
           },
           {
             text: "详细配置",
             items: [
-              { text: "GitHub Auth", link: "/github-auth" },
+              { text: "Turso 数据库", link: "/turso" },
               { text: "Cloudflare R2 / Bucket", link: "/r2-storage" },
+              { text: "GitHub Auth", link: "/github-auth" },
               { text: "Gmail OAuth", link: "/gmail-oauth" },
               { text: "Outlook OAuth", link: "/outlook-oauth" }
             ]
           },
           {
-            text: "深入理解",
+            text: "开发与参考",
             items: [
+              { text: "开发与调试", link: "/development" },
               { text: "架构", link: "/architecture" },
               { text: "项目结构", link: "/project-structure" }
             ]
@@ -84,15 +86,15 @@ export default defineConfig({
           { text: "Home", link: "/en/" },
           { text: "Quick Start", link: "/en/quick-start" },
           { text: "Deployment", link: "/en/deployment" },
-          { text: "Detailed Setup", link: "/en/github-auth" },
+          { text: "Detailed Setup", link: "/en/turso" },
+          { text: "Development", link: "/en/development" },
           { text: "Architecture", link: "/en/architecture" },
-          { text: "Project Structure", link: "/en/project-structure" },
           { text: "FAQ", link: "/en/faq" },
           { text: "GitHub", link: "https://github.com/theLucius7/Origami" }
         ],
         sidebar: [
           {
-            text: "Get Started",
+            text: "Production",
             items: [
               { text: "Overview", link: "/en/" },
               { text: "Quick Start", link: "/en/quick-start" },
@@ -103,15 +105,17 @@ export default defineConfig({
           {
             text: "Detailed Setup",
             items: [
-              { text: "GitHub Auth", link: "/en/github-auth" },
+              { text: "Turso Database", link: "/en/turso" },
               { text: "Cloudflare R2 / Bucket", link: "/en/r2-storage" },
+              { text: "GitHub Auth", link: "/en/github-auth" },
               { text: "Gmail OAuth", link: "/en/gmail-oauth" },
               { text: "Outlook OAuth", link: "/en/outlook-oauth" }
             ]
           },
           {
-            text: "Deep Dive",
+            text: "Development & Reference",
             items: [
+              { text: "Development", link: "/en/development" },
               { text: "Architecture", link: "/en/architecture" },
               { text: "Project Structure", link: "/en/project-structure" }
             ]
@@ -151,15 +155,15 @@ export default defineConfig({
           { text: "ホーム", link: "/ja/" },
           { text: "クイックスタート", link: "/ja/quick-start" },
           { text: "デプロイ", link: "/ja/deployment" },
-          { text: "詳細設定", link: "/ja/github-auth" },
+          { text: "詳細設定", link: "/ja/turso" },
+          { text: "開発", link: "/ja/development" },
           { text: "アーキテクチャ", link: "/ja/architecture" },
-          { text: "プロジェクト構成", link: "/ja/project-structure" },
           { text: "FAQ", link: "/ja/faq" },
           { text: "GitHub", link: "https://github.com/theLucius7/Origami" }
         ],
         sidebar: [
           {
-            text: "はじめに",
+            text: "本番導入",
             items: [
               { text: "概要", link: "/ja/" },
               { text: "クイックスタート", link: "/ja/quick-start" },
@@ -170,15 +174,17 @@ export default defineConfig({
           {
             text: "詳細設定",
             items: [
-              { text: "GitHub Auth", link: "/ja/github-auth" },
+              { text: "Turso データベース", link: "/ja/turso" },
               { text: "Cloudflare R2 / Bucket", link: "/ja/r2-storage" },
+              { text: "GitHub Auth", link: "/ja/github-auth" },
               { text: "Gmail OAuth", link: "/ja/gmail-oauth" },
               { text: "Outlook OAuth", link: "/ja/outlook-oauth" }
             ]
           },
           {
-            text: "詳細",
+            text: "開発とリファレンス",
             items: [
+              { text: "開発とデバッグ", link: "/ja/development" },
               { text: "アーキテクチャ", link: "/ja/architecture" },
               { text: "プロジェクト構成", link: "/ja/project-structure" }
             ]

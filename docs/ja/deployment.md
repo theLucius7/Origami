@@ -1,163 +1,156 @@
 # デプロイ
 
-最短ルートは次の通りです。  
-**`.env` を埋める → `npm run db:setup` → Vercel にデプロイ → `/accounts` でアカウント接続**
+このページでは **Origami の本番デプロイ標準手順** を説明します。
 
-## 推奨構成
+想定構成:
+
+- 単一インスタンス
+- 単一 owner
+- 公開アクセス
+- Vercel + Turso + Cloudflare R2
+
+最短手順は次から確認できます。
+
+- [クイックスタート](/ja/quick-start)
+
+ローカル開発やデバッグは別ページです。
+
+- [開発とデバッグ](/ja/development)
+
+## 本番構成
 
 - **Runtime:** Vercel
 - **Database:** Turso / libSQL
 - **Object storage:** Cloudflare R2
-- **Providers:** Gmail API, Microsoft Graph, 国内 IMAP/SMTP
+- **Sign-in:** GitHub OAuth App
+- **Mailbox providers:** Gmail OAuth, Outlook OAuth, IMAP/SMTP
+
+## 本番ドメイン
+
+まず最終的な本番 URL を決めてください。例:
+
+```txt
+https://mail.example.com
+```
+
+同じドメインを次に使います。
+
+- `NEXT_PUBLIC_APP_URL`
+- GitHub OAuth callback
+- Gmail OAuth callback
+- Outlook OAuth callback
+
+これらは必ず一致させてください。
 
 ## 環境変数
 
-### App
-
-| 変数 | 必須 | 説明 |
-|---|---:|---|
-| `NEXT_PUBLIC_APP_URL` | はい | OAuth callback に使う公開 URL |
-| `GITHUB_CLIENT_ID` | はい | GitHub OAuth app client id |
-| `GITHUB_CLIENT_SECRET` | はい | GitHub OAuth app client secret |
-| `ENCRYPTION_KEY` | はい | 64 文字の 16 進 AES-256-GCM キー |
-| `GITHUB_ALLOWED_LOGIN` | いいえ | 許可する GitHub login を制限する任意設定 |
-| `AUTH_SECRET` | いいえ | session 署名鍵。未設定時は `ENCRYPTION_KEY` にフォールバック |
-| `CRON_SECRET` | いいえ | `/api/cron/sync` 用 Bearer トークン。明示設定を推奨 |
-
-### Database
-
-| 変数 | 必須 | 説明 |
-|---|---:|---|
-| `TURSO_DATABASE_URL` | はい | Turso / libSQL URL |
-| `TURSO_AUTH_TOKEN` | はい | Turso token |
-
-### Storage
-
-| 変数 | 必須 | 説明 |
-|---|---:|---|
-| `R2_ACCESS_KEY_ID` | はい | R2 access key |
-| `R2_SECRET_ACCESS_KEY` | はい | R2 secret key |
-| `R2_BUCKET_NAME` | はい | 添付用バケット |
-| `R2_ENDPOINT` | はい | S3-compatible endpoint |
-
-## DB 初期化
-
-新規データベースでは：
-
-```bash
-npm run db:setup
-```
-
-他の選択肢：
-
-- `npm run db:migrate`
-- `npm run db:push`
-
-## GitHub Auth 設定
-
-Origami 自体へのログイン用に、GitHub OAuth App を作成します。
-
-### GitHub OAuth App に入れる値
-
-GitHub → **Settings** → **Developer settings** → **OAuth Apps** → **New OAuth App** で、次を設定します。
-
-- **Application name**: `Origami Local` / `Origami Production`
-- **Homepage URL**: アプリの URL
-- **Authorization callback URL**: `<APP_URL>/api/auth/github/callback`
-
-例：
-
-- ローカル
-  - Homepage URL: `http://localhost:3000`
-  - Callback URL: `http://localhost:3000/api/auth/github/callback`
-- 本番
-  - Homepage URL: `https://mail.example.com`
-  - Callback URL: `https://mail.example.com/api/auth/github/callback`
-
-作成後、生成された値を次へ入れます。
+本番用の必須例:
 
 ```txt
-GITHUB_CLIENT_ID=...
-GITHUB_CLIENT_SECRET=...
-```
+NEXT_PUBLIC_APP_URL=https://mail.example.com
 
-### おすすめの GitHub Auth 構成
-
-#### パターン A: ローカル開発専用の OAuth App
-
-素早く試すだけならこれで十分です。
-
-```txt
-NEXT_PUBLIC_APP_URL=http://localhost:3000
 GITHUB_CLIENT_ID=...
 GITHUB_CLIENT_SECRET=...
 GITHUB_ALLOWED_LOGIN=your-github-login
+
+ENCRYPTION_KEY=64-char-hex-key
+AUTH_SECRET=64-char-hex-key
+CRON_SECRET=64-char-hex-key
+
+TURSO_DATABASE_URL=...
+TURSO_AUTH_TOKEN=...
+
+R2_ACCESS_KEY_ID=...
+R2_SECRET_ACCESS_KEY=...
+R2_BUCKET_NAME=origami-attachments-prod
+R2_ENDPOINT=https://<ACCOUNT_ID>.r2.cloudflarestorage.com
 ```
 
-#### パターン B: ローカル / 本番で OAuth App を分ける（推奨）
-
-- local: `http://localhost:3000/api/auth/github/callback`
-- production: `https://your-domain/api/auth/github/callback`
-
-callback URL の衝突を避けやすく、secret の管理も楽です。
-
-#### パターン C: 公開単一ユーザー運用 + `GITHUB_ALLOWED_LOGIN`
-
-公開 URL で運用するなら、次を設定するのがおすすめです。
+必要に応じて追加:
 
 ```txt
-GITHUB_ALLOWED_LOGIN=your-github-login
+GMAIL_CLIENT_ID=...
+GMAIL_CLIENT_SECRET=...
+OUTLOOK_CLIENT_ID=...
+OUTLOOK_CLIENT_SECRET=...
 ```
 
-これで想定外のユーザーが先に owner を claim するのを防ぎやすくなります。
+## OAuth 要件
 
-### 初回 owner バインドについて
+### GitHub
 
-- 最初に条件を満たしてログインした GitHub ユーザーが owner になります
-- 以後は GitHub の user id で照合します
-- login 名を変更しても、同じ GitHub アカウントなら通常は継続ログインできます
+- **Homepage URL:** `https://mail.example.com`
+- **Authorization callback URL:** `https://mail.example.com/api/auth/github/callback`
 
-### よくあるハマりどころ
-
-- `NEXT_PUBLIC_APP_URL` と GitHub 側の URL は一致させる
-- callback URL は `/api/auth/github/callback` まで正確に書く
-- ドメイン変更時は GitHub 側と env の両方を更新する
-- auth 署名を暗号化キーと分離したいなら `AUTH_SECRET` を設定する
-
-## OAuth 設定
+公開運用では `GITHUB_ALLOWED_LOGIN` の設定を推奨します。
 
 ### Gmail
 
-- `gmail.modify`
-- `gmail.send`
-- `userinfo.email`
+```txt
+https://mail.example.com/api/oauth/gmail
+```
 
 ### Outlook
 
-- `openid`
-- `email`
-- `User.Read`
-- `Mail.Read`
-- `Mail.ReadWrite`
-- `Mail.Send`
-- `offline_access`
+```txt
+https://mail.example.com/api/oauth/outlook
+```
 
-## さらに詳しいガイド
-
-このページの要約版だけでなく、ボタンごとの手順で見たい場合は次へ進んでください。
+詳細:
 
 - [GitHub Auth 詳細設定](/ja/github-auth)
-- [Cloudflare R2 / bucket 詳細設定](/ja/r2-storage)
 - [Gmail OAuth 詳細設定](/ja/gmail-oauth)
 - [Outlook OAuth 詳細設定](/ja/outlook-oauth)
 
-## 本番チェック
+## DB 初期化
 
-- GitHub サインイン後に `/setup` またはホームへ進める
+```bash
+npm install
+npm run db:setup
+```
+
+新規本番 DB では `db:setup` を使用してください。
+
+## Vercel デプロイ手順
+
+1. リポジトリを Vercel に取り込む
+2. 本番環境変数を設定する
+3. 本番ドメインを設定する
+4. デプロイする
+5. 初回ログインとセットアップを完了する
+
+## 定期同期
+
+`vercel.json` では `/api/cron/sync` が定義されています。
+
+本番環境では次のヘッダーを使います。
+
+```http
+Authorization: Bearer <CRON_SECRET>
+```
+
+`CRON_SECRET` は明示設定を推奨します。
+
+## 本番チェックリスト
+
+- 本番ドメインでアクセスできる
+- GitHub ログイン後に Origami へ戻る
 - `/accounts` が開く
-- OAuth callback が動く
-- IMAP/SMTP アカウント追加ができる
-- 同期が動く
-- 添付の upload / download が動く
-- compose が動く
-- `npm run verify` が通る
+- Gmail OAuth が動作する
+- Outlook OAuth が動作する
+- IMAP/SMTP アカウントを追加できる
+- 同期が動作する
+- 添付の upload / download が正常
+- compose が動作する
+- `/api/cron/sync` を呼び出せる
+
+## リリース前検証
+
+```bash
+npm run verify
+```
+
+## 関連ページ
+
+- [クイックスタート](/ja/quick-start)
+- [開発とデバッグ](/ja/development)
