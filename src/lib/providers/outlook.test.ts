@@ -1,21 +1,25 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const postMock = vi.fn();
+const patchMock = vi.fn();
 
 vi.mock("@microsoft/microsoft-graph-client", () => ({
   Client: {
     init: () => ({
       api: (path: string) => ({
         post: (body: unknown) => postMock(path, body),
+        patch: (body: unknown) => patchMock(path, body),
       }),
     }),
   },
 }));
 
-describe("OutlookProvider.sendMail", () => {
+describe("OutlookProvider", () => {
   beforeEach(() => {
     postMock.mockReset();
+    patchMock.mockReset();
     postMock.mockResolvedValue(undefined);
+    patchMock.mockResolvedValue(undefined);
   });
 
   it("builds Graph sendMail JSON payload with recipients and attachments", async () => {
@@ -73,6 +77,30 @@ describe("OutlookProvider.sendMail", () => {
         ],
       },
       saveToSentItems: true,
+    });
+  });
+
+  it("writes read/star state through Graph message patch API", async () => {
+    const { OutlookProvider } = await import("./outlook");
+
+    const provider = new OutlookProvider({
+      accessToken: "access",
+      refreshToken: "refresh",
+      scopes: ["Mail.ReadWrite"],
+    });
+
+    await provider.markMessageRead("outlook-msg-1");
+    await provider.setMessageStarred("outlook-msg-1", true);
+    await provider.setMessageStarred("outlook-msg-1", false);
+
+    expect(patchMock).toHaveBeenNthCalledWith(1, "/me/messages/outlook-msg-1", {
+      isRead: true,
+    });
+    expect(patchMock).toHaveBeenNthCalledWith(2, "/me/messages/outlook-msg-1", {
+      flag: { flagStatus: "flagged" },
+    });
+    expect(patchMock).toHaveBeenNthCalledWith(3, "/me/messages/outlook-msg-1", {
+      flag: { flagStatus: "notFlagged" },
     });
   });
 });

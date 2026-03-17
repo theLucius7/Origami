@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const sendMock = vi.fn();
+const modifyMock = vi.fn();
 
 vi.mock("googleapis", () => {
   class OAuth2 {
@@ -20,6 +21,7 @@ vi.mock("googleapis", () => {
         users: {
           messages: {
             send: sendMock,
+            modify: modifyMock,
           },
         },
       }),
@@ -33,10 +35,12 @@ function decodeBase64Url(value: string): string {
   return Buffer.from(normalized + padding, "base64").toString("utf8");
 }
 
-describe("GmailProvider.sendMail", () => {
+describe("GmailProvider", () => {
   beforeEach(() => {
     sendMock.mockReset();
+    modifyMock.mockReset();
     sendMock.mockResolvedValue({ data: { id: "gmail-message-1" } });
+    modifyMock.mockResolvedValue({ data: {} });
     process.env.GMAIL_CLIENT_ID = "client-id";
     process.env.GMAIL_CLIENT_SECRET = "client-secret";
     process.env.NEXT_PUBLIC_APP_URL = "http://localhost:3000";
@@ -89,5 +93,41 @@ describe("GmailProvider.sendMail", () => {
     expect(mime).toContain("multipart/mixed");
     expect(mime).toContain('filename="note.txt"');
     expect(mime).toContain(Buffer.from("hello").toString("base64"));
+  });
+
+  it("writes read/star state through Gmail messages.modify", async () => {
+    const { GmailProvider } = await import("./gmail");
+
+    const provider = new GmailProvider({
+      accessToken: "access",
+      refreshToken: "refresh",
+      scopes: ["https://www.googleapis.com/auth/gmail.modify"],
+    });
+
+    await provider.markMessageRead("gmail-msg-1");
+    await provider.setMessageStarred("gmail-msg-1", true);
+    await provider.setMessageStarred("gmail-msg-1", false);
+
+    expect(modifyMock).toHaveBeenNthCalledWith(1, {
+      userId: "me",
+      id: "gmail-msg-1",
+      requestBody: {
+        removeLabelIds: ["UNREAD"],
+      },
+    });
+    expect(modifyMock).toHaveBeenNthCalledWith(2, {
+      userId: "me",
+      id: "gmail-msg-1",
+      requestBody: {
+        addLabelIds: ["STARRED"],
+      },
+    });
+    expect(modifyMock).toHaveBeenNthCalledWith(3, {
+      userId: "me",
+      id: "gmail-msg-1",
+      requestBody: {
+        removeLabelIds: ["STARRED"],
+      },
+    });
   });
 });
