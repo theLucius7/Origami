@@ -1,5 +1,7 @@
 import type { MailboxPreset } from "./types";
 
+export const MAILBOX_PRESET_KEYS = ["qq", "163", "vip163", "126", "vip126", "yeah", "custom"] as const;
+
 export const MAILBOX_PRESETS: Record<string, MailboxPreset> = {
   qq: {
     key: "qq",

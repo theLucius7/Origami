@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import {
@@ -10,6 +10,7 @@ import {
 } from "@/app/actions/account";
 import { getGmailOAuthUrl, getOutlookOAuthUrl } from "@/app/actions/oauth";
 import { maybeShowWriteBackEnabledToastOnce } from "@/components/accounts/accounts-page-notifications";
+import { EditMailboxAccountDialog } from "@/components/accounts/edit-mailbox-account-dialog";
 import type { AccountSettingsView } from "@/components/accounts/types";
 import { SyncAccountButton } from "@/components/sync/sync-button";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +20,7 @@ import { Switch } from "@/components/ui/switch";
 import { getProviderMeta } from "@/config/providers";
 import { useToast } from "@/hooks/use-toast";
 import { formatRelativeTime } from "@/lib/format";
+import { getMailboxPreset } from "@/lib/providers/imap-smtp/presets";
 
 export function AccountCard({ account }: { account: AccountSettingsView }) {
   const router = useRouter();
@@ -26,6 +28,12 @@ export function AccountCard({ account }: { account: AccountSettingsView }) {
   const [isPending, startTransition] = useTransition();
   const [fetchLimit, setFetchLimit] = useState(String(account.initialFetchLimit ?? 200));
   const provider = getProviderMeta(account.provider);
+  const isMailboxAccount = account.provider === "qq" || account.provider === "imap_smtp";
+  const supportsOauthReauth = account.provider === "gmail" || account.provider === "outlook";
+  const preset = useMemo(
+    () => getMailboxPreset(account.presetKey ?? (account.provider === "qq" ? "qq" : null)),
+    [account.presetKey, account.provider]
+  );
 
   function handleRemove() {
     if (!confirm(`确定要删除 ${account.email} 吗？关联的邮件数据也会被删除。`)) return;
@@ -74,10 +82,13 @@ export function AccountCard({ account }: { account: AccountSettingsView }) {
     });
   }
 
-  const readScopeMissing = !account.canWriteBackRead && account.provider !== "qq";
-  const starScopeMissing = !account.canWriteBackStar && account.provider !== "qq";
+  const readScopeMissing = supportsOauthReauth && !account.canWriteBackRead;
+  const starScopeMissing = supportsOauthReauth && !account.canWriteBackStar;
   const shouldShowReadNotice = account.syncReadBack === 1 && account.readBackNotice;
   const shouldShowStarNotice = account.syncStarBack === 1 && account.starBackNotice;
+  const hostSummary = isMailboxAccount && preset?.key === "custom"
+    ? `IMAP ${account.imapHost ?? "-"}:${account.imapPort ?? "-"} · SMTP ${account.smtpHost ?? "-"}:${account.smtpPort ?? "-"}`
+    : null;
 
   return (
     <Card>
@@ -89,8 +100,19 @@ export function AccountCard({ account }: { account: AccountSettingsView }) {
               <Badge variant="secondary" className={provider.badgeClass}>
                 {provider.label}
               </Badge>
+              {account.provider === "imap_smtp" && preset && (
+                <Badge variant="outline">{preset.label}</Badge>
+              )}
             </div>
             <p className="truncate text-sm text-muted-foreground">{account.email}</p>
+            {isMailboxAccount && preset && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                {preset.key === "custom"
+                  ? "自定义服务器配置"
+                  : `预设：${preset.label}`}
+                {hostSummary ? ` · ${hostSummary}` : ""}
+              </p>
+            )}
             <p className="mt-1 text-xs text-muted-foreground">
               {account.lastSyncedAt
                 ? `上次同步: ${formatRelativeTime(account.lastSyncedAt)}`
@@ -98,6 +120,7 @@ export function AccountCard({ account }: { account: AccountSettingsView }) {
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            {isMailboxAccount && <EditMailboxAccountDialog account={account} />}
             <SyncAccountButton accountId={account.id} />
             <Button
               variant="ghost"

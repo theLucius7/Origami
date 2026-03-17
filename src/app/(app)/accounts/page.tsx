@@ -25,7 +25,7 @@ export default async function AccountsPage({ searchParams }: PageProps) {
           <div>
             <h1 className="text-2xl font-semibold">邮箱账号</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              管理你的邮箱连接，添加或移除账号，也可以按账号开启远端已读/星标写回。
+              管理你的邮箱连接，添加或移除账号；IMAP/SMTP 账号也可以在这里更新授权码、密码和服务器配置。
             </p>
           </div>
           <AddAccountDialog />

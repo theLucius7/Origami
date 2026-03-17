@@ -15,9 +15,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus } from "lucide-react";
 import { addImapSmtpAccount } from "@/app/actions/account";
 import { getGmailOAuthUrl, getOutlookOAuthUrl } from "@/app/actions/oauth";
-import { MAILBOX_PRESETS } from "@/lib/providers/imap-smtp/presets";
-
-const presetOptions = ["qq", "163", "vip163", "126", "vip126", "yeah", "custom"] as const;
+import {
+  MAILBOX_PRESET_KEYS,
+  MAILBOX_PRESETS,
+} from "@/lib/providers/imap-smtp/presets";
 
 export function AddAccountDialog() {
   const router = useRouter();
@@ -27,7 +28,7 @@ export function AddAccountDialog() {
   const [authPass, setAuthPass] = useState("");
   const [name, setName] = useState("");
   const [initialFetchLimit, setInitialFetchLimit] = useState("200");
-  const [presetKey, setPresetKey] = useState<(typeof presetOptions)[number]>("qq");
+  const [presetKey, setPresetKey] = useState<(typeof MAILBOX_PRESET_KEYS)[number]>("qq");
   const [imapHost, setImapHost] = useState("");
   const [imapPort, setImapPort] = useState("993");
   const [imapSecure, setImapSecure] = useState(true);
@@ -143,7 +144,7 @@ export function AddAccountDialog() {
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm"
                   value={presetKey}
                   onChange={(event) => {
-                    const next = event.target.value as (typeof presetOptions)[number];
+                    const next = event.target.value as (typeof MAILBOX_PRESET_KEYS)[number];
                     setPresetKey(next);
                     const preset = MAILBOX_PRESETS[next];
                     setImapHost(preset.imapHost);
@@ -154,7 +155,7 @@ export function AddAccountDialog() {
                     setSmtpSecure(preset.secure);
                   }}
                 >
-                  {presetOptions.map((key) => (
+                  {MAILBOX_PRESET_KEYS.map((key) => (
                     <option key={key} value={key}>
                       {MAILBOX_PRESETS[key].label}
                     </option>
