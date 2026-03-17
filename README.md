@@ -1,191 +1,173 @@
-# Origami
+# Origami ✉️
 
-Origami 是一个面向个人使用场景的 Serverless 多邮箱统一收件箱，目标是在一个网页里集中查看 `Gmail`、`Outlook` 和 `QQ 邮箱` 的邮件，并把附件二进制存放到 `Cloudflare R2`，邮件与附件元数据存放到 `Turso`。
+> A privacy-friendly unified inbox for individuals or a single operator inside a small team, aggregating Gmail / Outlook / QQ in one place and designed for self-hosting. （一个面向个人或小团队单一操作席位的统一收件箱，可聚合 Gmail / Outlook / QQ，强调隐私与自托管。）
 
-## 当前定位
+[![CI](https://github.com/theLucius7/Origami/actions/workflows/ci.yml/badge.svg)](https://github.com/theLucius7/Origami/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/github/license/theLucius7/Origami)](./LICENSE)
+[![Next.js 16](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org/)
+[![Turso](https://img.shields.io/badge/Database-Turso-4FF8D2?logo=turso&logoColor=111)](https://turso.tech/)
+[![Cloudflare R2](https://img.shields.io/badge/Object%20Storage-Cloudflare%20R2-F38020?logo=cloudflare&logoColor=white)](https://developers.cloudflare.com/r2/)
+[![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://theLucius7.github.io/Origami/)
 
-- 单用户工具，不是多租户 SaaS
-- 核心能力是收件、同步、阅读、附件下载
-- 内部读写优先使用 `Server Actions`
-- 仅保留必要的 `Route Handlers`：登录、OAuth 回调、附件代理、Cron
+***
 
-## 已实现能力
+## ✨ Features
 
-- 统一收件箱首页，聚合多个邮箱账号邮件
-- 按账号过滤、按关键字搜索、查看已标星邮件
-- Gmail OAuth 接入，使用 Gmail API 拉取邮件
-- Outlook OAuth 接入，使用 Microsoft Graph API 拉取邮件
-- QQ 邮箱 IMAP 接入，使用授权码拉取邮件
-- 支持手动同步单个账号或全部账号
-- 支持 Vercel Cron 定时同步
-- 邮件附件上传到 R2，下载时经由服务端代理
-- 访问口令登录，服务端通过 Cookie 或 Bearer Token 鉴权
-- 邮箱凭据使用 `AES-256-GCM` 加密后存入数据库
+- Unified inbox across multiple accounts, sorted by time
+- Gmail / Outlook OAuth + QQ IMAP account connection
+- Local triage states: **Done / Archive / Snooze** (not written back to providers)
+- Structured search syntax: `account:` / `from:` / `subject:` / `is:read` / `is:done` / `is:snoozed`
+- Gmail / Outlook sending support for new emails (minimal viable compose flow)
+- Attachments stored in Cloudflare R2, metadata stored in Turso
+- Manual sync + scheduled sync via `GET /api/cron/sync`
+- Single-user `ACCESS_TOKEN` protection with cookie or Bearer auth
+- Lazy body hydration: initial sync stores metadata first, then fetches full body/attachments on demand
+- Local sent-message history with attachment records
 
-## 技术栈
+## 🚫 Known Limitations
 
-- `Next.js 16` + `App Router`
-- `React 19`
-- `Drizzle ORM` + `Turso (libSQL)`
-- `Cloudflare R2`
-- `googleapis`
-- `@microsoft/microsoft-graph-client`
-- `imapflow` + `mailparser`
-- `Tailwind CSS v4` + `shadcn/ui`
+- Local triage state is **Origami-only** and is not written back to Gmail / Outlook / QQ
+- QQ Mail is **read-only** for now; sending is not implemented
+- Single attachment must stay **under 3 MB** (Outlook compatibility limit in current implementation)
+- No thread-aware reply / forward flow yet
+- No remote draft sync yet
+- Inbox sync is focused on recent inbox mail, not full mailbox mirroring
 
-## 文档导航
+## 🚀 Quick Start
 
-- [架构文档](docs/ARCHITECTURE.md)
-- [项目结构文档](docs/PROJECT-STRUCTURE.md)
-- [部署文档](docs/DEPLOYMENT.md)
-
-## 快速开始
-
-### 1. 安装依赖
-
-```bash
-npm install
-```
-
-### 2. 复制环境变量
-
-PowerShell:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-Bash:
+### Environment setup
 
 ```bash
 cp .env.example .env
+npm install
 ```
 
-### 3. 生成加密密钥
+Generate a 32-byte hex encryption key:
 
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-把输出填入 `.env` 的 `ENCRYPTION_KEY`。
-
-### 4. 填写环境变量
-
-至少需要先准备这些配置：
-
-- `NEXT_PUBLIC_APP_URL`
-- `ACCESS_TOKEN`
-- `CRON_SECRET`
-- `ENCRYPTION_KEY`
-- `TURSO_DATABASE_URL`
-- `TURSO_AUTH_TOKEN`
-- `R2_ACCESS_KEY_ID`
-- `R2_SECRET_ACCESS_KEY`
-- `R2_BUCKET_NAME`
-- `R2_ENDPOINT`
-
-如果需要接入 Gmail / Outlook，还要填写对应 OAuth 配置。完整说明见 [部署文档](docs/DEPLOYMENT.md)。
-
-### 5. 初始化数据库
+Fill in `.env`, then initialize the database:
 
 ```bash
-npm run db:push
-```
-
-### 6. 启动开发环境
-
-```bash
-npm run dev
-```
-
-打开 `http://localhost:3000`，输入 `ACCESS_TOKEN` 登录。
-
-## 常用命令
-
-```bash
-npm run dev
-npm run build
-npm run test
-npm run test:watch
-npm run lint
-npx tsc --noEmit
-npm run audit
-npm run audit:prod
-npm run db:generate
-npm run db:push
 npm run db:migrate
-npm run db:studio
+# or: npm run db:push
 ```
 
-## 测试与质量门禁
+Start local development:
 
-项目现在包含一组最小单元测试，覆盖以下稳定工具模块：
+```bash
+npm run dev
+```
 
-- `src/lib/crypto.ts`
-- `src/lib/format.ts`
-- `src/lib/r2.ts`
-- `src/lib/auth.ts`
+Open `http://localhost:3000`, sign in with `ACCESS_TOKEN`, then add accounts from `/accounts`.
 
-本地建议在提交前执行：
+### One-click deploy on Vercel
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/theLucius7/Origami)
+
+Recommended production stack:
+
+- **Frontend + server runtime:** Vercel
+- **Database:** Turso / libSQL
+- **Attachment storage:** Cloudflare R2
+- **OAuth / provider APIs:** Google Gmail API, Microsoft Graph, QQ IMAP
+
+## ⚙️ Environment Variables
+
+| Variable | Required | Description |
+|---|---:|---|
+| `NEXT_PUBLIC_APP_URL` | Yes | Public app URL used for OAuth callback URLs |
+| `ACCESS_TOKEN` | Yes | Single-user login token |
+| `CRON_SECRET` | Yes | Bearer secret for `/api/cron/sync` |
+| `ENCRYPTION_KEY` | Yes | 64-char hex key for AES-256-GCM credential encryption |
+| `TURSO_DATABASE_URL` | Yes | Turso / libSQL database URL |
+| `TURSO_AUTH_TOKEN` | Yes | Turso auth token |
+| `R2_ACCESS_KEY_ID` | Yes | Cloudflare R2 access key |
+| `R2_SECRET_ACCESS_KEY` | Yes | Cloudflare R2 secret key |
+| `R2_BUCKET_NAME` | Yes | Bucket used for inbound and compose attachments |
+| `R2_ENDPOINT` | Yes | R2 S3-compatible endpoint |
+| `R2_ACCOUNT_ID` | No | Currently unused by runtime code; kept for ops reference |
+| `GMAIL_CLIENT_ID` | When Gmail is enabled | Google OAuth client ID |
+| `GMAIL_CLIENT_SECRET` | When Gmail is enabled | Google OAuth client secret |
+| `OUTLOOK_CLIENT_ID` | When Outlook is enabled | Microsoft OAuth client ID |
+| `OUTLOOK_CLIENT_SECRET` | When Outlook is enabled | Microsoft OAuth client secret |
+
+See also: [`docs/deployment.md`](./docs/deployment.md)
+
+## 🏗 Architecture
+
+Core runtime flow:
+
+```text
+Browser
+  -> Next.js Proxy (ACCESS_TOKEN protection)
+  -> App Router pages / Server Actions
+  -> Drizzle ORM
+  -> Turso (accounts, emails, triage state, sent history)
+  -> Cloudflare R2 (attachment binaries)
+  -> Providers
+       - Gmail API
+       - Microsoft Graph
+       - QQ IMAP
+
+Vercel Cron
+  -> /api/cron/sync
+  -> syncAllAccounts()
+```
+
+See the full architecture write-up: [`docs/architecture.md`](./docs/architecture.md)
+
+## 🧪 Development
+
+| Command | What it does |
+|---|---|
+| `npm run dev` | Start Next.js development server |
+| `npm run build` | Production build |
+| `npm run start` | Start built app |
+| `npm run test` | Run Vitest test suite |
+| `npm run lint` | Run ESLint |
+| `npm run audit:prod` | Audit production dependencies only |
+| `npm run db:migrate` | Apply migration chain |
+| `npm run db:push` | Push current schema with SQLite FTS-safe wrapper |
+| `npm run db:studio` | Open Drizzle Studio |
+| `npm run docs:dev` | Start VitePress docs locally |
+| `npm run docs:build` | Build GitHub Pages docs site |
+
+Current validation baseline used in CI:
 
 ```bash
 npm test
 npm run lint
 npx tsc --noEmit
 npm run build
+npm run docs:build
 ```
 
-对应的 GitHub Actions CI 也会在 `push` / `pull_request` 上执行相同的质量门禁：
+## 📦 Deployment
 
-- `npm test`
-- `npm run lint`
-- `npx tsc --noEmit`
-- `npm run build`
+### Vercel + Turso + R2
 
-## 依赖安全说明
+1. Create a Turso database and auth token
+2. Create a Cloudflare R2 bucket and S3-compatible credentials
+3. Configure Gmail / Outlook OAuth apps if you want those providers
+4. Add environment variables in Vercel
+5. Run `npm run db:migrate` (or `npm run db:push`) against the target database
+6. Deploy the app to Vercel
+7. Let `vercel.json` trigger scheduled sync every 15 minutes
 
-当前仓库区分两类依赖风险：
+Detailed deployment guide: [`docs/deployment.md`](./docs/deployment.md)
 
-1. **生产依赖风险**
-   - 使用 `npm run audit:prod` 检查
-   - 当前目标是保持生产依赖审计为 0 高危 / 0 中危
+## 🔒 Security
 
-2. **开发工具链风险**
-   - 使用 `npm run audit` 检查全部依赖
-   - 目前剩余风险主要来自 `drizzle-kit -> @esbuild-kit/* -> esbuild` 这条**开发期工具链**
-   - 这不会进入运行时产物，但仍然值得持续跟踪升级
+- Provider credentials are encrypted with **AES-256-GCM** before being stored in Turso
+- Attachment binaries are stored outside the database in **Cloudflare R2**
+- Downloads are proxied through the server, so clients never see raw R2 object keys
+- The app is protected by a single-user **ACCESS_TOKEN** enforced by Next.js Proxy
+- Cron sync is protected with `CRON_SECRET`
+- `npm run audit:prod` currently reports **0 production vulnerabilities**
 
-已做的安全加固：
+## 📄 License
 
-- 通过 `overrides` 将 `flatted` 固定到安全版本 `^3.4.1`
-- 目前 `npm audit --omit=dev` 已可通过
-
-## 页面与接口概览
-
-页面：
-
-- `/login`：访问口令登录页
-- `/`：统一收件箱
-- `/accounts`：邮箱账号管理
-- `/mail/[id]`：移动端/直达邮件详情页
-
-接口：
-
-- `POST /api/auth/login`：设置登录 Cookie
-- `GET /api/oauth/gmail`：Gmail OAuth 回调
-- `GET /api/oauth/outlook`：Outlook OAuth 回调
-- `GET /api/attachments/[key]`：附件下载代理
-- `GET /api/cron/sync`：Vercel Cron 定时同步入口
-
-## 开发说明
-
-- 主页和账号页的数据由 `Server Actions` 直接读取，不经过传统 REST 列表接口
-- `src/proxy.ts` 是 Next.js 16 的网关层，负责保护大多数页面和接口
-- 附件下载路径使用数据库里的附件记录 `id`，服务端再解析到真正的 `r2ObjectKey`
-- 为避免构建期因为数据库环境变量缺失而报错，受保护应用区域使用了动态渲染
-
-## 建议阅读顺序
-
-1. 先看 [项目结构文档](docs/PROJECT-STRUCTURE.md)
-2. 再看 [架构文档](docs/ARCHITECTURE.md)
-3. 最后按 [部署文档](docs/DEPLOYMENT.md) 配置外部服务并上线
+MIT — see [LICENSE](./LICENSE)

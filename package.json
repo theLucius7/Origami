@@ -7,6 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "docs:dev": "vitepress dev docs --host 0.0.0.0",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs --host 0.0.0.0",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "node scripts/db-push.mjs",
@@ -48,6 +51,7 @@
     "postcss": "^8.5.8",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3",
+    "vitepress": "^1.6.4",
     "vitest": "^4.1.0"
   },
   "overrides": {

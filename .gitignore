@@ -39,3 +39,6 @@ next-env.d.ts
 # drizzle
 /drizzle/meta/*
 !/drizzle/meta/_journal.json
+
+docs/.vitepress/dist
+docs/.vitepress/cache
