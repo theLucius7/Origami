@@ -1,200 +1,203 @@
-# Architecture
+# 架构说明
 
-Origami is a **single-user, serverless unified inbox** built with Next.js 16 App Router.
+这一页描述的是 **Origami 当前代码中已经落地的架构**，不是未来蓝图。
 
-Its runtime responsibilities are split across:
-
-- **App Router pages** for rendering
-- **Server Actions** in `src/app/actions/*` for internal mutations and reads used by the UI
-- **Route Handlers** only where external callbacks or binary streams are needed
-- **Queries / services / providers** in `src/lib/*` for data access and provider integration
-
-## Runtime overview
+## 总览
 
 ```text
 Browser
   -> Next.js Proxy
-  -> App Router pages
-  -> Server Actions / Route Handlers
+  -> App Router Pages / Server Actions / Route Handlers
   -> Drizzle ORM
-  -> Turso
+  -> Turso / libSQL
 
-Binary attachments
+Attachments
   -> Cloudflare R2
 
-Mail providers
-  -> Gmail API / OAuth app resolver (env or DB)
-  -> Microsoft Graph / OAuth app resolver (env or DB)
-  -> IMAP/SMTP presets (QQ / 163 / 126 / Yeah / custom)
+Providers
+  -> Gmail API
+  -> Microsoft Graph
+  -> IMAP / SMTP
 
-Scheduled sync
+Scheduled Sync
   -> Vercel Cron
   -> /api/cron/sync
 ```
 
-## Main flows
+## 核心设计原则
 
-### 1. Authentication flow
+### 1. 单用户优先
 
-Origami uses a **single `ACCESS_TOKEN`**.
+Origami 不引入复杂的用户、角色和组织模型。  
+它把“一个操作员处理多个邮箱”作为第一优先级。
 
-1. The user visits `/login`
-2. `POST /api/auth/login` verifies the token
-3. The app stores `origami_token` as an `httpOnly` cookie
-4. `src/proxy.ts` protects the rest of the app and most API routes
+### 2. 本地生产力层优先
 
-Public routes are limited to:
+Origami 不试图把所有 triage 状态都强行映射到每个 provider。  
+因此：
 
-- `/login`
-- `/api/auth/*`
-- `/api/oauth/*`
-- `/api/cron/*`
+- Done / Archive / Snooze：本地状态
+- Read / Star：可选回写状态
 
-## 2. Inbox read flow
+### 3. metadata-first
 
-The inbox UI uses a mix of server-rendered page data and client-triggered Server Actions.
+首次同步时优先抓：
 
-- `src/app/(app)/page.tsx` loads initial inbox data
-- `src/lib/queries/emails.ts` builds filtered inbox queries
-- `src/components/inbox/*` renders list and detail UI
+- subject
+- sender
+- snippet
+- receivedAt
+- folder
 
-Supported local filters include:
+正文和附件会在用户打开详情时按需拉取。  
+这样可以显著降低首轮同步成本。
 
-- `account:`
-- `from:`
-- `subject:`
-- `is:read` / `is:unread`
-- `is:starred` / `is:unstarred`
-- `is:done` / `is:undone`
-- `is:archived` / `is:active`
-- `is:snoozed` / `is:unsnoozed`
+## 运行时分层
 
-Search is backed by:
+### App Router 页面
 
-- structured SQL filters
-- SQLite FTS5 when full-text search is available
-- `LIKE` fallback when FTS is unavailable
+负责首屏渲染和路由层组织，例如：
 
-## 3. Sync flow
+- `/`
+- `/accounts`
+- `/compose`
+- `/sent`
 
-Sync is provider-driven but normalized through a shared `EmailProvider` interface in `src/lib/providers/types.ts`.
+### Server Actions
+
+负责应用内部读写，例如：
+
+- 获取邮件列表
+- 更新 triage 状态
+- 发信
+- 管理账号和 OAuth app
+
+### Route Handlers
+
+只用于必须暴露为 HTTP endpoint 的场景，例如：
+
+- OAuth callback
+- 附件下载
+- 定时同步入口
+
+## 账户与 provider 模型
+
+当前 provider 主要有四类：
+
+- `gmail`
+- `outlook`
+- `qq`
+- `imap_smtp`
+
+其中：
+
+- `qq` 已不再只是“只读特例”，本质上是带兼容封装的 IMAP/SMTP provider
+- `imap_smtp` 是通用国内/自定义邮箱入口
+
+## OAuth app 解析模型
+
+对于 Gmail / Outlook，Origami 现在使用：
+
+- **env-backed default app**
+- **DB-backed app**
+
+解析顺序是：
+
+1. 如果账号指定了 `oauth_app_id`，优先解析数据库中的 app
+2. 如果没有，则回退到 `default`
+3. `default` 再从环境变量读取
+
+这个设计的意义是：
+
+- 老账号可以平滑兼容
+- 新账号可以按 app 隔离
+- 运维可以逐步从 env-only 迁移到 DB-backed app
+
+## 同步流程
 
 ```text
 Sync trigger
-  -> syncAccountById / syncAllAccounts
+  -> syncSingleAccount / syncAllAccounts
   -> provider.syncEmails(cursor, { metadataOnly: true })
-  -> persist emails into Turso
-  -> upload attachments to R2
-  -> update sync cursor + lastSyncedAt
+  -> persist emails into database
+  -> upload discovered attachments to R2 (if needed)
+  -> update cursor + lastSyncedAt
 ```
 
-Provider-specific cursors:
+不同 provider 的 cursor 语义不同：
 
-- **Gmail**: `historyId`
-- **Outlook**: Graph delta / next link cursor
-- **QQ**: IMAP UID
+- Gmail：`historyId`
+- Outlook：Graph delta / nextLink
+- IMAP：UID / 基于邮箱列表状态推进
 
-Initial sync is metadata-first. Full bodies and attachments can be hydrated later on demand.
+## 邮件详情补抓
 
-## 4. Lazy body hydration
+当用户打开详情页时：
 
-To reduce the first sync cost, Origami stores message metadata first and fetches the full body later when needed.
+1. 先查本地数据库
+2. 如果正文缺失，则调用 `provider.fetchEmail(remoteId)`
+3. 把正文、HTML、附件元数据补写回数据库
+4. 必要时把附件对象写入 R2
 
-`src/lib/services/email-service.ts` handles this flow:
+这使得 Origami 在真实使用时更像“快列表 + 懒展开”，而不是“先把全世界拉完再给你看”。
 
-1. Open a message
-2. If body is missing, call `provider.fetchEmail(remoteId)`
-3. Persist full body + attachment metadata
-4. Upload newly discovered attachments to R2
-
-This keeps inbox sync fast while still allowing full message detail when the user opens a message.
-
-## 5. Local triage model
-
-Origami stores triage state in its own database:
-
-- `local_done`
-- `local_archived`
-- `local_snooze_until`
-- `local_labels`
-
-Important: these local triage fields are **not written back** to Gmail, Outlook, or QQ.
-
-Read / Star are handled separately: supported providers can opt into asynchronous write-back at the account level, while failures are treated as non-blocking best-effort sync.
-
-That means Origami behaves like a local productivity layer on top of external inboxes, with selective mailbox-state synchronization where it is worth the complexity.
-
-## 6. Sending flow
-
-Origami currently supports **new outbound email** through Gmail, Outlook, and IMAP/SMTP mailboxes.
+## 发信流程
 
 ```text
 Compose form
-  -> upload attachment to R2 (temporary compose object)
-  -> sendMailAction()
+  -> upload compose attachments
+  -> send action
   -> provider.sendMail()
-  -> store local sent_messages record
-  -> store sent_message_attachments metadata
+  -> persist local sent_messages record
+  -> persist sent_message_attachments
 ```
 
-Current behavior:
+当前行为：
 
-- Gmail: sends raw RFC 2822 MIME via Gmail API
-- Outlook: sends JSON payload via Microsoft Graph `sendMail`
-- IMAP/SMTP mailboxes: send via SMTP with the mailbox auth code or password
+- Gmail：发送 RFC 2822 / MIME raw
+- Outlook：发送 Graph `sendMail` JSON payload
+- IMAP/SMTP：走 SMTP 直发
 
-Current limitations:
-
-- no thread-aware reply / forward flow
-- no remote draft sync
-- Outlook attachment path is limited to files smaller than 3 MB in the current implementation
-
-## 7. Storage layout
+## 数据存储分工
 
 ### Turso / libSQL
 
-Main tables:
+保存：
 
-- `accounts`
-- `oauth_apps`
-- `emails`
-- `attachments`
-- `compose_uploads`
-- `sent_messages`
-- `sent_message_attachments`
+- accounts
+- oauth_apps
+- emails
+- attachments metadata
+- compose_uploads
+- sent_messages
+- sent_message_attachments
 
 ### Cloudflare R2
 
-R2 stores:
+保存：
 
-- inbound attachment binaries
-- temporary compose uploads
-- sent attachment binaries referenced by local sent-message records
+- 收件附件对象
+- compose 临时上传文件
+- sent history 对应附件对象
 
-Clients never receive raw R2 object keys directly; downloads are proxied by the app.
+## 安全边界
 
-## 8. Security boundaries
+- 凭据在入库前用 **AES-256-GCM** 加密
+- OAuth client secret 只保留在服务端
+- 下载通过服务端代理，避免暴露原始对象 key
+- `CRON_SECRET` 保护同步入口
+- `ACCESS_TOKEN` 保护应用访问
 
-- Provider credentials are encrypted with **AES-256-GCM** before database storage
-- OAuth client secrets stay server-side only and are AES-encrypted when stored in `oauth_apps`
-- QQ auth codes never ship to the client bundle
-- `CRON_SECRET` protects scheduled sync
-- Attachment access is mediated through database lookup + server streaming
+## 哪些是故意没做的
 
-## 9. Current scope
+当前没有做这些，并不是忘了，而是刻意收敛范围：
 
-Origami currently focuses on:
+- 多用户协作角色系统
+- 全 provider 的 Done / Archive / Snooze 回写
+- 完整 thread-aware reply / forward
+- remote draft sync
+- 完整镜像整个邮箱体系
 
-- unified inbox reading
-- local triage
-- metadata-first sync
-- minimal new-message sending
-- self-hosted single-user deployment
+这些能力都很有价值，但也会显著抬高复杂度。Origami 当前优先保证的是：
 
-It does **not** currently implement:
-
-- provider write-back for Done / Archive / Snooze / labels
-- provider write-back for Done / Archive / Snooze / labels
-- draft sync
-- thread-aware replies / forwards
-- multi-user roles or workspace features
+> 单用户场景下，核心路径足够快、足够稳、足够容易维护。

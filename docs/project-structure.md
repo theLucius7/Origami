@@ -1,38 +1,54 @@
-# Project Structure
+# 项目结构
 
-Origami uses a **hybrid Next.js App Router structure**:
+这一页不是“列目录”，而是帮助你快速判断：**想改什么，应该从哪里下手。**
 
-- route files live in `src/app`
-- shared UI lives in `src/components`
-- business logic lives in `src/lib`
-- runtime/config helpers live in `src/config`
-- shared client hooks live in `src/hooks`
-
-## Repository root layout
+## 仓库根目录
 
 ```text
 .
-├── docs/                # VitePress docs site
-├── drizzle/             # historical SQL migrations + journal
-├── scripts/             # helper scripts, grouped by purpose
-├── src/                 # application source
-├── .env.example         # environment template
-├── drizzle.config.ts    # Drizzle config
-├── eslint.config.mjs    # active ESLint flat config
-├── next.config.ts       # Next.js config
-├── package.json         # scripts + dependencies
-├── vercel.json          # Vercel cron / deploy config
+├── docs/                # VitePress 文档站
+├── drizzle/             # 历史 SQL migration 与 journal
+├── scripts/             # 辅助脚本（按用途分组）
+├── src/                 # 应用源码
+├── .env.example         # 环境变量模板
+├── drizzle.config.ts    # Drizzle 配置
+├── eslint.config.mjs    # ESLint flat config
+├── next.config.ts       # Next.js 配置
+├── package.json         # 依赖与脚本
+├── vercel.json          # Vercel cron / 部署配置
 └── ...
 ```
 
-### Root notes
+## 根目录里这些文件为什么不算“乱”
 
-- Most root files are standard Next.js / Vercel / TypeScript config files, not project clutter.
-- `drizzle/` keeps the historical migration chain for upgrades, but for a brand-new database the recommended shortcut is `npm run db:setup`.
-- `scripts/` is grouped by purpose (`db/`, `bench/`) so operational helpers do not sprawl at the repo root.
-- `.eslintrc.json` is no longer used; the project uses `eslint.config.mjs`.
+因为这里大多数都是标准 Web 项目需要的配置：
 
-## Top-level source layout
+- Next.js 自己需要的配置
+- Vercel 部署配置
+- TypeScript / ESLint / PostCSS 配置
+- Drizzle schema / migration 配置
+
+真正和项目业务强相关的内容，还是集中在：
+
+- `src/`
+- `docs/`
+- `drizzle/`
+- `scripts/`
+
+## `scripts/` 现在怎么组织
+
+```text
+scripts/
+├── README.md
+├── bench/
+│   └── seed-search-benchmark.mjs
+└── db/
+    └── push.mjs
+```
+
+设计原则是：**把运维辅助脚本留在仓库里，但不要让它们散落在根目录。**
+
+## `src/` 总体结构
 
 ```text
 src/
@@ -44,148 +60,42 @@ src/
 └── proxy.ts
 ```
 
-## `src/app/`
+### `src/app/`
 
-`src/app` contains route segments, layouts, API routes, and Server Actions.
+放：
 
-```text
-src/app/
-├── (app)/
-├── (auth)/
-├── actions/
-├── api/
-├── globals.css
-└── layout.tsx
-```
+- App Router 路由
+- 页面
+- Server Actions
+- Route Handlers
 
-### Important points
+### `src/components/`
 
-- `(app)` contains authenticated application pages
-- `(auth)` currently contains the login route group
-- `actions/` contains server actions such as account management, sync, email mutations, and send flow
-- `api/` only exists for cases that need external callbacks or streaming
+放界面组件，按功能分组，例如：
 
-## `src/components/`
+- `accounts/`
+- `compose/`
+- `inbox/`
+- `layout/`
+- `sent/`
+- `sync/`
+- `ui/`
 
-Components are grouped by function instead of being kept in one flat folder.
+### `src/lib/`
 
-```text
-src/components/
-├── accounts/
-├── compose/
-├── inbox/
-├── layout/
-├── providers/
-├── sent/
-├── sync/
-└── ui/
-```
+这是主要业务逻辑层，重点包括：
 
-### Group responsibilities
+- `db/`：schema 与数据库访问基础
+- `queries/`：读取型数据访问
+- `services/`：更高层的编排逻辑
+- `providers/`：Gmail / Outlook / IMAP/SMTP 集成
+- `oauth-apps.ts`：OAuth app 解析与管理逻辑
 
-- `accounts/` — account cards and account-adding dialog
-- `compose/` — compose entry link and compose form
-- `inbox/` — inbox shell, mail list, mail detail, snooze dialog
-- `layout/` — main sidebar shell
-- `providers/` — app-level providers such as `ToastProvider`
-- `sent/` — sent-message list and detail views
-- `sync/` — sync buttons
-- `ui/` — shadcn/ui primitives
+## 想改某个功能时，看哪里
 
-## `src/config/`
+### 改收件箱行为
 
-Centralized runtime and provider configuration.
-
-```text
-src/config/
-├── db.ts
-├── env.ts
-├── providers.server.ts
-├── providers.ts
-└── r2.ts
-```
-
-### What lives here
-
-- `env.ts` — required env lookup helper
-- `db.ts` — Turso/libSQL connection config
-- `r2.ts` — R2 client config
-- `providers.ts` — provider labels/colors for UI
-- `providers.server.ts` — OAuth/provider-specific server config
-
-## `src/hooks/`
-
-Currently used for app-level reusable client hooks.
-
-```text
-src/hooks/
-└── use-toast.ts
-```
-
-## `src/lib/`
-
-This is the main business-logic layer.
-
-```text
-src/lib/
-├── db/
-├── providers/
-├── queries/
-├── services/
-├── account-providers.ts
-├── actions.ts
-├── auth.ts
-├── crypto.ts
-├── format.ts
-├── r2.ts
-└── ...
-```
-
-### Key subdirectories
-
-#### `src/lib/db/`
-
-- Drizzle schema
-- Drizzle db client
-- migration runner
-
-#### `src/lib/providers/`
-
-Provider implementations and provider-shared types:
-
-- Gmail
-- Outlook
-- IMAP/SMTP provider + QQ compatibility wrapper
-- MIME helpers
-- provider interface definitions
-
-#### `src/lib/queries/`
-
-Read-oriented data access:
-
-- accounts
-- emails
-- oauth apps
-- sent messages
-
-#### `src/lib/services/`
-
-Write / orchestration logic that is broader than a single query:
-
-- sync orchestration
-- lazy email hydration
-
-## `src/proxy.ts`
-
-Global request guard for the application.
-
-It lets public auth and cron routes through, while protecting the main app with `ACCESS_TOKEN`.
-
-## File-finding guide
-
-### If you want to change inbox behavior
-
-Look at:
+看：
 
 - `src/app/(app)/page.tsx`
 - `src/components/inbox/*`
@@ -193,51 +103,48 @@ Look at:
 - `src/lib/queries/emails.ts`
 - `src/lib/services/email-service.ts`
 
-### If you want to change sync behavior
+### 改账号接入 / OAuth app 管理
 
-Look at:
+看：
+
+- `src/app/(app)/accounts/page.tsx`
+- `src/app/actions/account.ts`
+- `src/app/actions/oauth-apps.ts`
+- `src/components/accounts/*`
+- `src/lib/oauth-apps.ts`
+- `src/lib/queries/oauth-apps.ts`
+
+### 改同步行为
+
+看：
 
 - `src/app/actions/sync.ts`
 - `src/lib/services/sync-service.ts`
 - `src/lib/providers/*`
 
-### If you want to change compose / sent flow
+### 改发信 / 已发送历史
 
-Look at:
+看：
 
 - `src/app/(app)/compose/page.tsx`
 - `src/components/compose/*`
 - `src/app/actions/send.ts`
+- `src/lib/queries/sent-messages.ts`
 - `src/lib/providers/gmail.ts`
 - `src/lib/providers/outlook.ts`
+- `src/lib/providers/imap-smtp/provider.ts`
 
-### If you want to change OAuth app management
+## `drizzle/` 为什么保留很多 migration
 
-Look at:
+因为这代表的是**项目历史升级路径**。  
+对于新部署，你不必逐个理解这些 migration；直接用 `npm run db:setup` 即可。
 
-- `src/app/(app)/accounts/page.tsx`
-- `src/app/actions/oauth-apps.ts`
-- `src/components/accounts/oauth-apps-panel.tsx`
-- `src/components/accounts/oauth-app-dialog.tsx`
-- `src/lib/oauth-apps.ts`
-- `src/lib/queries/oauth-apps.ts`
+但对于已有环境升级，它们仍然有价值，所以不会粗暴删除。
 
-### If you want to change deployment/runtime config
+## 推荐阅读顺序
 
-Look at:
+如果你是新贡献者：
 
-- `src/config/*`
-- `.env.example`
-- `vercel.json`
-- `drizzle.config.ts`
-
-## Why this structure exists
-
-This layout is intentionally optimized for the current size of the project:
-
-- shared UI is easier to find
-- server actions stay close to the App Router layer
-- data access and orchestration stay in `lib`
-- provider/runtime config is centralized instead of being scattered across files
-
-It is not a full feature-first monolith yet, but it is a strong middle ground for a growing Next.js app.
+1. 先读 [快速开始](/quick-start)
+2. 再读 [架构说明](/architecture)
+3. 最后再看这页和具体源码
