@@ -138,6 +138,24 @@ Origami Gmail Production
 
 ---
 
+## 如果你看到的界面和本文不完全一样
+
+Google Cloud Console 的界面改版比较频繁，所以按钮位置和分组名称可能会略有变化。你优先认这些关键词：
+
+- `Google Cloud Console`
+- `APIs & Services`
+- `Gmail API`
+- `Google Auth platform`
+- `Branding`
+- `Audience`
+- `Data Access`
+- `OAuth client ID`
+- `Web application`
+
+如果你看到的页面和本文不完全一样，不一定是你走错了，很多时候只是 Google 又改了 UI。
+
+---
+
 ## 宝宝式步骤：从零开始创建 Gmail OAuth App
 
 ### 第 1 步：打开 Google Cloud Console

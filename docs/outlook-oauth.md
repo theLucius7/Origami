@@ -151,6 +151,23 @@ Origami Outlook Production
 
 ---
 
+## 如果你看到的界面和本文不完全一样
+
+Microsoft Entra 后台也会改名字和导航位置。你优先认这些关键词：
+
+- `Microsoft Entra admin center`
+- `App registrations`
+- `New registration`
+- `Authentication`
+- `Certificates & secrets`
+- `API permissions`
+- `Delegated permissions`
+- `Grant admin consent`
+
+有时 `Entra ID` 的显示也会略有不同，但只要你还在应用注册页面体系里，一般方向就是对的。
+
+---
+
 ## 宝宝式步骤：从零开始创建 Outlook OAuth App
 
 ### 第 1 步：打开 Microsoft Entra Admin Center

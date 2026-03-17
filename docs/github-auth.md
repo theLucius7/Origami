@@ -158,6 +158,19 @@ GITHUB_ALLOWED_LOGIN=your-github-login
 
 ---
 
+## 如果你看到的界面和本文不完全一样
+
+GitHub 后台偶尔会微调文案，但你只要抓住这几个关键词，一般不会迷路：
+
+- `Settings`
+- `Developer settings`
+- `OAuth Apps`
+- `New OAuth App` 或 `Register a new application`
+
+如果按钮名字略有变化，优先认左侧栏目和页面标题，不要死盯某一个按钮翻译。
+
+---
+
 ## 宝宝式步骤：从零开始创建 GitHub OAuth App
 
 ### 第 1 步：打开 GitHub OAuth App 页面

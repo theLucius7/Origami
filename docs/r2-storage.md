@@ -72,6 +72,19 @@ R2 endpoint = https://<ACCOUNT_ID>.r2.cloudflarestorage.com
 
 ---
 
+## 如果你看到的界面和本文不完全一样
+
+Cloudflare 后台也会有一些 UI 调整，但通常你只要找到这些关键词就够了：
+
+- `R2 Object Storage`
+- `Buckets`
+- `Manage R2 API tokens`
+- `Account ID`
+
+如果导航层级和本文截图描述略有不同，优先按搜索和页面标题找，不要被菜单位置的小变化绊住。
+
+---
+
 ## 宝宝式步骤：从零开始配置 R2
 
 ### 第 1 步：登录 Cloudflare Dashboard
