@@ -53,6 +53,24 @@ function buildEmailRow(accountId: string, mail: SyncedEmail) {
   };
 }
 
+function buildHydrationState(mail: SyncedEmail) {
+  const hasHydratedPayload = mail.bodyText !== null || mail.bodyHtml !== null;
+
+  if (!hasHydratedPayload) {
+    return {
+      hydrationStatus: "metadata",
+      hydratedAt: null,
+      hydrationError: null,
+    };
+  }
+
+  return {
+    hydrationStatus: "hydrated",
+    hydratedAt: Math.floor(Date.now() / 1000),
+    hydrationError: null,
+  };
+}
+
 async function upsertEmail(accountId: string, mail: SyncedEmail) {
   const emailId = nanoid();
   const emailRow = buildEmailRow(accountId, mail);
@@ -63,6 +81,7 @@ async function upsertEmail(accountId: string, mail: SyncedEmail) {
       ...emailRow,
       bodyText: mail.bodyText,
       bodyHtml: mail.bodyHtml,
+      ...buildHydrationState(mail),
       localDone: 0,
       localArchived: 0,
       localLabels: "[]",
@@ -88,6 +107,7 @@ async function upsertEmail(accountId: string, mail: SyncedEmail) {
           ? {
               bodyText: mail.bodyText,
               bodyHtml: mail.bodyHtml,
+              ...buildHydrationState(mail),
             }
           : {}),
       })

@@ -14,6 +14,10 @@ import {
   CheckCircle2,
   Archive,
   Clock3,
+  RefreshCw,
+  AlertCircle,
+  CheckCircle,
+  MinusCircle,
 } from "lucide-react";
 import {
   clearSnooze,
@@ -33,6 +37,41 @@ interface MailDetailProps {
   isHydrating?: boolean;
   onClose?: () => void;
   onLocalUpdate?: (emailId: string, patch: Partial<Email>) => void;
+}
+
+function renderWriteBackStatus(label: string, status: string | null | undefined, error?: string | null) {
+  switch (status) {
+    case "pending":
+      return (
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <RefreshCw className="h-3 w-3 animate-spin" />
+          <span>{label}写回中…</span>
+        </div>
+      );
+    case "success":
+      return (
+        <div className="flex items-center gap-1 text-xs text-emerald-600">
+          <CheckCircle className="h-3 w-3" />
+          <span>{label}已写回远端</span>
+        </div>
+      );
+    case "skipped":
+      return (
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <MinusCircle className="h-3 w-3" />
+          <span>{label}已跳过{error ? `：${error}` : ""}</span>
+        </div>
+      );
+    case "failed":
+      return (
+        <div className="flex items-center gap-1 text-xs text-destructive">
+          <AlertCircle className="h-3 w-3" />
+          <span>{label}写回失败{error ? `：${error}` : ""}</span>
+        </div>
+      );
+    default:
+      return null;
+  }
 }
 
 export function MailDetail({
@@ -101,6 +140,7 @@ export function MailDetail({
   }
 
   const isSnoozed = !!email.localSnoozeUntil && email.localSnoozeUntil > nowTs;
+  const hydrationStatus = isHydrating ? "hydrating" : email.hydrationStatus;
 
   return (
     <>
@@ -155,6 +195,10 @@ export function MailDetail({
             {email.localDone === 1 && <Badge variant="secondary">Done</Badge>}
             {email.localArchived === 1 && <Badge variant="secondary">已归档</Badge>}
             {isSnoozed && <Badge variant="secondary">稍后看中</Badge>}
+            {hydrationStatus === "metadata" && <Badge variant="outline">仅元数据</Badge>}
+            {hydrationStatus === "hydrating" && <Badge variant="outline">正文拉取中</Badge>}
+            {hydrationStatus === "hydrated" && <Badge variant="outline">正文已缓存</Badge>}
+            {hydrationStatus === "failed" && <Badge variant="destructive">正文拉取失败</Badge>}
           </div>
           <div className="flex items-center justify-between">
             <div>
@@ -169,12 +213,22 @@ export function MailDetail({
               收件人: {recipients.join(", ")}
             </p>
           )}
+          <div className="mt-2 space-y-1">
+            {renderWriteBackStatus("已读", email.readWriteBackStatus, email.readWriteBackError)}
+            {renderWriteBackStatus("星标", email.starWriteBackStatus, email.starWriteBackError)}
+            {hydrationStatus === "failed" && email.hydrationError && (
+              <div className="flex items-center gap-1 text-xs text-destructive">
+                <AlertCircle className="h-3 w-3" />
+                <span>正文拉取失败：{email.hydrationError}</span>
+              </div>
+            )}
+          </div>
         </div>
 
         <Separator />
 
         <ScrollArea className="flex-1 p-4">
-          {isHydrating ? (
+          {hydrationStatus === "hydrating" ? (
             <div className="flex h-full min-h-48 items-center justify-center text-sm text-muted-foreground">
               正在按需拉取正文与附件…
             </div>
@@ -185,6 +239,14 @@ export function MailDetail({
             />
           ) : email.bodyText ? (
             <pre className="whitespace-pre-wrap text-sm">{email.bodyText}</pre>
+          ) : hydrationStatus === "hydrated" ? (
+            <div className="text-sm text-muted-foreground">
+              这封邮件已经成功补拉，但远端没有可显示的正文内容。
+            </div>
+          ) : hydrationStatus === "failed" ? (
+            <div className="text-sm text-muted-foreground">
+              正文拉取失败了，你稍后可以重新打开这封邮件再试一次。
+            </div>
           ) : (
             <div className="text-sm text-muted-foreground">
               这封邮件当前仅缓存了标题与摘要，点击时会按需补拉正文。

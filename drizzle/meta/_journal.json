@@ -64,6 +64,13 @@
       "when": 1773831600000,
       "tag": "0008_app_installation_github_auth",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1773832800000,
+      "tag": "0009_email_hydration_and_writeback_state",
+      "breakpoints": true
     }
   ]
 }

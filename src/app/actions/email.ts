@@ -10,8 +10,11 @@ import {
   listEmailAttachments,
   listEmails,
 } from "@/lib/queries/emails";
-import { writeBackRead, writeBackStar } from "@/lib/providers/writeBack";
+import { writeBackRead, writeBackStar, type WriteBackResult } from "@/lib/providers/writeBack";
 import { getHydratedEmailDetail, hydrateEmailIfNeeded } from "@/lib/services/email-service";
+
+type WriteBackKind = "read" | "star";
+type PersistedWriteBackStatus = "idle" | "pending" | "success" | "skipped" | "failed";
 
 async function getWriteBackTargets(emailIds: string[]) {
   if (emailIds.length === 0) return [];
@@ -25,30 +28,130 @@ async function getWriteBackTargets(emailIds: string[]) {
   return rows;
 }
 
-function triggerReadWriteBack(emailId: string) {
-  void getWriteBackTargets([emailId])
-    .then(async (rows) => {
-      const row = rows[0];
-      if (!row?.email.remoteId) return;
-      await writeBackRead(row.account, row.email.remoteId);
+async function persistWriteBackState(
+  emailIds: string[],
+  kind: WriteBackKind,
+  state: {
+    status: PersistedWriteBackStatus;
+    error?: string | null;
+    at?: number | null;
+  }
+) {
+  if (emailIds.length === 0) return;
+
+  const isRead = kind === "read";
+  await db
+    .update(emails)
+    .set(
+      isRead
+        ? {
+            readWriteBackStatus: state.status,
+            readWriteBackError: state.error ?? null,
+            readWriteBackAt: state.at ?? null,
+          }
+        : {
+            starWriteBackStatus: state.status,
+            starWriteBackError: state.error ?? null,
+            starWriteBackAt: state.at ?? null,
+          }
+    )
+    .where(inArray(emails.id, emailIds));
+}
+
+function mapWriteBackResult(result: WriteBackResult): {
+  status: PersistedWriteBackStatus;
+  error: string | null;
+  at: number;
+} {
+  return {
+    status: result.success ? "success" : result.skipped ? "skipped" : "failed",
+    error: result.error ?? null,
+    at: Math.floor(Date.now() / 1000),
+  };
+}
+
+async function scheduleReadWriteBack(emailId: string) {
+  const rows = await getWriteBackTargets([emailId]);
+  const row = rows[0];
+  if (!row) return;
+
+  if (!row.email.remoteId) {
+    await persistWriteBackState([emailId], "read", {
+      status: "skipped",
+      error: "missing remote message id",
+      at: Math.floor(Date.now() / 1000),
+    });
+    return;
+  }
+
+  await persistWriteBackState([emailId], "read", {
+    status: "pending",
+    error: null,
+    at: null,
+  });
+
+  void writeBackRead(row.account, row.email.remoteId)
+    .then(async (result) => {
+      await persistWriteBackState([emailId], "read", mapWriteBackResult(result));
     })
-    .catch((error) => {
+    .catch(async (error) => {
+      const message = error instanceof Error ? error.message : String(error);
+      await persistWriteBackState([emailId], "read", {
+        status: "failed",
+        error: message,
+        at: Math.floor(Date.now() / 1000),
+      });
       console.warn(`[writeback:read] failed to schedule for ${emailId}:`, error);
     });
 }
 
-function triggerStarWriteBack(emailIds: string[], starred: boolean) {
-  void getWriteBackTargets(emailIds)
-    .then(async (rows) => {
-      await Promise.allSettled(
-        rows
-          .filter((row) => Boolean(row.email.remoteId))
-          .map((row) => writeBackStar(row.account, row.email.remoteId!, starred))
-      );
+async function scheduleStarWriteBack(emailIds: string[], starred: boolean) {
+  const rows = await getWriteBackTargets(emailIds);
+  if (rows.length === 0) return;
+
+  const withRemoteIds = rows.filter((row) => Boolean(row.email.remoteId));
+  const withoutRemoteIds = rows.filter((row) => !row.email.remoteId);
+
+  if (withoutRemoteIds.length > 0) {
+    await persistWriteBackState(
+      withoutRemoteIds.map((row) => row.email.id),
+      "star",
+      {
+        status: "skipped",
+        error: "missing remote message id",
+        at: Math.floor(Date.now() / 1000),
+      }
+    );
+  }
+
+  if (withRemoteIds.length === 0) return;
+
+  await persistWriteBackState(
+    withRemoteIds.map((row) => row.email.id),
+    "star",
+    {
+      status: "pending",
+      error: null,
+      at: null,
+    }
+  );
+
+  void Promise.allSettled(
+    withRemoteIds.map(async (row) => {
+      try {
+        const result = await writeBackStar(row.account, row.email.remoteId!, starred);
+        await persistWriteBackState([row.email.id], "star", mapWriteBackResult(result));
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        await persistWriteBackState([row.email.id], "star", {
+          status: "failed",
+          error: message,
+          at: Math.floor(Date.now() / 1000),
+        });
+        console.warn(`[writeback:star] failed to schedule for ${row.email.id}:`, error);
+      }
     })
-    .catch((error) => {
-      console.warn(`[writeback:star] failed to schedule for ${emailIds.join(",")}:`, error);
-    });
+  );
 }
 
 export async function getEmails(opts?: {
@@ -83,7 +186,11 @@ export async function markRead(emailId: string) {
       .set({ isRead: 1 })
       .where(eq(emails.id, emailId));
 
-    triggerReadWriteBack(emailId);
+    try {
+      await scheduleReadWriteBack(emailId);
+    } catch (error) {
+      console.warn(`[writeback:read] failed to prepare for ${emailId}:`, error);
+    }
   });
 }
 
@@ -98,7 +205,11 @@ export async function toggleStar(emailId: string) {
       .from(emails)
       .where(eq(emails.id, emailId));
 
-    triggerStarWriteBack([emailId], row[0]?.isStarred === 1);
+    try {
+      await scheduleStarWriteBack([emailId], row[0]?.isStarred === 1);
+    } catch (error) {
+      console.warn(`[writeback:star] failed to prepare for ${emailId}:`, error);
+    }
   });
 }
 
@@ -110,7 +221,11 @@ export async function setStarred(emailIds: string[], starred = true) {
       .set({ isStarred: starred ? 1 : 0 })
       .where(inArray(emails.id, emailIds));
 
-    triggerStarWriteBack(emailIds, starred);
+    try {
+      await scheduleStarWriteBack(emailIds, starred);
+    } catch (error) {
+      console.warn(`[writeback:star] failed to prepare for ${emailIds.join(",")}:`, error);
+    }
   });
 }
 
