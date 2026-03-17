@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionCookieName, getSessionCookieOptions } from "@/lib/session";
+import { toPublicUrl } from "@/lib/request-origin";
 
 function withHttpsPreviewCookieCompat(request: Request, opts: ReturnType<typeof getSessionCookieOptions>) {
   const proto = request.headers.get("x-forwarded-proto") ?? new URL(request.url).protocol.replace(":", "");
@@ -20,7 +21,7 @@ export async function POST(request: Request) {
 }
 
 export async function GET(request: Request) {
-  const response = NextResponse.redirect(new URL("/login", request.url));
+  const response = NextResponse.redirect(toPublicUrl(request, "/login"));
   response.cookies.set(getSessionCookieName(), "", {
     ...withHttpsPreviewCookieCompat(request, getSessionCookieOptions()),
     maxAge: 0,

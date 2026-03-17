@@ -6,6 +6,7 @@ import {
   getSessionCookieOptions,
   readSessionFromCookies,
 } from "@/lib/session";
+import { toPublicUrl } from "@/lib/request-origin";
 
 function withHttpsPreviewCookieCompat(request: NextRequest, opts: ReturnType<typeof getSessionCookieOptions>) {
   const proto = request.headers.get("x-forwarded-proto") ?? request.nextUrl.protocol.replace(":", "");
@@ -19,12 +20,12 @@ function withHttpsPreviewCookieCompat(request: NextRequest, opts: ReturnType<typ
 export async function POST(request: NextRequest) {
   const session = await readSessionFromCookies(request.cookies);
   if (!session) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(toPublicUrl(request, "/login"));
   }
 
   await markInstallationSetupComplete();
 
-  const response = NextResponse.redirect(new URL("/", request.url));
+  const response = NextResponse.redirect(toPublicUrl(request, "/"));
   response.cookies.set(
     getSessionCookieName(),
     await createSessionCookieValue({ ...session, setupComplete: true }),
