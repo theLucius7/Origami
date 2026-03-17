@@ -1,5 +1,6 @@
 import { ImapFlow } from "imapflow";
 import { simpleParser } from "mailparser";
+import nodemailer from "nodemailer";
 import { getQqProviderConfig } from "@/config/providers.server";
 import type {
   EmailProvider,
@@ -44,12 +45,12 @@ export class QQProvider implements EmailProvider {
     this.creds = creds;
   }
 
-  private createClient() {
+  private createImapClient() {
     const config = getQqProviderConfig();
     return new ImapFlow({
-      host: config.host,
-      port: config.port,
-      secure: config.secure,
+      host: config.imap.host,
+      port: config.imap.port,
+      secure: config.imap.secure,
       auth: {
         user: this.creds.email,
         pass: this.creds.authCode,
@@ -58,8 +59,21 @@ export class QQProvider implements EmailProvider {
     });
   }
 
+  private createSmtpTransport() {
+    const config = getQqProviderConfig();
+    return nodemailer.createTransport({
+      host: config.smtp.host,
+      port: config.smtp.port,
+      secure: config.smtp.secure,
+      auth: {
+        user: this.creds.email,
+        pass: this.creds.authCode,
+      },
+    });
+  }
+
   private async withInboxClient<T>(fn: (client: ImapFlow) => Promise<T>): Promise<T> {
-    const client = this.createClient();
+    const client = this.createImapClient();
 
     try {
       await client.connect();
@@ -76,15 +90,98 @@ export class QQProvider implements EmailProvider {
   }
 
   getCapabilities() {
-    return { canSend: false };
+    return { canSend: true };
   }
 
-  async sendMail(_params: SendMailParams): Promise<SendMailResult> {
-    return {
-      ok: false,
-      errorCode: "UNSUPPORTED",
-      errorMessage: "QQ 邮箱暂不支持通过 Origami 发信。",
-    };
+  async sendMail(params: SendMailParams): Promise<SendMailResult> {
+    if (params.to.length === 0) {
+      return {
+        ok: false,
+        errorCode: "VALIDATION",
+        errorMessage: "至少需要一个收件人。",
+      };
+    }
+
+    const transport = this.createSmtpTransport();
+
+    try {
+      const info = await transport.sendMail({
+        from: params.from || this.creds.email,
+        to: params.to,
+        ...(params.cc?.length ? { cc: params.cc } : {}),
+        ...(params.bcc?.length ? { bcc: params.bcc } : {}),
+        subject: params.subject || "(无主题)",
+        text: params.textBody || "",
+        ...(params.htmlBody ? { html: params.htmlBody } : {}),
+        ...(params.attachments?.length
+          ? {
+              attachments: params.attachments.map((attachment) => ({
+                filename: attachment.filename,
+                contentType: attachment.contentType,
+                content: attachment.content,
+              })),
+            }
+          : {}),
+      });
+
+      return {
+        ok: true,
+        providerMessageId: info.messageId ?? null,
+        sentAt: Math.floor(Date.now() / 1000),
+      };
+    } catch (error: unknown) {
+      const smtpError = error as {
+        code?: string;
+        responseCode?: number;
+        response?: string;
+        command?: string;
+        message?: string;
+      };
+      const responseCode = smtpError.responseCode;
+      const providerRawError = JSON.stringify({
+        code: smtpError.code,
+        responseCode: smtpError.responseCode,
+        response: smtpError.response,
+        command: smtpError.command,
+        message: smtpError.message,
+      });
+
+      if (responseCode === 535 || responseCode === 534) {
+        return {
+          ok: false,
+          errorCode: "AUTH_EXPIRED",
+          errorMessage: "QQ 邮箱授权码无效或已过期，请重新生成授权码。",
+          providerRawError,
+        };
+      }
+
+      if (responseCode === 421 || responseCode === 450 || responseCode === 451 || responseCode === 452) {
+        return {
+          ok: false,
+          errorCode: "RATE_LIMITED",
+          errorMessage: "QQ 邮箱当前触发了频率或临时限制，请稍后重试。",
+          providerRawError,
+        };
+      }
+
+      if (["ECONNECTION", "ETIMEDOUT", "ESOCKET", "ECONNRESET", "ENOTFOUND", "EPIPE"].includes(smtpError.code ?? "")) {
+        return {
+          ok: false,
+          errorCode: "NETWORK",
+          errorMessage: "连接 QQ SMTP 服务失败，请稍后重试。",
+          providerRawError,
+        };
+      }
+
+      return {
+        ok: false,
+        errorCode: "PROVIDER_ERROR",
+        errorMessage: smtpError.message ?? "QQ 邮箱发信失败。",
+        providerRawError,
+      };
+    } finally {
+      await transport.close();
+    }
   }
 
   async markMessageRead(remoteId: string): Promise<void> {

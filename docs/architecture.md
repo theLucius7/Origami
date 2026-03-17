@@ -126,7 +126,7 @@ That means Origami behaves like a local productivity layer on top of external in
 
 ## 6. Sending flow
 
-Origami currently supports **new outbound email** through Gmail and Outlook only.
+Origami currently supports **new outbound email** through Gmail, Outlook, and QQ.
 
 ```text
 Compose form
@@ -141,7 +141,7 @@ Current behavior:
 
 - Gmail: sends raw RFC 2822 MIME via Gmail API
 - Outlook: sends JSON payload via Microsoft Graph `sendMail`
-- QQ: sending is not implemented
+- QQ: sends via SMTP with the mailbox auth code
 
 Current limitations:
 

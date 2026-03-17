@@ -22,7 +22,7 @@ features:
   - title: Local-first triage
     details: Done, Archive, and Snooze stay local to Origami, while Read / Star can optionally write back to supported providers.
   - title: Minimal sending flow
-    details: Compose and send new emails through Gmail and Outlook, with local sent history.
+    details: Compose and send new emails through Gmail, Outlook, and QQ, with local sent history.
   - title: R2-backed attachments
     details: Large binary attachments stay in Cloudflare R2 while metadata lives in Turso.
   - title: Search syntax
@@ -39,7 +39,7 @@ Current provider support:
 
 - **Gmail** — read + send
 - **Outlook** — read + send
-- **QQ Mail** — read only via IMAP
+- **QQ Mail** — read via IMAP + send via SMTP
 
 ## What is intentionally local
 

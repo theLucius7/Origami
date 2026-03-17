@@ -120,7 +120,12 @@ Origami 当前请求的 Outlook scopes 包括：
 
 ## 6. 配置 QQ 邮箱
 
-QQ 当前是**只读 IMAP**。
+QQ 当前使用 **IMAP 做收件同步**，使用 **SMTP 做发信**。
+
+需要的服务端点：
+
+- IMAP：`imap.qq.com:993`（SSL）
+- SMTP：`smtp.qq.com:465`（SSL）
 
 用户需要提供：
 
@@ -187,12 +192,12 @@ Authorization: Bearer <CRON_SECRET>
 - 手动同步可用
 - `/api/cron/sync` 能接受正确的 Bearer 密钥
 - 附件下载正常
-- Gmail / Outlook 发信正常
+- Gmail / Outlook / QQ 发信正常
 - `audit:prod` 报告生产依赖零漏洞
 
 ## 10. 已知部署注意事项
 
-- QQ 发信尚未实现
+- QQ 发信现在依赖 SMTP 授权码登录而非 OAuth；如果发信失败，优先检查是否已开启 IMAP / SMTP，并重新生成 QQ 授权码
 - Done / Archive / Snooze 仍只保存在 Origami 本地；Read / Star 回写是可选能力，并依赖正确的 provider scopes
 - Outlook 发信在当前实现下仍限制单个附件小于 3 MB
 - provider 回调 URL 必须与实际配置的应用 URL 完全一致

@@ -34,8 +34,15 @@ export function getOutlookProviderConfig() {
 
 export function getQqProviderConfig() {
   return {
-    host: "imap.qq.com",
-    port: 993,
-    secure: true,
+    imap: {
+      host: "imap.qq.com",
+      port: 993,
+      secure: true,
+    },
+    smtp: {
+      host: "smtp.qq.com",
+      port: 465,
+      secure: true,
+    },
   };
 }

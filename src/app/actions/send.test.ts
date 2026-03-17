@@ -73,6 +73,12 @@ describe("sendMailAction", () => {
     insertedRows.length = 0;
     providerMock.getCapabilities.mockClear();
     providerMock.sendMail.mockClear();
+    providerMock.getCapabilities.mockReturnValue({ canSend: true });
+    providerMock.sendMail.mockResolvedValue({
+      ok: true,
+      providerMessageId: "provider-msg-1",
+      sentAt: 1_763_680_000,
+    });
   });
 
   it("sends via provider and writes a local sent record", async () => {
@@ -120,5 +126,26 @@ describe("sendMailAction", () => {
       ccRecipients: JSON.stringify(["cc@example.com"]),
       bccRecipients: JSON.stringify(["bcc@example.com"]),
     });
+  });
+
+  it("returns insufficient-scope style error when account is not send-capable", async () => {
+    providerMock.getCapabilities.mockReturnValue({ canSend: false });
+    const { sendMailAction } = await import("./send");
+
+    const result = await sendMailAction({
+      accountId: "acc-1",
+      from: "qq@example.com",
+      to: ["alice@example.com"],
+      subject: "Hello",
+      textBody: "body",
+      attachmentIds: [],
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      errorCode: "INSUFFICIENT_SCOPE",
+      errorMessage: "当前账号未配置发送权限，请重新授权后再试。",
+    });
+    expect(providerMock.sendMail).not.toHaveBeenCalled();
   });
 });

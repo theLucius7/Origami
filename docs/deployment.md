@@ -120,7 +120,12 @@ Callback URL:
 
 ## 6. Configure QQ Mail
 
-QQ support is currently **read-only via IMAP**.
+QQ currently uses **IMAP for inbox sync** and **SMTP for outbound sending**.
+
+Required endpoints:
+
+- IMAP: `imap.qq.com:993` (SSL)
+- SMTP: `smtp.qq.com:465` (SSL)
 
 Users must provide:
 
@@ -187,12 +192,12 @@ Authorization: Bearer <CRON_SECRET>
 - manual sync works
 - `/api/cron/sync` accepts the correct bearer secret
 - attachments download correctly
-- compose works for Gmail / Outlook
+- compose works for Gmail / Outlook / QQ
 - `audit:prod` reports zero production vulnerabilities
 
 ## 10. Known deployment caveats
 
-- QQ sending is not implemented
+- QQ compose now depends on SMTP auth-code login instead of OAuth; if send fails, verify IMAP/SMTP is enabled and regenerate the QQ auth code first
 - Done / Archive / Snooze stay local to Origami; Read / Star write-back is optional and requires the right provider scopes
 - Outlook compose is currently limited to single attachments smaller than 3 MB
 - provider callback URLs must exactly match the configured app URL

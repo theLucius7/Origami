@@ -124,7 +124,7 @@ export function AddAccountDialog() {
                   required
                 />
                 <p className="text-xs text-muted-foreground">
-                  QQ 邮箱 → 设置 → 账户 → POP3/IMAP/SMTP 服务 → 生成授权码
+                  QQ 邮箱 → 设置 → 账户 → POP3/IMAP/SMTP 服务 → 开启 IMAP / SMTP 并生成授权码
                 </p>
               </div>
               <div className="space-y-2">
