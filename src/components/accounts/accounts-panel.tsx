@@ -5,12 +5,22 @@ import { useRouter } from "next/navigation";
 import { updateAllAccountsWriteBackSettings } from "@/app/actions/account";
 import { AccountCard } from "@/components/accounts/account-card";
 import { maybeShowWriteBackEnabledToastOnce } from "@/components/accounts/accounts-page-notifications";
-import type { AccountSettingsView } from "@/components/accounts/types";
+import type { AccountSettingsView, OAuthAppUsageView } from "@/components/accounts/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 
-export function AccountsPanel({ accounts }: { accounts: AccountSettingsView[] }) {
+interface AccountsPanelProps {
+  accounts: AccountSettingsView[];
+  gmailOAuthApps: OAuthAppUsageView[];
+  outlookOAuthApps: OAuthAppUsageView[];
+}
+
+export function AccountsPanel({
+  accounts,
+  gmailOAuthApps,
+  outlookOAuthApps,
+}: AccountsPanelProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -82,7 +92,15 @@ export function AccountsPanel({ accounts }: { accounts: AccountSettingsView[] })
       </Card>
 
       {accounts.map((account) => (
-        <AccountCard key={account.id} account={account} />
+        <AccountCard
+          key={account.id}
+          account={account}
+          oauthApps={account.provider === "gmail"
+            ? gmailOAuthApps
+            : account.provider === "outlook"
+              ? outlookOAuthApps
+              : []}
+        />
       ))}
     </div>
   );

@@ -17,7 +17,7 @@ export function parseAccountCredentials(account: Account) {
   return JSON.parse(decrypt(account.credentials)) as Record<string, unknown>;
 }
 
-export function createProviderForAccount(account: Account): EmailProvider {
+export async function createProviderForAccount(account: Account): Promise<EmailProvider> {
   return createEmailProvider(account, parseAccountCredentials(account));
 }
 
@@ -31,7 +31,7 @@ export async function getAccountWithProvider(accountId: string): Promise<{
 
   return {
     account,
-    provider: createProviderForAccount(account),
+    provider: await createProviderForAccount(account),
   };
 }
 
@@ -44,13 +44,14 @@ export async function persistProviderCredentialsIfNeeded(account: Account, provi
 
 export async function listSendCapableAccounts(): Promise<SendCapableAccountSummary[]> {
   const rows = await db.select().from(accounts).orderBy(accounts.createdAt);
+  const result: SendCapableAccountSummary[] = [];
 
-  return rows.flatMap((account) => {
+  for (const account of rows) {
     try {
-      const provider = createProviderForAccount(account);
-      if (!provider.getCapabilities().canSend) return [];
+      const provider = await createProviderForAccount(account);
+      if (!provider.getCapabilities().canSend) continue;
 
-      return [{
+      result.push({
         id: account.id,
         provider: account.provider,
         email: account.email,
@@ -58,10 +59,11 @@ export async function listSendCapableAccounts(): Promise<SendCapableAccountSumma
         fromAddress: account.displayName
           ? `${account.displayName} <${account.email}>`
           : account.email,
-      }];
+      });
     } catch (error) {
       console.warn("Failed to inspect provider capabilities:", account.email, error);
-      return [];
     }
-  });
+  }
+
+  return result;
 }

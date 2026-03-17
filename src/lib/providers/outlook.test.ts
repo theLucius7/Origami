@@ -16,6 +16,9 @@ vi.mock("@microsoft/microsoft-graph-client", () => ({
 
 describe("OutlookProvider", () => {
   beforeEach(() => {
+    process.env.NEXT_PUBLIC_APP_URL = "http://localhost:3000";
+    process.env.OUTLOOK_CLIENT_ID = "outlook-client";
+    process.env.OUTLOOK_CLIENT_SECRET = "outlook-secret";
     postMock.mockReset();
     patchMock.mockReset();
     postMock.mockResolvedValue(undefined);

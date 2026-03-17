@@ -1,6 +1,11 @@
 import { google, type gmail_v1 } from "googleapis";
-import { getGmailProviderConfig } from "@/config/providers.server";
-import { DEFAULT_OAUTH_APP_ID } from "@/lib/oauth-apps";
+import { DEFAULT_OAUTH_APP_ID } from "@/lib/oauth-apps.shared";
+import {
+  GMAIL_SEND_SCOPES,
+  getDefaultGmailOAuthAppSync,
+  resolveGmailOAuthApp,
+  type ResolvedGmailOAuthApp,
+} from "@/lib/oauth-apps";
 import { buildMimeMessage, encodeMimeMessageBase64Url } from "./mime";
 import type {
   EmailProvider,
@@ -17,6 +22,7 @@ interface GmailCredentials {
   refreshToken: string;
   scopes?: string[];
   appId?: string;
+  oauthApp?: ResolvedGmailOAuthApp;
 }
 
 export const GMAIL_MODIFY_SCOPE = "https://www.googleapis.com/auth/gmail.modify";
@@ -26,17 +32,16 @@ function normalizeScopes(scopes?: string[] | string): string[] {
   return [...new Set(list.map((scope) => scope.trim()).filter(Boolean))];
 }
 
-function hasGmailSendScope(scopes?: string[], appId?: string): boolean {
+function hasGmailSendScope(scopes?: string[]): boolean {
   const normalized = normalizeScopes(scopes);
-  return getGmailProviderConfig(appId).sendScopes.some((scope) => normalized.includes(scope));
+  return GMAIL_SEND_SCOPES.some((scope) => normalized.includes(scope));
 }
 
 export function hasGmailModifyScope(scopes?: string[]): boolean {
   return normalizeScopes(scopes).includes(GMAIL_MODIFY_SCOPE);
 }
 
-function getOAuth2Client(appId?: string) {
-  const config = getGmailProviderConfig(appId);
+function getOAuth2Client(config: ResolvedGmailOAuthApp) {
   return new google.auth.OAuth2(
     config.clientId,
     config.clientSecret,
@@ -44,8 +49,18 @@ function getOAuth2Client(appId?: string) {
   );
 }
 
-export function getGmailAuthUrl(state?: string, appId?: string): string {
-  const oauth2 = getOAuth2Client(appId);
+function resolveSyncGmailOAuthApp(appId?: string, oauthApp?: ResolvedGmailOAuthApp) {
+  if (oauthApp) return oauthApp;
+  const normalizedAppId = appId?.trim() || DEFAULT_OAUTH_APP_ID;
+  if (normalizedAppId !== DEFAULT_OAUTH_APP_ID) {
+    throw new Error(`OAuth app \"${normalizedAppId}\" requires async resolution before constructing GmailProvider.`);
+  }
+  return getDefaultGmailOAuthAppSync();
+}
+
+export async function getGmailAuthUrl(state?: string, appId?: string): Promise<string> {
+  const oauthConfig = await resolveGmailOAuthApp(appId);
+  const oauth2 = getOAuth2Client(oauthConfig);
   return oauth2.generateAuthUrl({
     access_type: "offline",
     prompt: "consent",
@@ -59,7 +74,8 @@ export function getGmailAuthUrl(state?: string, appId?: string): string {
 }
 
 export async function exchangeGmailCode(code: string, appId?: string) {
-  const oauth2 = getOAuth2Client(appId);
+  const oauthConfig = await resolveGmailOAuthApp(appId);
+  const oauth2 = getOAuth2Client(oauthConfig);
   const { tokens } = await oauth2.getToken(code);
   oauth2.setCredentials(tokens);
 
@@ -71,7 +87,7 @@ export async function exchangeGmailCode(code: string, appId?: string) {
     accessToken: tokens.access_token!,
     refreshToken: tokens.refresh_token!,
     scopes: normalizeScopes(tokens.scope),
-    appId: appId?.trim() || DEFAULT_OAUTH_APP_ID,
+    appId: oauthConfig.appId,
   };
 }
 
@@ -81,12 +97,14 @@ export class GmailProvider implements EmailProvider {
   private creds: GmailCredentials;
 
   constructor(creds: GmailCredentials) {
+    const oauthApp = resolveSyncGmailOAuthApp(creds.appId, creds.oauthApp);
     this.creds = {
       ...creds,
       scopes: normalizeScopes(creds.scopes),
-      appId: creds.appId?.trim() || DEFAULT_OAUTH_APP_ID,
+      appId: oauthApp.appId,
+      oauthApp,
     };
-    this.oauth2 = getOAuth2Client(this.creds.appId);
+    this.oauth2 = getOAuth2Client(oauthApp);
     this.oauth2.setCredentials({
       access_token: creds.accessToken,
       refresh_token: creds.refreshToken,
@@ -116,7 +134,7 @@ export class GmailProvider implements EmailProvider {
 
   getCapabilities() {
     return {
-      canSend: hasGmailSendScope(this.creds.scopes, this.creds.appId),
+      canSend: hasGmailSendScope(this.creds.scopes),
     };
   }
 

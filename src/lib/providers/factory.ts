@@ -1,5 +1,6 @@
 import { encrypt } from "@/lib/crypto";
 import type { Account } from "@/lib/db/schema";
+import { resolveGmailOAuthApp, resolveOutlookOAuthApp } from "@/lib/oauth-apps";
 import type { EmailProvider } from "./types";
 import { QQProvider } from "./qq";
 import { GmailProvider } from "./gmail";
@@ -7,10 +8,10 @@ import { OutlookProvider } from "./outlook";
 import { ImapSmtpProvider } from "./imap-smtp/provider";
 import { resolveImapSmtpConfigFromAccount } from "./imap-smtp/account-config";
 
-export function createEmailProvider(
+export async function createEmailProvider(
   account: Account,
   creds: Record<string, unknown>
-): EmailProvider {
+): Promise<EmailProvider> {
   switch (account.provider) {
     case "qq":
       return new QQProvider({
@@ -19,20 +20,26 @@ export function createEmailProvider(
       });
     case "imap_smtp":
       return new ImapSmtpProvider(resolveImapSmtpConfigFromAccount(account, creds));
-    case "gmail":
+    case "gmail": {
+      const oauthApp = await resolveGmailOAuthApp(account.oauthAppId ?? String(creds.appId ?? "default"));
       return new GmailProvider({
         accessToken: String(creds.accessToken ?? ""),
         refreshToken: String(creds.refreshToken ?? ""),
         scopes: Array.isArray(creds.scopes) ? creds.scopes.map(String) : [],
-        appId: account.oauthAppId ?? undefined,
+        appId: oauthApp.appId,
+        oauthApp,
       });
-    case "outlook":
+    }
+    case "outlook": {
+      const oauthApp = await resolveOutlookOAuthApp(account.oauthAppId ?? String(creds.appId ?? "default"));
       return new OutlookProvider({
         accessToken: String(creds.accessToken ?? ""),
         refreshToken: String(creds.refreshToken ?? ""),
         scopes: Array.isArray(creds.scopes) ? creds.scopes.map(String) : [],
-        appId: account.oauthAppId ?? undefined,
+        appId: oauthApp.appId,
+        oauthApp,
       });
+    }
     default:
       throw new Error(`Unknown provider: ${account.provider}`);
   }

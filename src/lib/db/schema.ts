@@ -24,6 +24,23 @@ export const accounts = sqliteTable("accounts", {
   createdAt: integer("created_at").default(sql`(unixepoch())`),
 });
 
+export const oauthApps = sqliteTable(
+  "oauth_apps",
+  {
+    id: text("id").primaryKey(),
+    provider: text("provider").notNull(), // 'gmail' | 'outlook'
+    label: text("label").notNull(),
+    clientId: text("client_id").notNull(),
+    clientSecret: text("client_secret").notNull(), // AES-encrypted
+    tenant: text("tenant"),
+    createdAt: integer("created_at").default(sql`(unixepoch())`),
+  },
+  (t) => [
+    uniqueIndex("oauth_apps_provider_label_idx").on(t.provider, t.label),
+    index("oauth_apps_provider_created_idx").on(t.provider, t.createdAt),
+  ]
+);
+
 export const emails = sqliteTable(
   "emails",
   {
@@ -128,7 +145,7 @@ export const sentMessages = sqliteTable(
   },
   (t) => [
     index("sent_messages_account_sent_idx").on(t.accountId, t.sentAt),
-    index("sent_messages_provider_id_idx").on(t.providerMessageId),
+    index("sent_messages_sent_at_idx").on(t.sentAt),
   ]
 );
 
@@ -145,13 +162,12 @@ export const sentMessageAttachments = sqliteTable(
     r2ObjectKey: text("r2_object_key").notNull(),
     createdAt: integer("created_at").default(sql`(unixepoch())`),
   },
-  (t) => [index("sent_message_attachments_message_idx").on(t.sentMessageId)]
+  (t) => [index("sent_message_attachments_sent_idx").on(t.sentMessageId)]
 );
 
 export type Account = typeof accounts.$inferSelect;
-export type NewAccount = typeof accounts.$inferInsert;
+export type OAuthApp = typeof oauthApps.$inferSelect;
 export type Email = typeof emails.$inferSelect;
-export type NewEmail = typeof emails.$inferInsert;
 export type EmailListItem = Pick<
   Email,
   | "id"
@@ -171,10 +187,6 @@ export type EmailListItem = Pick<
   | "createdAt"
 >;
 export type Attachment = typeof attachments.$inferSelect;
-export type NewAttachment = typeof attachments.$inferInsert;
 export type ComposeUpload = typeof composeUploads.$inferSelect;
-export type NewComposeUpload = typeof composeUploads.$inferInsert;
 export type SentMessage = typeof sentMessages.$inferSelect;
-export type NewSentMessage = typeof sentMessages.$inferInsert;
 export type SentMessageAttachment = typeof sentMessageAttachments.$inferSelect;
-export type NewSentMessageAttachment = typeof sentMessageAttachments.$inferInsert;

@@ -1,6 +1,10 @@
 import { Client } from "@microsoft/microsoft-graph-client";
-import { getOutlookProviderConfig } from "@/config/providers.server";
-import { DEFAULT_OAUTH_APP_ID } from "@/lib/oauth-apps";
+import { DEFAULT_OAUTH_APP_ID } from "@/lib/oauth-apps.shared";
+import {
+  getDefaultOutlookOAuthAppSync,
+  resolveOutlookOAuthApp,
+  type ResolvedOutlookOAuthApp,
+} from "@/lib/oauth-apps";
 import type {
   EmailProvider,
   SendMailParams,
@@ -16,6 +20,7 @@ interface OutlookCredentials {
   refreshToken: string;
   scopes?: string[];
   appId?: string;
+  oauthApp?: ResolvedOutlookOAuthApp;
 }
 
 function normalizeScopes(scopes?: string[] | string): string[] {
@@ -34,8 +39,17 @@ export function hasOutlookWriteBackScope(scopes?: string[]): boolean {
   return normalizeScopes(scopes).includes(OUTLOOK_REQUIRED_WRITEBACK_SCOPE);
 }
 
-export function getOutlookAuthUrl(state?: string, appId?: string): string {
-  const config = getOutlookProviderConfig(appId);
+function resolveSyncOutlookOAuthApp(appId?: string, oauthApp?: ResolvedOutlookOAuthApp) {
+  if (oauthApp) return oauthApp;
+  const normalizedAppId = appId?.trim() || DEFAULT_OAUTH_APP_ID;
+  if (normalizedAppId !== DEFAULT_OAUTH_APP_ID) {
+    throw new Error(`OAuth app \"${normalizedAppId}\" requires async resolution before constructing OutlookProvider.`);
+  }
+  return getDefaultOutlookOAuthAppSync();
+}
+
+export async function getOutlookAuthUrl(state?: string, appId?: string): Promise<string> {
+  const config = await resolveOutlookOAuthApp(appId);
   const params = new URLSearchParams({
     client_id: config.clientId,
     response_type: "code",
@@ -49,7 +63,7 @@ export function getOutlookAuthUrl(state?: string, appId?: string): string {
 }
 
 export async function exchangeOutlookCode(code: string, appId?: string) {
-  const config = getOutlookProviderConfig(appId);
+  const config = await resolveOutlookOAuthApp(appId);
   const res = await fetch(config.tokenUrl, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -76,12 +90,12 @@ export async function exchangeOutlookCode(code: string, appId?: string) {
     accessToken: tokens.access_token as string,
     refreshToken: tokens.refresh_token as string,
     scopes: normalizeScopes(tokens.scope as string),
-    appId: appId?.trim() || DEFAULT_OAUTH_APP_ID,
+    appId: config.appId,
   };
 }
 
-async function refreshTokens(refreshToken: string, appId?: string) {
-  const config = getOutlookProviderConfig(appId);
+async function refreshTokens(refreshToken: string, oauthApp: ResolvedOutlookOAuthApp) {
+  const config = oauthApp;
   const res = await fetch(config.tokenUrl, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -106,10 +120,12 @@ export class OutlookProvider implements EmailProvider {
   private client: Client;
 
   constructor(creds: OutlookCredentials) {
+    const oauthApp = resolveSyncOutlookOAuthApp(creds.appId, creds.oauthApp);
     this.creds = {
       ...creds,
       scopes: normalizeScopes(creds.scopes),
-      appId: creds.appId?.trim() || DEFAULT_OAUTH_APP_ID,
+      appId: oauthApp.appId,
+      oauthApp,
     };
     this.client = Client.init({
       authProvider: (done) => done(null, this.creds.accessToken),
@@ -281,7 +297,7 @@ export class OutlookProvider implements EmailProvider {
     } catch (err: unknown) {
       const e = err as { statusCode?: number; code?: string; message?: string };
       if (e.statusCode === 401 || e.code === "InvalidAuthenticationToken") {
-        const next = await refreshTokens(this.creds.refreshToken, this.creds.appId);
+        const next = await refreshTokens(this.creds.refreshToken, this.creds.oauthApp!);
         this.creds = { ...this.creds, ...next };
         this.client = Client.init({ authProvider: (done) => done(null, this.creds.accessToken) });
         return fn();

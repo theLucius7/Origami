@@ -15,12 +15,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus } from "lucide-react";
 import { addImapSmtpAccount } from "@/app/actions/account";
 import { getGmailOAuthUrl, getOutlookOAuthUrl } from "@/app/actions/oauth";
+import type { OAuthAppOption } from "@/lib/oauth-apps.shared";
 import {
   MAILBOX_PRESET_KEYS,
   MAILBOX_PRESETS,
 } from "@/lib/providers/imap-smtp/presets";
 
-export function AddAccountDialog() {
+interface AddAccountDialogProps {
+  gmailOAuthApps: OAuthAppOption[];
+  outlookOAuthApps: OAuthAppOption[];
+}
+
+export function AddAccountDialog({
+  gmailOAuthApps,
+  outlookOAuthApps,
+}: AddAccountDialogProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
@@ -35,6 +44,8 @@ export function AddAccountDialog() {
   const [smtpHost, setSmtpHost] = useState("");
   const [smtpPort, setSmtpPort] = useState("465");
   const [smtpSecure, setSmtpSecure] = useState(true);
+  const [gmailAppId, setGmailAppId] = useState(gmailOAuthApps[0]?.id ?? "default");
+  const [outlookAppId, setOutlookAppId] = useState(outlookOAuthApps[0]?.id ?? "default");
   const [isPending, startTransition] = useTransition();
 
   const selectedPreset = useMemo(() => MAILBOX_PRESETS[presetKey], [presetKey]);
@@ -80,14 +91,14 @@ export function AddAccountDialog() {
 
   function handleGmailAuth() {
     startTransition(async () => {
-      const url = await getGmailOAuthUrl();
+      const url = await getGmailOAuthUrl({ appId: gmailAppId });
       window.location.href = url;
     });
   }
 
   function handleOutlookAuth() {
     startTransition(async () => {
-      const url = await getOutlookOAuthUrl();
+      const url = await getOutlookOAuthUrl({ appId: outlookAppId });
       window.location.href = url;
     });
   }
@@ -113,10 +124,31 @@ export function AddAccountDialog() {
             <p className="text-sm text-muted-foreground">
               点击下方按钮将跳转到 Google 授权页面，授权后自动返回。首次同步默认抓取最近 200 封，可在账号管理页修改。
             </p>
+            <div className="space-y-2">
+              <Label htmlFor="gmail-app">OAuth 应用</Label>
+              <select
+                id="gmail-app"
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                value={gmailAppId}
+                onChange={(event) => setGmailAppId(event.target.value)}
+                disabled={isPending || gmailOAuthApps.length === 0}
+              >
+                {gmailOAuthApps.map((app) => (
+                  <option key={`${app.provider}-${app.id}`} value={app.id}>
+                    {app.label}
+                  </option>
+                ))}
+              </select>
+              {gmailOAuthApps.length === 0 && (
+                <p className="text-xs text-destructive">
+                  当前没有可用的 Gmail OAuth 应用，请先在下方配置环境变量或数据库应用。
+                </p>
+              )}
+            </div>
             <Button
               className="w-full"
               onClick={handleGmailAuth}
-              disabled={isPending}
+              disabled={isPending || gmailOAuthApps.length === 0}
             >
               {isPending ? "跳转中..." : "使用 Google 账号授权"}
             </Button>
@@ -126,10 +158,31 @@ export function AddAccountDialog() {
             <p className="text-sm text-muted-foreground">
               点击下方按钮将跳转到 Microsoft 授权页面，授权后自动返回。首次同步默认抓取最近 200 封，可在账号管理页修改。
             </p>
+            <div className="space-y-2">
+              <Label htmlFor="outlook-app">OAuth 应用</Label>
+              <select
+                id="outlook-app"
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                value={outlookAppId}
+                onChange={(event) => setOutlookAppId(event.target.value)}
+                disabled={isPending || outlookOAuthApps.length === 0}
+              >
+                {outlookOAuthApps.map((app) => (
+                  <option key={`${app.provider}-${app.id}`} value={app.id}>
+                    {app.label}
+                  </option>
+                ))}
+              </select>
+              {outlookOAuthApps.length === 0 && (
+                <p className="text-xs text-destructive">
+                  当前没有可用的 Outlook OAuth 应用，请先在下方配置环境变量或数据库应用。
+                </p>
+              )}
+            </div>
             <Button
               className="w-full"
               onClick={handleOutlookAuth}
-              disabled={isPending}
+              disabled={isPending || outlookOAuthApps.length === 0}
             >
               {isPending ? "跳转中..." : "使用 Microsoft 账号授权"}
             </Button>

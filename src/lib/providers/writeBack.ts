@@ -1,5 +1,6 @@
 import { parseAccountCredentials, persistProviderCredentialsIfNeeded } from "@/lib/account-providers";
 import type { Account } from "@/lib/db/schema";
+import { resolveGmailOAuthApp, resolveOutlookOAuthApp } from "@/lib/oauth-apps";
 import { GmailProvider, GMAIL_MODIFY_SCOPE, hasGmailModifyScope } from "./gmail";
 import { OutlookProvider, OUTLOOK_REQUIRED_WRITEBACK_SCOPE, hasOutlookWriteBackScope } from "./outlook";
 import { QQProvider } from "./qq";
@@ -111,10 +112,13 @@ async function writeBackReadGmail(account: Account, remoteMessageId: string): Pr
     return { success: false, skipped: true, error: `missing scope ${GMAIL_MODIFY_SCOPE}` };
   }
 
+  const oauthApp = await resolveGmailOAuthApp(account.oauthAppId ?? String(creds.appId ?? "default"));
   const provider = new GmailProvider({
     accessToken: String(creds.accessToken ?? ""),
     refreshToken: String(creds.refreshToken ?? ""),
     scopes,
+    appId: oauthApp.appId,
+    oauthApp,
   });
 
   try {
@@ -144,10 +148,13 @@ async function writeBackStarGmail(
     return { success: false, skipped: true, error: `missing scope ${GMAIL_MODIFY_SCOPE}` };
   }
 
+  const oauthApp = await resolveGmailOAuthApp(account.oauthAppId ?? String(creds.appId ?? "default"));
   const provider = new GmailProvider({
     accessToken: String(creds.accessToken ?? ""),
     refreshToken: String(creds.refreshToken ?? ""),
     scopes,
+    appId: oauthApp.appId,
+    oauthApp,
   });
 
   try {
@@ -177,10 +184,13 @@ async function writeBackReadOutlook(account: Account, remoteMessageId: string): 
     };
   }
 
+  const oauthApp = await resolveOutlookOAuthApp(account.oauthAppId ?? String(creds.appId ?? "default"));
   const provider = new OutlookProvider({
     accessToken: String(creds.accessToken ?? ""),
     refreshToken: String(creds.refreshToken ?? ""),
     scopes,
+    appId: oauthApp.appId,
+    oauthApp,
   });
 
   try {
@@ -214,10 +224,13 @@ async function writeBackStarOutlook(
     };
   }
 
+  const oauthApp = await resolveOutlookOAuthApp(account.oauthAppId ?? String(creds.appId ?? "default"));
   const provider = new OutlookProvider({
     accessToken: String(creds.accessToken ?? ""),
     refreshToken: String(creds.refreshToken ?? ""),
     scopes,
+    appId: oauthApp.appId,
+    oauthApp,
   });
 
   try {

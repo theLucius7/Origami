@@ -1,10 +1,17 @@
+import { eq } from "drizzle-orm";
 import { requireEnv } from "@/config/env";
-
-export const DEFAULT_OAUTH_APP_ID = "default";
+import { db } from "@/lib/db";
+import { oauthApps } from "@/lib/db/schema";
+import { decrypt } from "@/lib/crypto";
+import {
+  DEFAULT_OAUTH_APP_ID,
+  type OAuthAppOption,
+  type OAuthProviderKind,
+} from "@/lib/oauth-apps.shared";
 
 export interface ResolvedGmailOAuthApp {
   appId: string;
-  source: "env";
+  source: "env" | "db";
   clientId: string;
   clientSecret: string;
   redirectUrl: string;
@@ -13,7 +20,7 @@ export interface ResolvedGmailOAuthApp {
 
 export interface ResolvedOutlookOAuthApp {
   appId: string;
-  source: "env";
+  source: "env" | "db";
   tenant: string;
   tokenUrl: string;
   clientId: string;
@@ -34,22 +41,22 @@ function normalizeAppId(appId?: string | null): string {
   return normalized || DEFAULT_OAUTH_APP_ID;
 }
 
-function assertEnvBackedDefaultApp(appId?: string | null) {
-  const normalized = normalizeAppId(appId);
-  if (normalized !== DEFAULT_OAUTH_APP_ID) {
-    throw new Error(
-      `OAuth app \"${normalized}\" is not configured yet. This build currently supports env-backed default apps only.`
-    );
-  }
-  return normalized;
+function getAppUrl() {
+  return requireEnv("NEXT_PUBLIC_APP_URL");
 }
 
-export function resolveGmailOAuthApp(appId?: string | null): ResolvedGmailOAuthApp {
-  const resolvedAppId = assertEnvBackedDefaultApp(appId);
-  const appUrl = requireEnv("NEXT_PUBLIC_APP_URL");
+function hasEnvGmailApp() {
+  return Boolean(process.env.GMAIL_CLIENT_ID && process.env.GMAIL_CLIENT_SECRET && process.env.NEXT_PUBLIC_APP_URL);
+}
 
+function hasEnvOutlookApp() {
+  return Boolean(process.env.OUTLOOK_CLIENT_ID && process.env.OUTLOOK_CLIENT_SECRET && process.env.NEXT_PUBLIC_APP_URL);
+}
+
+export function getDefaultGmailOAuthAppSync(): ResolvedGmailOAuthApp {
+  const appUrl = getAppUrl();
   return {
-    appId: resolvedAppId,
+    appId: DEFAULT_OAUTH_APP_ID,
     source: "env",
     clientId: requireEnv("GMAIL_CLIENT_ID"),
     clientSecret: requireEnv("GMAIL_CLIENT_SECRET"),
@@ -58,18 +65,115 @@ export function resolveGmailOAuthApp(appId?: string | null): ResolvedGmailOAuthA
   };
 }
 
-export function resolveOutlookOAuthApp(appId?: string | null): ResolvedOutlookOAuthApp {
-  const resolvedAppId = assertEnvBackedDefaultApp(appId);
+export function getDefaultOutlookOAuthAppSync(): ResolvedOutlookOAuthApp {
   const tenant = "common";
-  const appUrl = requireEnv("NEXT_PUBLIC_APP_URL");
-
+  const appUrl = getAppUrl();
   return {
-    appId: resolvedAppId,
+    appId: DEFAULT_OAUTH_APP_ID,
     source: "env",
     tenant,
     tokenUrl: `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`,
     clientId: requireEnv("OUTLOOK_CLIENT_ID"),
     clientSecret: requireEnv("OUTLOOK_CLIENT_SECRET"),
+    redirectUrl: `${appUrl}/api/oauth/outlook`,
+    requiredSendScope: "mail.send",
+  };
+}
+
+async function getOAuthAppFromDb(appId: string, provider: OAuthProviderKind) {
+  const rows = await db
+    .select()
+    .from(oauthApps)
+    .where(eq(oauthApps.id, appId));
+
+  const row = rows[0] ?? null;
+  if (!row || row.provider !== provider) {
+    throw new Error(`OAuth app \"${appId}\" for ${provider} is not configured.`);
+  }
+
+  return row;
+}
+
+export async function listOAuthAppOptions(provider?: OAuthProviderKind): Promise<OAuthAppOption[]> {
+  const rows = provider
+    ? await db.select().from(oauthApps).where(eq(oauthApps.provider, provider))
+    : await db.select().from(oauthApps);
+
+  const options: OAuthAppOption[] = [];
+
+  if ((!provider || provider === "gmail") && hasEnvGmailApp()) {
+    options.push({
+      id: DEFAULT_OAUTH_APP_ID,
+      provider: "gmail",
+      label: "默认 Gmail 应用（环境变量）",
+      source: "env",
+      clientId: process.env.GMAIL_CLIENT_ID ?? null,
+    });
+  }
+
+  if ((!provider || provider === "outlook") && hasEnvOutlookApp()) {
+    options.push({
+      id: DEFAULT_OAUTH_APP_ID,
+      provider: "outlook",
+      label: "默认 Outlook 应用（环境变量）",
+      source: "env",
+      tenant: "common",
+      clientId: process.env.OUTLOOK_CLIENT_ID ?? null,
+    });
+  }
+
+  for (const row of rows) {
+    options.push({
+      id: row.id,
+      provider: row.provider as OAuthProviderKind,
+      label: row.label,
+      source: "db",
+      tenant: row.tenant,
+      clientId: row.clientId,
+    });
+  }
+
+  return options.sort((a, b) => {
+    if (a.provider !== b.provider) return a.provider.localeCompare(b.provider);
+    if (a.source !== b.source) return a.source === "env" ? -1 : 1;
+    return a.label.localeCompare(b.label, "zh-CN");
+  });
+}
+
+export async function resolveGmailOAuthApp(appId?: string | null): Promise<ResolvedGmailOAuthApp> {
+  const resolvedAppId = normalizeAppId(appId);
+  if (resolvedAppId === DEFAULT_OAUTH_APP_ID) {
+    return getDefaultGmailOAuthAppSync();
+  }
+
+  const row = await getOAuthAppFromDb(resolvedAppId, "gmail");
+  const appUrl = getAppUrl();
+  return {
+    appId: row.id,
+    source: "db",
+    clientId: row.clientId,
+    clientSecret: decrypt(row.clientSecret),
+    redirectUrl: `${appUrl}/api/oauth/gmail`,
+    sendScopes: GMAIL_SEND_SCOPES,
+  };
+}
+
+export async function resolveOutlookOAuthApp(appId?: string | null): Promise<ResolvedOutlookOAuthApp> {
+  const resolvedAppId = normalizeAppId(appId);
+  if (resolvedAppId === DEFAULT_OAUTH_APP_ID) {
+    return getDefaultOutlookOAuthAppSync();
+  }
+
+  const row = await getOAuthAppFromDb(resolvedAppId, "outlook");
+  const tenant = row.tenant?.trim() || "common";
+  const appUrl = getAppUrl();
+  return {
+    appId: row.id,
+    source: "db",
+    tenant,
+    tokenUrl: `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`,
+    clientId: row.clientId,
+    clientSecret: decrypt(row.clientSecret),
     redirectUrl: `${appUrl}/api/oauth/outlook`,
     requiredSendScope: "mail.send",
   };

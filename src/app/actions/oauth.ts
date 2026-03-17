@@ -1,6 +1,6 @@
 "use server";
 
-import { DEFAULT_OAUTH_APP_ID } from "@/lib/oauth-apps";
+import { DEFAULT_OAUTH_APP_ID } from "@/lib/oauth-apps.shared";
 import { encodeOAuthState } from "@/lib/oauth-state";
 import { getGmailAuthUrl } from "@/lib/providers/gmail";
 import { getOutlookAuthUrl } from "@/lib/providers/outlook";

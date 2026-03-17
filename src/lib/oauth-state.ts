@@ -1,4 +1,4 @@
-import { DEFAULT_OAUTH_APP_ID } from "@/lib/oauth-apps";
+import { DEFAULT_OAUTH_APP_ID } from "@/lib/oauth-apps.shared";
 
 export interface OAuthStatePayload {
   appId?: string;

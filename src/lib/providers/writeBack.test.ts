@@ -66,6 +66,11 @@ const baseAccount = {
 
 describe("writeBack service", () => {
   beforeEach(() => {
+    process.env.NEXT_PUBLIC_APP_URL = "http://localhost:3000";
+    process.env.GMAIL_CLIENT_ID = "gmail-client";
+    process.env.GMAIL_CLIENT_SECRET = "gmail-secret";
+    process.env.OUTLOOK_CLIENT_ID = "outlook-client";
+    process.env.OUTLOOK_CLIENT_SECRET = "outlook-secret";
     parseAccountCredentialsMock.mockReset();
     persistProviderCredentialsIfNeededMock.mockReset();
     gmailMarkMessageReadMock.mockReset();

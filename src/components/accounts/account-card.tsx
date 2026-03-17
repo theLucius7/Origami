@@ -11,7 +11,7 @@ import {
 import { getGmailOAuthUrl, getOutlookOAuthUrl } from "@/app/actions/oauth";
 import { maybeShowWriteBackEnabledToastOnce } from "@/components/accounts/accounts-page-notifications";
 import { EditMailboxAccountDialog } from "@/components/accounts/edit-mailbox-account-dialog";
-import type { AccountSettingsView } from "@/components/accounts/types";
+import type { AccountSettingsView, OAuthAppUsageView } from "@/components/accounts/types";
 import { SyncAccountButton } from "@/components/sync/sync-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,12 @@ import { useToast } from "@/hooks/use-toast";
 import { formatRelativeTime } from "@/lib/format";
 import { getMailboxPreset } from "@/lib/providers/imap-smtp/presets";
 
-export function AccountCard({ account }: { account: AccountSettingsView }) {
+interface AccountCardProps {
+  account: AccountSettingsView;
+  oauthApps: OAuthAppUsageView[];
+}
+
+export function AccountCard({ account, oauthApps }: AccountCardProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -34,6 +39,9 @@ export function AccountCard({ account }: { account: AccountSettingsView }) {
     () => getMailboxPreset(account.presetKey ?? (account.provider === "qq" ? "qq" : null)),
     [account.presetKey, account.provider]
   );
+  const currentOauthAppId = account.oauthAppId ?? "default";
+  const [selectedOauthAppId, setSelectedOauthAppId] = useState(currentOauthAppId);
+  const selectedOAuthApp = oauthApps.find((item) => item.id === selectedOauthAppId) ?? null;
 
   function handleRemove() {
     if (!confirm(`确定要删除 ${account.email} 吗？关联的邮件数据也会被删除。`)) return;
@@ -66,10 +74,10 @@ export function AccountCard({ account }: { account: AccountSettingsView }) {
     });
   }
 
-  function handleReauthorize(target: "read" | "star") {
+  function handleReauthorize(target?: "read" | "star") {
     startTransition(async () => {
       const options = {
-        appId: account.oauthAppId ?? undefined,
+        appId: selectedOauthAppId,
         intent: "writeback" as const,
         enableReadBack: target === "read" || account.syncReadBack === 1,
         enableStarBack: target === "star" || account.syncStarBack === 1,
@@ -114,6 +122,11 @@ export function AccountCard({ account }: { account: AccountSettingsView }) {
                 {hostSummary ? ` · ${hostSummary}` : ""}
               </p>
             )}
+            {supportsOauthReauth && account.oauthAppLabel && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                OAuth 应用：{account.oauthAppLabel}
+              </p>
+            )}
             <p className="mt-1 text-xs text-muted-foreground">
               {account.lastSyncedAt
                 ? `上次同步: ${formatRelativeTime(account.lastSyncedAt)}`
@@ -134,6 +147,44 @@ export function AccountCard({ account }: { account: AccountSettingsView }) {
             </Button>
           </div>
         </div>
+
+        {supportsOauthReauth && (
+          <div className="space-y-3 rounded-md border p-3">
+            <div>
+              <p className="text-sm font-medium">OAuth 应用</p>
+              <p className="text-xs text-muted-foreground">
+                可切换用于重新授权的 OAuth 应用。切换后需要重新走一次授权流程，账号才会真正绑定到新的应用。
+              </p>
+            </div>
+            <div className="flex flex-col gap-3 md:flex-row md:items-center">
+              <select
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm md:max-w-sm"
+                value={selectedOauthAppId}
+                onChange={(event) => setSelectedOauthAppId(event.target.value)}
+                disabled={isPending || oauthApps.length === 0}
+              >
+                {oauthApps.map((app) => (
+                  <option key={`${app.provider}-${app.id}`} value={app.id}>
+                    {app.label}
+                  </option>
+                ))}
+              </select>
+              <Button
+                variant="outline"
+                onClick={() => handleReauthorize()}
+                disabled={isPending || oauthApps.length === 0}
+              >
+                使用当前应用重新授权
+              </Button>
+            </div>
+            {selectedOAuthApp && (
+              <p className="text-xs text-muted-foreground">
+                当前选择：{selectedOAuthApp.label}
+                {selectedOAuthApp.source === "db" ? "（数据库）" : "（环境变量）"}
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="flex items-center justify-between gap-4 rounded-md border p-3">
           <div>
