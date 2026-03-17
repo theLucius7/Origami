@@ -48,6 +48,10 @@ function resolveSyncOutlookOAuthApp(appId?: string, oauthApp?: ResolvedOutlookOA
   return getDefaultOutlookOAuthAppSync();
 }
 
+function getFlagStatus(msg: Record<string, unknown>) {
+  return String((msg.flag as { flagStatus?: string } | undefined)?.flagStatus ?? "notFlagged").toLowerCase();
+}
+
 export async function getOutlookAuthUrl(state?: string, appId?: string): Promise<string> {
   const config = await resolveOutlookOAuthApp(appId);
   const params = new URLSearchParams({
@@ -137,8 +141,14 @@ export class OutlookProvider implements EmailProvider {
   }
 
   getCapabilities() {
+    const canWriteBack = hasOutlookWriteBackScope(this.creds.scopes);
+
     return {
       canSend: hasOutlookSendScope(this.creds.scopes),
+      canWriteBackRead: canWriteBack,
+      canWriteBackStar: canWriteBack,
+      readWriteBackNotice: canWriteBack ? null : `需要重新授权以启用写回功能（需要 Outlook Delegated 权限：${OUTLOOK_REQUIRED_WRITEBACK_SCOPE}）`,
+      starWriteBackNotice: canWriteBack ? null : `需要重新授权以启用写回功能（需要 Outlook Delegated 权限：${OUTLOOK_REQUIRED_WRITEBACK_SCOPE}）`,
     };
   }
 
@@ -157,7 +167,7 @@ export class OutlookProvider implements EmailProvider {
   }
 
   async syncEmails(cursor: string | null, options: SyncOptions = {}): Promise<SyncResult> {
-    return this.withRefresh(() => this._sync(cursor, options));
+    return this.withRefresh(() => this.sync(cursor, options));
   }
 
   async fetchEmail(remoteId: string): Promise<SyncedEmail | null> {
@@ -165,8 +175,9 @@ export class OutlookProvider implements EmailProvider {
       const msg = await this.client
         .api(`/me/messages/${remoteId}`)
         .select(
-          "id,internetMessageId,subject,from,toRecipients,receivedDateTime,bodyPreview,body,hasAttachments"
+          "id,internetMessageId,subject,from,toRecipients,receivedDateTime,bodyPreview,body,hasAttachments,isRead,flag"
         )
+        .expand("attachments($select=id,name,contentType,size)")
         .get();
 
       return this.mapMessage(msg, false);
@@ -199,21 +210,15 @@ export class OutlookProvider implements EmailProvider {
               contentType: params.htmlBody ? "HTML" : "Text",
               content: params.htmlBody || params.textBody || "",
             },
-            toRecipients: params.to.map((address) => ({
-              emailAddress: { address },
-            })),
+            toRecipients: params.to.map((address) => ({ emailAddress: { address } })),
             ...(params.cc?.length
               ? {
-                  ccRecipients: params.cc.map((address) => ({
-                    emailAddress: { address },
-                  })),
+                  ccRecipients: params.cc.map((address) => ({ emailAddress: { address } })),
                 }
               : {}),
             ...(params.bcc?.length
               ? {
-                  bccRecipients: params.bcc.map((address) => ({
-                    emailAddress: { address },
-                  })),
+                  bccRecipients: params.bcc.map((address) => ({ emailAddress: { address } })),
                 }
               : {}),
             ...(params.attachments?.length
@@ -295,7 +300,7 @@ export class OutlookProvider implements EmailProvider {
     try {
       return await fn();
     } catch (err: unknown) {
-      const e = err as { statusCode?: number; code?: string; message?: string };
+      const e = err as { statusCode?: number; code?: string };
       if (e.statusCode === 401 || e.code === "InvalidAuthenticationToken") {
         const next = await refreshTokens(this.creds.refreshToken, this.creds.oauthApp!);
         this.creds = { ...this.creds, ...next };
@@ -306,9 +311,10 @@ export class OutlookProvider implements EmailProvider {
     }
   }
 
-  private async _sync(cursor: string | null, options: SyncOptions): Promise<SyncResult> {
+  private async sync(cursor: string | null, options: SyncOptions): Promise<SyncResult> {
     let url = "/me/mailFolders/inbox/messages?$orderby=receivedDateTime desc";
     if (options.limit) url += `&$top=${options.limit}`;
+    url += "&$select=id,internetMessageId,subject,from,toRecipients,receivedDateTime,bodyPreview,body,hasAttachments,isRead,flag";
     if (!options.metadataOnly) {
       url += "&$expand=attachments($select=id,name,contentType,size)";
     }
@@ -330,7 +336,7 @@ export class OutlookProvider implements EmailProvider {
     const attachments: SyncedAttachment[] = attachmentsRaw.map((att) => ({
       filename: String(att.name ?? "untitled"),
       contentType: String(att.contentType ?? "application/octet-stream"),
-      size: typeof att.size === "number" ? att.size : undefined,
+      size: typeof att.size === "number" ? att.size : 0,
       content: Buffer.alloc(0),
     }));
 
@@ -343,15 +349,19 @@ export class OutlookProvider implements EmailProvider {
           .filter(Boolean)
       : [];
 
+    const bodyContent = String((msg.body as { content?: string } | undefined)?.content ?? "");
+
     return {
       remoteId: String(msg.id),
       messageId: String(msg.internetMessageId ?? msg.id),
       subject: String(msg.subject ?? "(无主题)"),
-      sender: String((msg.from as { emailAddress?: { address?: string } })?.emailAddress?.address ?? ""),
+      sender: String((msg.from as { emailAddress?: { address?: string } } | undefined)?.emailAddress?.address ?? ""),
       recipients: toRecipients,
       snippet: String(msg.bodyPreview ?? ""),
-      bodyText: metadataOnly ? null : String((msg.body as { content?: string })?.content ?? ""),
-      bodyHtml: metadataOnly ? null : String((msg.body as { content?: string })?.content ?? ""),
+      bodyText: metadataOnly ? null : bodyContent,
+      bodyHtml: metadataOnly ? null : bodyContent,
+      isRead: Boolean(msg.isRead),
+      isStarred: getFlagStatus(msg) === "flagged",
       receivedAt: Math.floor(new Date(String(msg.receivedDateTime)).getTime() / 1000),
       folder: "INBOX",
       attachments,

@@ -16,6 +16,10 @@ async function persistAttachment(
     content: Buffer;
   }
 ) {
+  if (!att.content || att.content.length === 0) {
+    return;
+  }
+
   const attId = nanoid();
   const key = buildObjectKey(accountId, emailId, att.filename);
 
@@ -52,12 +56,18 @@ export async function hydrateEmailIfNeeded(email: Email): Promise<Email> {
     await db
       .update(emails)
       .set({
+        remoteId: fetched.remoteId,
+        messageId: fetched.messageId,
         subject: fetched.subject,
         sender: fetched.sender,
         recipients: JSON.stringify(fetched.recipients),
         snippet: fetched.snippet,
         bodyText: fetched.bodyText,
         bodyHtml: fetched.bodyHtml,
+        isRead: fetched.isRead ? 1 : 0,
+        isStarred: fetched.isStarred ? 1 : 0,
+        receivedAt: fetched.receivedAt,
+        folder: fetched.folder,
       })
       .where(eq(emails.id, email.id));
 

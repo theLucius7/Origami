@@ -42,11 +42,7 @@ export function hasGmailModifyScope(scopes?: string[]): boolean {
 }
 
 function getOAuth2Client(config: ResolvedGmailOAuthApp) {
-  return new google.auth.OAuth2(
-    config.clientId,
-    config.clientSecret,
-    config.redirectUrl
-  );
+  return new google.auth.OAuth2(config.clientId, config.clientSecret, config.redirectUrl);
 }
 
 function resolveSyncGmailOAuthApp(appId?: string, oauthApp?: ResolvedGmailOAuthApp) {
@@ -58,6 +54,27 @@ function resolveSyncGmailOAuthApp(appId?: string, oauthApp?: ResolvedGmailOAuthA
   return getDefaultGmailOAuthAppSync();
 }
 
+function buildAttachmentList(parts: gmail_v1.Schema$MessagePart[] = []): SyncedAttachment[] {
+  const attachments: SyncedAttachment[] = [];
+
+  for (const part of parts) {
+    if (part.parts?.length) {
+      attachments.push(...buildAttachmentList(part.parts));
+    }
+
+    if (part.filename && part.body?.attachmentId) {
+      attachments.push({
+        filename: part.filename,
+        contentType: part.mimeType ?? "application/octet-stream",
+        size: part.body.size ?? 0,
+        content: Buffer.alloc(0),
+      });
+    }
+  }
+
+  return attachments;
+}
+
 export async function getGmailAuthUrl(state?: string, appId?: string): Promise<string> {
   const oauthConfig = await resolveGmailOAuthApp(appId);
   const oauth2 = getOAuth2Client(oauthConfig);
@@ -65,7 +82,7 @@ export async function getGmailAuthUrl(state?: string, appId?: string): Promise<s
     access_type: "offline",
     prompt: "consent",
     scope: [
-      "https://www.googleapis.com/auth/gmail.modify",
+      GMAIL_MODIFY_SCOPE,
       "https://www.googleapis.com/auth/gmail.send",
       "https://www.googleapis.com/auth/userinfo.email",
     ],
@@ -133,8 +150,14 @@ export class GmailProvider implements EmailProvider {
   }
 
   getCapabilities() {
+    const canWriteBack = hasGmailModifyScope(this.creds.scopes);
+
     return {
       canSend: hasGmailSendScope(this.creds.scopes),
+      canWriteBackRead: canWriteBack,
+      canWriteBackStar: canWriteBack,
+      readWriteBackNotice: canWriteBack ? null : `需要重新授权以启用写回功能（需要 Gmail 修改权限：${GMAIL_MODIFY_SCOPE}）`,
+      starWriteBackNotice: canWriteBack ? null : `需要重新授权以启用写回功能（需要 Gmail 修改权限：${GMAIL_MODIFY_SCOPE}）`,
     };
   }
 
@@ -228,9 +251,7 @@ export class GmailProvider implements EmailProvider {
     await this.gmail.users.messages.modify({
       userId: "me",
       id: remoteId,
-      requestBody: starred
-        ? { addLabelIds: ["STARRED"] }
-        : { removeLabelIds: ["STARRED"] },
+      requestBody: starred ? { addLabelIds: ["STARRED"] } : { removeLabelIds: ["STARRED"] },
     });
   }
 
@@ -307,19 +328,8 @@ export class GmailProvider implements EmailProvider {
     const headers = Object.fromEntries(
       (msg.payload?.headers ?? []).map((h) => [h.name?.toLowerCase() ?? "", h.value ?? ""])
     );
-    const parts = msg.payload?.parts ?? [];
-    const attachments: SyncedAttachment[] = [];
-
-    for (const p of parts) {
-      if (p.filename && p.body?.attachmentId) {
-        attachments.push({
-          filename: p.filename,
-          contentType: p.mimeType ?? "application/octet-stream",
-          size: p.body.size ?? 0,
-          content: Buffer.alloc(0),
-        });
-      }
-    }
+    const labelIds = new Set((msg.labelIds ?? []).map(String));
+    const attachments = buildAttachmentList(msg.payload?.parts ?? []);
 
     const bodyData = metadataOnly
       ? undefined
@@ -335,20 +345,19 @@ export class GmailProvider implements EmailProvider {
       snippet: msg.snippet ?? "",
       bodyText: bodyData ? Buffer.from(bodyData, "base64").toString("utf8") : null,
       bodyHtml: htmlData ? Buffer.from(htmlData, "base64").toString("utf8") : null,
+      isRead: !labelIds.has("UNREAD"),
+      isStarred: labelIds.has("STARRED"),
       receivedAt: Number(headers.date ? Date.parse(headers.date) / 1000 : Date.now() / 1000),
       folder: "INBOX",
       attachments,
     };
   }
 
-  private extractBody(
-    payload: gmail_v1.Schema$MessagePart | undefined,
-    mimeType: string
-  ): string | null {
+  private extractBody(payload: gmail_v1.Schema$MessagePart | undefined, mimeType: string): string | null {
     if (!payload) return null;
     if (payload.mimeType === mimeType && payload.body?.data) return payload.body.data;
-    for (const p of payload.parts ?? []) {
-      const found = this.extractBody(p, mimeType);
+    for (const part of payload.parts ?? []) {
+      const found = this.extractBody(part, mimeType);
       if (found) return found;
     }
     return null;
