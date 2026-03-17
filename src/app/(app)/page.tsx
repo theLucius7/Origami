@@ -6,6 +6,8 @@ interface PageProps {
   searchParams: Promise<{
     account?: string;
     starred?: string;
+    search?: string;
+    mail?: string;
   }>;
 }
 
@@ -13,9 +15,11 @@ export default async function InboxPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const accountId = params.account;
   const starred = params.starred === "1";
+  const search = params.search?.trim() || undefined;
+  const selectedMailId = params.mail;
 
   const [emailList, accountList] = await Promise.all([
-    listEmails({ accountId, starred }),
+    listEmails({ accountId, starred, search }),
     listAccounts(),
   ]);
 
@@ -30,6 +34,8 @@ export default async function InboxPage({ searchParams }: PageProps) {
       accountProviders={accountProviders}
       accountId={accountId}
       starred={starred}
+      initialSearch={search ?? ""}
+      selectedMailId={selectedMailId}
     />
   );
 }

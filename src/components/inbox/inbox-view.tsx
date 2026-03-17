@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition, useCallback } from "react";
+import { useMemo, useState, useTransition, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { MailList } from "./mail-list";
 import { MailDetail } from "./mail-detail";
@@ -25,12 +25,15 @@ import {
   snooze,
 } from "@/app/actions/email";
 import type { Email, EmailListItem, Attachment } from "@/lib/db/schema";
+import { buildInboxHref } from "@/lib/inbox-route";
 
 interface InboxViewProps {
   initialEmails: EmailListItem[];
   accountProviders: Record<string, string>;
   accountId?: string;
   starred?: boolean;
+  initialSearch: string;
+  selectedMailId?: string;
 }
 
 export function InboxView({
@@ -38,38 +41,120 @@ export function InboxView({
   accountProviders,
   accountId,
   starred,
+  initialSearch,
+  selectedMailId,
 }: InboxViewProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [emails, setEmails] = useState(initialEmails);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [selectedAttachments, setSelectedAttachments] = useState<Attachment[]>([]);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch);
+  const [activeSearch, setActiveSearch] = useState(initialSearch);
   const [batchSnoozeOpen, setBatchSnoozeOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
+  const selectedId = selectedMailId ?? null;
   const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const allVisibleSelected = emails.length > 0 && selectedIds.length === emails.length;
 
+  const buildCurrentInboxHref = useCallback(
+    (overrides?: { search?: string; mailId?: string }) =>
+      buildInboxHref({
+        accountId,
+        starred,
+        search: overrides?.search ?? activeSearch,
+        mailId: overrides?.mailId,
+      }),
+    [accountId, activeSearch, starred]
+  );
+
+  useEffect(() => {
+    setEmails(initialEmails);
+  }, [initialEmails]);
+
+  useEffect(() => {
+    setSearch(initialSearch);
+    setActiveSearch(initialSearch);
+  }, [initialSearch]);
+
+  useEffect(() => {
+    if (!selectedId) {
+      setSelectedEmail(null);
+      setSelectedAttachments([]);
+      setDetailLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setDetailLoading(true);
+
+    setSelectedEmail((current) => (current?.id === selectedId ? current : null));
+    setSelectedAttachments([]);
+
+    void getEmailDetail(selectedId)
+      .then((detail) => {
+        if (cancelled) return;
+        setSelectedEmail(detail?.email ?? null);
+        setSelectedAttachments(detail?.attachments ?? []);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        const message = error instanceof Error ? error.message : "加载邮件详情失败，请稍后重试。";
+        toast({
+          title: "加载邮件详情失败",
+          description: message,
+          variant: "error",
+        });
+        setSelectedEmail(null);
+        setSelectedAttachments([]);
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setDetailLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initialEmails, selectedId, toast]);
+
+  useEffect(() => {
+    if (selectedId && !emails.some((email) => email.id === selectedId)) {
+      router.replace(buildCurrentInboxHref({ mailId: undefined }), { scroll: false });
+    }
+  }, [buildCurrentInboxHref, emails, router, selectedId]);
+
   const doSearch = useCallback(
     (query: string) => {
+      const normalizedQuery = query.trim();
+
       startTransition(async () => {
         try {
           const results = await getEmails({
             accountId,
-            search: query || undefined,
+            search: normalizedQuery || undefined,
             starred,
           });
           setEmails(results);
           setSelectedIds([]);
-          if (selectedId && !results.some((email) => email.id === selectedId)) {
-            setSelectedId(null);
-            setSelectedEmail(null);
-            setSelectedAttachments([]);
-          }
+          setActiveSearch(normalizedQuery);
+
+          const nextMailId = selectedId && results.some((email) => email.id === selectedId)
+            ? selectedId
+            : undefined;
+
+          router.replace(
+            buildInboxHref({
+              accountId,
+              starred,
+              search: normalizedQuery,
+              mailId: nextMailId,
+            }),
+            { scroll: false }
+          );
         } catch (error) {
           const message = error instanceof Error ? error.message : "搜索失败，请换个关键词重试。";
           toast({
@@ -80,7 +165,7 @@ export function InboxView({
         }
       });
     },
-    [accountId, selectedId, starred, toast]
+    [accountId, router, selectedId, starred, toast]
   );
 
   function handleSearchSubmit(e: React.FormEvent) {
@@ -107,6 +192,7 @@ export function InboxView({
 
   function applyLocalPatch(emailId: string, patch: Partial<Email>) {
     const now = Math.floor(Date.now() / 1000);
+    let removedSelectedEmail = false;
 
     setEmails((current) => {
       const updated = current
@@ -120,14 +206,15 @@ export function InboxView({
           return true;
         });
 
-      if (!updated.some((email) => email.id === emailId) && selectedId === emailId) {
-        setSelectedId(null);
-        setSelectedEmail(null);
-        setSelectedAttachments([]);
-      }
+      removedSelectedEmail =
+        emailId === selectedId && !updated.some((email) => email.id === emailId);
 
       return updated;
     });
+
+    if (removedSelectedEmail) {
+      router.replace(buildCurrentInboxHref({ mailId: undefined }), { scroll: false });
+    }
 
     setSelectedEmail((current) =>
       current && current.id === emailId ? { ...current, ...patch } : current
@@ -140,23 +227,11 @@ export function InboxView({
   }
 
   function handleSelect(id: string) {
-    setSelectedId(id);
-    setDetailLoading(true);
-    setSelectedEmail(null);
-    setSelectedAttachments([]);
-    startTransition(async () => {
-      const detail = await getEmailDetail(id);
-      setSelectedEmail(detail?.email ?? null);
-      setSelectedAttachments(detail?.attachments ?? []);
-      setDetailLoading(false);
-    });
+    router.push(buildCurrentInboxHref({ mailId: id }), { scroll: false });
   }
 
   function handleClose() {
-    setSelectedId(null);
-    setSelectedEmail(null);
-    setSelectedAttachments([]);
-    setDetailLoading(false);
+    router.replace(buildCurrentInboxHref({ mailId: undefined }), { scroll: false });
   }
 
   async function runBatchAction(action: () => Promise<void>) {
@@ -167,10 +242,12 @@ export function InboxView({
     });
   }
 
+  const shouldShowMobileDetail = Boolean(selectedId);
+
   return (
     <>
       <div className="flex h-full flex-1">
-        <div className="flex w-80 flex-col border-r lg:w-96">
+        <div className={`${shouldShowMobileDetail ? "hidden md:flex" : "flex"} w-80 flex-col border-r lg:w-96`}>
           <div className="border-b p-3">
             <form onSubmit={handleSearchSubmit} className="flex gap-2">
               <div className="relative flex-1">
@@ -195,6 +272,7 @@ export function InboxView({
             <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <span>{emails.length} 封邮件</span>
               {starred && <span>• 仅已标星</span>}
+              {activeSearch && <span>• 搜索中</span>}
               {isPending && <span>• 加载中...</span>}
             </div>
             <div className="mt-2 text-xs text-muted-foreground">
@@ -273,7 +351,7 @@ export function InboxView({
           />
         </div>
 
-        <div className="hidden flex-1 md:flex">
+        <div className={`${shouldShowMobileDetail ? "flex" : "hidden md:flex"} flex-1`}>
           {selectedEmail || detailLoading ? (
             <div className="flex-1">
               {selectedEmail ? (
