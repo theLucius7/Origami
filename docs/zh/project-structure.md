@@ -131,7 +131,7 @@ provider 实现以及共用类型：
 
 - Gmail
 - Outlook
-- QQ IMAP
+- IMAP/SMTP provider + QQ 兼容封装
 - MIME helpers
 - provider interface definitions
 

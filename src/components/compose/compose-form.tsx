@@ -182,7 +182,7 @@ export function ComposeForm({
       <div>
         <h1 className="text-2xl font-semibold">写邮件</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          当前支持 Gmail / Outlook / QQ 发信；其中 QQ 使用授权码通过 SMTP 发送。
+          当前支持 Gmail / Outlook 以及国内邮箱 IMAP/SMTP 发信；QQ、163、126、Yeah 等使用授权码或密码通过 SMTP 发送。
         </p>
       </div>
 

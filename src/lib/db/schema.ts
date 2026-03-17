@@ -3,10 +3,18 @@ import { sql } from "drizzle-orm";
 
 export const accounts = sqliteTable("accounts", {
   id: text("id").primaryKey(),
-  provider: text("provider").notNull(), // 'gmail' | 'outlook' | 'qq'
+  provider: text("provider").notNull(), // 'gmail' | 'outlook' | 'qq' | 'imap_smtp'
   email: text("email").notNull().unique(),
   displayName: text("display_name"),
   credentials: text("credentials").notNull(), // AES-encrypted JSON
+  presetKey: text("preset_key"),
+  authUser: text("auth_user"),
+  imapHost: text("imap_host"),
+  imapPort: integer("imap_port"),
+  imapSecure: integer("imap_secure").notNull().default(1),
+  smtpHost: text("smtp_host"),
+  smtpPort: integer("smtp_port"),
+  smtpSecure: integer("smtp_secure").notNull().default(1),
   syncCursor: text("sync_cursor"),
   syncReadBack: integer("sync_read_back").notNull().default(0),
   syncStarBack: integer("sync_star_back").notNull().default(0),

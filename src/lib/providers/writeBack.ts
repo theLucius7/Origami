@@ -3,6 +3,8 @@ import type { Account } from "@/lib/db/schema";
 import { GmailProvider, GMAIL_MODIFY_SCOPE, hasGmailModifyScope } from "./gmail";
 import { OutlookProvider, OUTLOOK_REQUIRED_WRITEBACK_SCOPE, hasOutlookWriteBackScope } from "./outlook";
 import { QQProvider } from "./qq";
+import { ImapSmtpProvider } from "./imap-smtp/provider";
+import { resolveImapSmtpConfigFromAccount } from "./imap-smtp/account-config";
 
 export interface WriteBackResult {
   success: boolean;
@@ -41,6 +43,13 @@ function getOutlookScopes(account: Account): string[] {
   return Array.isArray(creds?.scopes) ? creds.scopes.map(String) : [];
 }
 
+function createImapSmtpProviderForAccount(account: Account) {
+  const creds = tryParseCredentials(account);
+  if (!creds) return null;
+
+  return new ImapSmtpProvider(resolveImapSmtpConfigFromAccount(account, creds));
+}
+
 export function getAccountWriteBackAvailability(account: Account): AccountWriteBackAvailability {
   switch (account.provider) {
     case "gmail": {
@@ -72,6 +81,7 @@ export function getAccountWriteBackAvailability(account: Account): AccountWriteB
     }
 
     case "qq":
+    case "imap_smtp":
       return {
         canWriteBackRead: true,
         canWriteBackStar: true,
@@ -229,7 +239,7 @@ async function writeBackReadQq(account: Account, remoteMessageId: string): Promi
 
   const provider = new QQProvider({
     email: String(creds.email ?? account.email),
-    authCode: String(creds.authCode ?? ""),
+    authCode: String(creds.authCode ?? creds.authPass ?? ""),
   });
 
   try {
@@ -254,8 +264,44 @@ async function writeBackStarQq(
 
   const provider = new QQProvider({
     email: String(creds.email ?? account.email),
-    authCode: String(creds.authCode ?? ""),
+    authCode: String(creds.authCode ?? creds.authPass ?? ""),
   });
+
+  try {
+    await provider.setMessageStarred(remoteMessageId, starred);
+    return { success: true, skipped: false };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    logWriteBackWarning(account, "star", message);
+    return { success: false, skipped: false, error: message };
+  }
+}
+
+async function writeBackReadImapSmtp(account: Account, remoteMessageId: string): Promise<WriteBackResult> {
+  const provider = createImapSmtpProviderForAccount(account);
+  if (!provider) {
+    return { success: false, skipped: true, error: "invalid credentials" };
+  }
+
+  try {
+    await provider.markMessageRead(remoteMessageId);
+    return { success: true, skipped: false };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    logWriteBackWarning(account, "read", message);
+    return { success: false, skipped: false, error: message };
+  }
+}
+
+async function writeBackStarImapSmtp(
+  account: Account,
+  remoteMessageId: string,
+  starred: boolean
+): Promise<WriteBackResult> {
+  const provider = createImapSmtpProviderForAccount(account);
+  if (!provider) {
+    return { success: false, skipped: true, error: "invalid credentials" };
+  }
 
   try {
     await provider.setMessageStarred(remoteMessageId, starred);
@@ -286,6 +332,8 @@ export async function writeBackRead(
       return writeBackReadOutlook(account, remoteMessageId);
     case "qq":
       return writeBackReadQq(account, remoteMessageId);
+    case "imap_smtp":
+      return writeBackReadImapSmtp(account, remoteMessageId);
     default:
       return { success: false, skipped: true, error: `unsupported provider: ${account.provider}` };
   }
@@ -311,6 +359,8 @@ export async function writeBackStar(
       return writeBackStarOutlook(account, remoteMessageId, starred);
     case "qq":
       return writeBackStarQq(account, remoteMessageId, starred);
+    case "imap_smtp":
+      return writeBackStarImapSmtp(account, remoteMessageId, starred);
     default:
       return { success: false, skipped: true, error: `unsupported provider: ${account.provider}` };
   }

@@ -131,7 +131,7 @@ Provider implementations and provider-shared types:
 
 - Gmail
 - Outlook
-- QQ IMAP
+- IMAP/SMTP provider + QQ compatibility wrapper
 - MIME helpers
 - provider interface definitions
 

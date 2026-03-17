@@ -7,6 +7,7 @@ import { listSendCapableAccounts } from "@/lib/account-providers";
 import { encrypt } from "@/lib/crypto";
 import { db } from "@/lib/db";
 import { accounts, attachments, emails } from "@/lib/db/schema";
+import { getMailboxPreset } from "@/lib/providers/imap-smtp/presets";
 import { getAccountRecordById, listAccounts } from "@/lib/queries/accounts";
 import { deleteAttachment } from "@/lib/r2";
 
@@ -22,6 +23,82 @@ export async function getSendCapableAccounts() {
   return listSendCapableAccounts();
 }
 
+interface AddImapSmtpAccountInput {
+  email: string;
+  authPass: string;
+  displayName?: string;
+  authUser?: string;
+  presetKey: string;
+  imapHost?: string;
+  imapPort?: number;
+  imapSecure?: boolean;
+  smtpHost?: string;
+  smtpPort?: number;
+  smtpSecure?: boolean;
+  initialFetchLimit?: number;
+}
+
+function validateInitialFetchLimit(initialFetchLimit: number) {
+  if (![50, 200, 1000].includes(initialFetchLimit)) {
+    throw new Error("Unsupported initial fetch limit");
+  }
+}
+
+export async function addImapSmtpAccount(input: AddImapSmtpAccountInput) {
+  return runLoggedAction("addImapSmtpAccount", async () => {
+    const preset = getMailboxPreset(input.presetKey);
+    if (!preset) {
+      throw new Error("Unsupported mailbox preset");
+    }
+
+    const initialFetchLimit = input.initialFetchLimit ?? 200;
+    validateInitialFetchLimit(initialFetchLimit);
+
+    const email = input.email.trim();
+    const authUser = (input.authUser || email).trim();
+    const authPass = input.authPass.trim();
+
+    if (!email) throw new Error("邮箱地址不能为空");
+    if (!authPass) throw new Error("授权码或密码不能为空");
+
+    const isCustom = input.presetKey === "custom";
+    const imapHost = (input.imapHost ?? preset.imapHost).trim();
+    const smtpHost = (input.smtpHost ?? preset.smtpHost).trim();
+    const imapPort = input.imapPort ?? preset.imapPort;
+    const smtpPort = input.smtpPort ?? preset.smtpPort;
+    const imapSecure = input.imapSecure ?? preset.secure;
+    const smtpSecure = input.smtpSecure ?? preset.secure;
+
+    if (isCustom) {
+      if (!imapHost || !smtpHost) {
+        throw new Error("自定义 IMAP/SMTP 账号必须填写服务器地址");
+      }
+    }
+
+    const id = nanoid();
+    const creds = encrypt(JSON.stringify({ authUser, authPass, presetKey: input.presetKey }));
+
+    await db.insert(accounts).values({
+      id,
+      provider: "imap_smtp",
+      email,
+      displayName: input.displayName?.trim() || email,
+      credentials: creds,
+      presetKey: input.presetKey,
+      authUser,
+      imapHost: imapHost || null,
+      imapPort,
+      imapSecure: imapSecure ? 1 : 0,
+      smtpHost: smtpHost || null,
+      smtpPort,
+      smtpSecure: smtpSecure ? 1 : 0,
+      initialFetchLimit,
+    });
+
+    return id;
+  });
+}
+
 export async function addQQAccount(
   email: string,
   authCode: string,
@@ -29,8 +106,9 @@ export async function addQQAccount(
   initialFetchLimit = 200
 ) {
   return runLoggedAction("addQQAccount", async () => {
+    validateInitialFetchLimit(initialFetchLimit);
     const id = nanoid();
-    const creds = encrypt(JSON.stringify({ email, authCode }));
+    const creds = encrypt(JSON.stringify({ email, authCode, presetKey: "qq", authUser: email }));
 
     await db.insert(accounts).values({
       id,
@@ -38,6 +116,8 @@ export async function addQQAccount(
       email,
       displayName: displayName ?? email,
       credentials: creds,
+      presetKey: "qq",
+      authUser: email,
       initialFetchLimit,
     });
 
@@ -55,6 +135,7 @@ export async function addOAuthAccount(
   initialFetchLimit = 200
 ) {
   return runLoggedAction("addOAuthAccount", async () => {
+    validateInitialFetchLimit(initialFetchLimit);
     const id = nanoid();
     const creds = encrypt(JSON.stringify({ accessToken, refreshToken, scopes }));
 
@@ -82,9 +163,7 @@ export async function updateAccountInitialFetchLimit(
   initialFetchLimit: number
 ) {
   return runLoggedAction("updateAccountInitialFetchLimit", async () => {
-    if (![50, 200, 1000].includes(initialFetchLimit)) {
-      throw new Error("Unsupported initial fetch limit");
-    }
+    validateInitialFetchLimit(initialFetchLimit);
 
     await db
       .update(accounts)

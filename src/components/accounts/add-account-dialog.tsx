@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   Dialog,
@@ -13,31 +13,65 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus } from "lucide-react";
-import { addQQAccount } from "@/app/actions/account";
+import { addImapSmtpAccount } from "@/app/actions/account";
 import { getGmailOAuthUrl, getOutlookOAuthUrl } from "@/app/actions/oauth";
+import { MAILBOX_PRESETS } from "@/lib/providers/imap-smtp/presets";
+
+const presetOptions = ["qq", "163", "vip163", "126", "vip126", "yeah", "custom"] as const;
 
 export function AddAccountDialog() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [qqEmail, setQQEmail] = useState("");
-  const [qqAuthCode, setQQAuthCode] = useState("");
-  const [qqName, setQQName] = useState("");
+  const [email, setEmail] = useState("");
+  const [authUser, setAuthUser] = useState("");
+  const [authPass, setAuthPass] = useState("");
+  const [name, setName] = useState("");
   const [initialFetchLimit, setInitialFetchLimit] = useState("200");
+  const [presetKey, setPresetKey] = useState<(typeof presetOptions)[number]>("qq");
+  const [imapHost, setImapHost] = useState("");
+  const [imapPort, setImapPort] = useState("993");
+  const [imapSecure, setImapSecure] = useState(true);
+  const [smtpHost, setSmtpHost] = useState("");
+  const [smtpPort, setSmtpPort] = useState("465");
+  const [smtpSecure, setSmtpSecure] = useState(true);
   const [isPending, startTransition] = useTransition();
 
-  function handleAddQQ(e: React.FormEvent) {
+  const selectedPreset = useMemo(() => MAILBOX_PRESETS[presetKey], [presetKey]);
+  const isCustom = presetKey === "custom";
+
+  function resetForm() {
+    setEmail("");
+    setAuthUser("");
+    setAuthPass("");
+    setName("");
+    setInitialFetchLimit("200");
+    setPresetKey("qq");
+    setImapHost("");
+    setImapPort("993");
+    setImapSecure(true);
+    setSmtpHost("");
+    setSmtpPort("465");
+    setSmtpSecure(true);
+  }
+
+  function handleAddImapSmtp(e: React.FormEvent) {
     e.preventDefault();
     startTransition(async () => {
-      await addQQAccount(
-        qqEmail,
-        qqAuthCode,
-        qqName || undefined,
-        Number(initialFetchLimit)
-      );
-      setQQEmail("");
-      setQQAuthCode("");
-      setQQName("");
-      setInitialFetchLimit("200");
+      await addImapSmtpAccount({
+        email,
+        authUser: authUser || email,
+        authPass,
+        displayName: name || undefined,
+        presetKey,
+        imapHost: isCustom ? imapHost : undefined,
+        imapPort: isCustom ? Number(imapPort) : undefined,
+        imapSecure: isCustom ? imapSecure : undefined,
+        smtpHost: isCustom ? smtpHost : undefined,
+        smtpPort: isCustom ? Number(smtpPort) : undefined,
+        smtpSecure: isCustom ? smtpSecure : undefined,
+        initialFetchLimit: Number(initialFetchLimit),
+      });
+      resetForm();
       setOpen(false);
       router.refresh();
     });
@@ -71,7 +105,7 @@ export function AddAccountDialog() {
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="gmail">Gmail</TabsTrigger>
             <TabsTrigger value="outlook">Outlook</TabsTrigger>
-            <TabsTrigger value="qq">QQ 邮箱</TabsTrigger>
+            <TabsTrigger value="imap-smtp">国内邮箱 / IMAP</TabsTrigger>
           </TabsList>
 
           <TabsContent value="gmail" className="space-y-4 pt-4">
@@ -100,40 +134,123 @@ export function AddAccountDialog() {
             </Button>
           </TabsContent>
 
-          <TabsContent value="qq" className="pt-4">
-            <form onSubmit={handleAddQQ} className="space-y-4">
+          <TabsContent value="imap-smtp" className="pt-4">
+            <form onSubmit={handleAddImapSmtp} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="qq-email">QQ 邮箱地址</Label>
+                <Label htmlFor="preset-key">邮箱类型</Label>
+                <select
+                  id="preset-key"
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+                  value={presetKey}
+                  onChange={(event) => {
+                    const next = event.target.value as (typeof presetOptions)[number];
+                    setPresetKey(next);
+                    const preset = MAILBOX_PRESETS[next];
+                    setImapHost(preset.imapHost);
+                    setImapPort(String(preset.imapPort));
+                    setImapSecure(preset.secure);
+                    setSmtpHost(preset.smtpHost);
+                    setSmtpPort(String(preset.smtpPort));
+                    setSmtpSecure(preset.secure);
+                  }}
+                >
+                  {presetOptions.map((key) => (
+                    <option key={key} value={key}>
+                      {MAILBOX_PRESETS[key].label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="imap-email">邮箱地址</Label>
                 <Input
-                  id="qq-email"
+                  id="imap-email"
                   type="email"
-                  placeholder="example@qq.com"
-                  value={qqEmail}
-                  onChange={(e) => setQQEmail(e.target.value)}
+                  placeholder="example@163.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="qq-auth-code">授权码</Label>
+                <Label htmlFor="auth-user">登录用户名（可选）</Label>
                 <Input
-                  id="qq-auth-code"
+                  id="auth-user"
+                  placeholder="默认使用邮箱地址"
+                  value={authUser}
+                  onChange={(e) => setAuthUser(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="auth-pass">
+                  {selectedPreset.authType === "authcode" ? "授权码" : "密码 / 授权码"}
+                </Label>
+                <Input
+                  id="auth-pass"
                   type="password"
-                  placeholder="在 QQ 邮箱设置中生成授权码"
-                  value={qqAuthCode}
-                  onChange={(e) => setQQAuthCode(e.target.value)}
+                  placeholder={selectedPreset.authType === "authcode" ? "在邮箱设置中生成授权码" : "输入登录密码或应用专用密码"}
+                  value={authPass}
+                  onChange={(e) => setAuthPass(e.target.value)}
                   required
                 />
-                <p className="text-xs text-muted-foreground">
-                  QQ 邮箱 → 设置 → 账户 → POP3/IMAP/SMTP 服务 → 开启 IMAP / SMTP 并生成授权码
-                </p>
+                {selectedPreset.helpUrl && (
+                  <p className="text-xs text-muted-foreground">
+                    不知道怎么获取？
+                    <a
+                      href={selectedPreset.helpUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="ml-1 underline underline-offset-4"
+                    >
+                      查看帮助文档
+                    </a>
+                  </p>
+                )}
               </div>
+
+              {isCustom && (
+                <div className="grid gap-4 rounded-md border p-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="imap-host">IMAP 服务器</Label>
+                    <Input id="imap-host" value={imapHost} onChange={(e) => setImapHost(e.target.value)} required />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="imap-port">IMAP 端口</Label>
+                      <Input id="imap-port" type="number" value={imapPort} onChange={(e) => setImapPort(e.target.value)} required />
+                    </div>
+                    <label className="mt-8 flex items-center gap-2 text-sm">
+                      <input type="checkbox" checked={imapSecure} onChange={(e) => setImapSecure(e.target.checked)} />
+                      使用 SSL/TLS
+                    </label>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="smtp-host">SMTP 服务器</Label>
+                    <Input id="smtp-host" value={smtpHost} onChange={(e) => setSmtpHost(e.target.value)} required />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="smtp-port">SMTP 端口</Label>
+                      <Input id="smtp-port" type="number" value={smtpPort} onChange={(e) => setSmtpPort(e.target.value)} required />
+                    </div>
+                    <label className="mt-8 flex items-center gap-2 text-sm">
+                      <input type="checkbox" checked={smtpSecure} onChange={(e) => setSmtpSecure(e.target.checked)} />
+                      使用 SSL/TLS
+                    </label>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-2">
-                <Label htmlFor="qq-name">显示名称 (可选)</Label>
+                <Label htmlFor="imap-name">显示名称 (可选)</Label>
                 <Input
-                  id="qq-name"
+                  id="imap-name"
                   placeholder="用于侧边栏显示"
-                  value={qqName}
-                  onChange={(e) => setQQName(e.target.value)}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -150,7 +267,7 @@ export function AddAccountDialog() {
                 </select>
               </div>
               <Button type="submit" className="w-full" disabled={isPending}>
-                {isPending ? "添加中..." : "添加 QQ 邮箱"}
+                {isPending ? "添加中..." : `添加${selectedPreset.label}`}
               </Button>
             </form>
           </TabsContent>

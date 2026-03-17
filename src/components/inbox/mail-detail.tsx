@@ -146,7 +146,7 @@ export function MailDetail({
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            Done / 归档 / 稍后看 仅在 Origami 本地生效，不会写回 Gmail / Outlook / QQ。
+            Done / 归档 / 稍后看 仅在 Origami 本地生效，不会写回 Gmail / Outlook / IMAP/SMTP 邮箱。
           </p>
         </div>
 

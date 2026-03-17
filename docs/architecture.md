@@ -25,7 +25,7 @@ Binary attachments
 Mail providers
   -> Gmail API
   -> Microsoft Graph
-  -> QQ IMAP
+  -> IMAP/SMTP presets (QQ / 163 / 126 / Yeah / custom)
 
 Scheduled sync
   -> Vercel Cron
@@ -126,7 +126,7 @@ That means Origami behaves like a local productivity layer on top of external in
 
 ## 6. Sending flow
 
-Origami currently supports **new outbound email** through Gmail, Outlook, and QQ.
+Origami currently supports **new outbound email** through Gmail, Outlook, and IMAP/SMTP mailboxes.
 
 ```text
 Compose form
@@ -141,7 +141,7 @@ Current behavior:
 
 - Gmail: sends raw RFC 2822 MIME via Gmail API
 - Outlook: sends JSON payload via Microsoft Graph `sendMail`
-- QQ: sends via SMTP with the mailbox auth code
+- IMAP/SMTP mailboxes: send via SMTP with the mailbox auth code or password
 
 Current limitations:
 

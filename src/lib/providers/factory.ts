@@ -4,6 +4,8 @@ import type { EmailProvider } from "./types";
 import { QQProvider } from "./qq";
 import { GmailProvider } from "./gmail";
 import { OutlookProvider } from "./outlook";
+import { ImapSmtpProvider } from "./imap-smtp/provider";
+import { resolveImapSmtpConfigFromAccount } from "./imap-smtp/account-config";
 
 export function createEmailProvider(
   account: Account,
@@ -13,8 +15,10 @@ export function createEmailProvider(
     case "qq":
       return new QQProvider({
         email: String(creds.email ?? account.email),
-        authCode: String(creds.authCode ?? ""),
+        authCode: String(creds.authCode ?? creds.authPass ?? ""),
       });
+    case "imap_smtp":
+      return new ImapSmtpProvider(resolveImapSmtpConfigFromAccount(account, creds));
     case "gmail":
       return new GmailProvider({
         accessToken: String(creds.accessToken ?? ""),

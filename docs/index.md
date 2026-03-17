@@ -3,7 +3,7 @@ layout: home
 
 hero:
   name: Origami
-  text: Unified inbox for Gmail, Outlook, and QQ
+  text: Unified inbox for Gmail, Outlook, and domestic IMAP/SMTP mailboxes
   tagline: Privacy-friendly, self-hostable, and built for a single-user workflow.
   actions:
     - theme: brand
@@ -22,7 +22,7 @@ features:
   - title: Local-first triage
     details: Done, Archive, and Snooze stay local to Origami, while Read / Star can optionally write back to supported providers.
   - title: Minimal sending flow
-    details: Compose and send new emails through Gmail, Outlook, and QQ, with local sent history.
+    details: Compose and send new emails through Gmail, Outlook, and IMAP/SMTP mailboxes, with local sent history.
   - title: R2-backed attachments
     details: Large binary attachments stay in Cloudflare R2 while metadata lives in Turso.
   - title: Search syntax
@@ -39,7 +39,7 @@ Current provider support:
 
 - **Gmail** — read + send
 - **Outlook** — read + send
-- **QQ Mail** — read via IMAP + send via SMTP
+- **Domestic IMAP/SMTP mailboxes** — QQ / 163 / 126 / Yeah / custom, read via IMAP + send via SMTP
 
 ## What is intentionally local
 

@@ -7,7 +7,7 @@ Recommended stack:
 - **App runtime**: Vercel
 - **Database**: Turso / libSQL
 - **Object storage**: Cloudflare R2
-- **Mail providers**: Gmail API, Microsoft Graph, QQ IMAP
+- **Mail providers**: Gmail API, Microsoft Graph, domestic IMAP/SMTP presets (QQ / 163 / 126 / Yeah / custom)
 
 ## Environment variables
 
@@ -118,21 +118,24 @@ Callback URL:
 - local: `http://localhost:3000/api/oauth/outlook`
 - production: `https://your-domain/api/oauth/outlook`
 
-## 6. Configure QQ Mail
+## 6. Configure domestic IMAP/SMTP mailboxes
 
-QQ currently uses **IMAP for inbox sync** and **SMTP for outbound sending**.
+Origami currently supports **preset-based IMAP/SMTP mailbox setup** for QQ / 163 / VIP 163 / 126 / VIP 126 / Yeah, plus a custom mode.
 
-Required endpoints:
+Preset examples:
 
-- IMAP: `imap.qq.com:993` (SSL)
-- SMTP: `smtp.qq.com:465` (SSL)
+- QQ: `imap.qq.com:993` + `smtp.qq.com:465`
+- 163: `imap.163.com:993` + `smtp.163.com:465`
+- 126: `imap.126.com:993` + `smtp.126.com:465`
+- Yeah: `imap.yeah.net:993` + `smtp.yeah.net:465`
 
 Users must provide:
 
-- QQ mail address
-- QQ IMAP authorization code
+- mailbox address
+- IMAP/SMTP authorization code or password
+- custom server settings when using the `custom` preset
 
-There are no app-level QQ environment variables.
+There are no app-level environment variables for IMAP/SMTP presets.
 
 ## 7. Local development flow
 
@@ -148,7 +151,7 @@ Then:
 1. open `http://localhost:3000`
 2. sign in with `ACCESS_TOKEN`
 3. open `/accounts`
-4. connect Gmail / Outlook / QQ
+4. connect Gmail / Outlook / IMAP/SMTP mailboxes
 
 ## 8. Vercel deployment flow
 
@@ -188,16 +191,16 @@ Authorization: Bearer <CRON_SECRET>
 - `/accounts` loads correctly
 - Gmail OAuth callback works
 - Outlook OAuth callback works
-- QQ account can be added
+- IMAP/SMTP account can be added
 - manual sync works
 - `/api/cron/sync` accepts the correct bearer secret
 - attachments download correctly
-- compose works for Gmail / Outlook / QQ
+- compose works for Gmail / Outlook / IMAP/SMTP accounts
 - `audit:prod` reports zero production vulnerabilities
 
 ## 10. Known deployment caveats
 
-- QQ compose now depends on SMTP auth-code login instead of OAuth; if send fails, verify IMAP/SMTP is enabled and regenerate the QQ auth code first
+- IMAP/SMTP compose depends on mailbox auth-code or password login; if send fails, verify IMAP/SMTP is enabled and refresh the mailbox credential first
 - Done / Archive / Snooze stay local to Origami; Read / Star write-back is optional and requires the right provider scopes
 - Outlook compose is currently limited to single attachments smaller than 3 MB
 - provider callback URLs must exactly match the configured app URL

@@ -36,6 +36,13 @@
       "when": 1773776400000,
       "tag": "0004_account_write_back_flags",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1773779100000,
+      "tag": "0005_imap_smtp_provider",
+      "breakpoints": true
     }
   ]
 }

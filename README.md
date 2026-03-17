@@ -1,8 +1,8 @@
 # Origami ✉️
 
-> **EN:** A privacy-friendly unified inbox for individuals or a single operator inside a small team, aggregating Gmail / Outlook / QQ in one place and designed for self-hosting.
+> **EN:** A privacy-friendly unified inbox for individuals or a single operator inside a small team, aggregating Gmail / Outlook plus domestic IMAP/SMTP mailboxes in one place and designed for self-hosting.
 >
-> **中文：** 一个面向个人或小团队单一操作席位的统一收件箱，可聚合 Gmail / Outlook / QQ，强调隐私与自托管。
+> **中文：** 一个面向个人或小团队单一操作席位的统一收件箱，可聚合 Gmail / Outlook 与国内 IMAP/SMTP 邮箱，强调隐私与自托管。
 
 [![CI](https://github.com/theLucius7/Origami/actions/workflows/ci.yml/badge.svg)](https://github.com/theLucius7/Origami/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/github/license/theLucius7/Origami)](./LICENSE)
@@ -30,10 +30,10 @@
 ## ✨ Features / 主要特性
 
 - Unified inbox across multiple accounts, sorted by time
-- Gmail / Outlook OAuth + QQ auth-code account connection (IMAP sync + SMTP send)
+- Gmail / Outlook OAuth + domestic IMAP/SMTP account connection (QQ / 163 / 126 / Yeah / custom)
 - Local triage states: **Done / Archive / Snooze** stay inside Origami, while **Read / Star** can optionally write back to supported providers
 - Structured search syntax: `account:` / `from:` / `subject:` / `is:read` / `is:done` / `is:snoozed`
-- Gmail / Outlook / QQ sending support for new emails (minimal viable compose flow)
+- Gmail / Outlook / IMAP/SMTP sending support for new emails (minimal viable compose flow)
 - Attachments stored in Cloudflare R2, metadata stored in Turso
 - Manual sync + scheduled sync via `GET /api/cron/sync`
 - Single-user `ACCESS_TOKEN` protection with cookie or Bearer auth
@@ -43,7 +43,7 @@
 ## 🚫 Known Limitations / 当前限制
 
 - **Done / Archive / Snooze** remain local to Origami; **Read / Star** write-back is optional and scope-dependent
-- QQ Mail now supports SMTP sending, but still uses IMAP-only inbox sync in the current implementation
+- Domestic IMAP/SMTP accounts currently use inbox-focused IMAP sync plus SMTP sending; this is not full mailbox mirroring
 - Single attachment must stay **under 3 MB** (Outlook compatibility limit in current implementation)
 - No thread-aware reply / forward flow yet
 - No remote draft sync yet
@@ -88,7 +88,7 @@ Recommended production stack:
 - **Frontend + server runtime:** Vercel
 - **Database:** Turso / libSQL
 - **Attachment storage:** Cloudflare R2
-- **OAuth / provider APIs:** Google Gmail API, Microsoft Graph, QQ IMAP
+- **OAuth / provider APIs:** Google Gmail API, Microsoft Graph, generic IMAP/SMTP presets (QQ / 163 / 126 / Yeah / custom)
 
 ## ⚙️ Environment Variables / 环境变量
 
@@ -126,7 +126,7 @@ Browser
   -> Providers
        - Gmail API
        - Microsoft Graph
-       - QQ IMAP
+       - IMAP/SMTP presets (QQ / 163 / 126 / Yeah / custom)
 
 Vercel Cron
   -> /api/cron/sync

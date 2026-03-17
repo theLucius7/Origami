@@ -7,7 +7,7 @@
 - **应用运行时**：Vercel
 - **数据库**：Turso / libSQL
 - **对象存储**：Cloudflare R2
-- **邮件提供商**：Gmail API、Microsoft Graph、QQ IMAP
+- **邮件提供商**：Gmail API、Microsoft Graph、国内 IMAP/SMTP 预设（QQ / 163 / 126 / Yeah / custom）
 
 ## 环境变量
 
@@ -118,21 +118,24 @@ Origami 当前请求的 Outlook scopes 包括：
 - 本地：`http://localhost:3000/api/oauth/outlook`
 - 生产：`https://your-domain/api/oauth/outlook`
 
-## 6. 配置 QQ 邮箱
+## 6. 配置国内 IMAP/SMTP 邮箱
 
-QQ 当前使用 **IMAP 做收件同步**，使用 **SMTP 做发信**。
+Origami 当前支持基于预设的 **IMAP/SMTP 邮箱接入**：QQ / 163 / VIP 163 / 126 / VIP 126 / Yeah，以及自定义模式。
 
-需要的服务端点：
+预设示例：
 
-- IMAP：`imap.qq.com:993`（SSL）
-- SMTP：`smtp.qq.com:465`（SSL）
+- QQ：`imap.qq.com:993` + `smtp.qq.com:465`
+- 163：`imap.163.com:993` + `smtp.163.com:465`
+- 126：`imap.126.com:993` + `smtp.126.com:465`
+- Yeah：`imap.yeah.net:993` + `smtp.yeah.net:465`
 
 用户需要提供：
 
-- QQ 邮箱地址
-- QQ IMAP 授权码
+- 邮箱地址
+- IMAP/SMTP 授权码或密码
+- 使用 `custom` 时对应的服务器配置
 
-目前没有额外的 QQ 应用级环境变量。
+目前没有额外的 IMAP/SMTP 应用级环境变量。
 
 ## 7. 本地开发流程
 
@@ -148,7 +151,7 @@ npm run dev
 1. 打开 `http://localhost:3000`
 2. 使用 `ACCESS_TOKEN` 登录
 3. 打开 `/accounts`
-4. 连接 Gmail / Outlook / QQ
+4. 连接 Gmail / Outlook / IMAP/SMTP 邮箱
 
 ## 8. Vercel 部署流程
 
@@ -188,16 +191,16 @@ Authorization: Bearer <CRON_SECRET>
 - `/accounts` 页面正常加载
 - Gmail OAuth 回调可用
 - Outlook OAuth 回调可用
-- QQ 账号可以添加
+- IMAP/SMTP 账号可以添加
 - 手动同步可用
 - `/api/cron/sync` 能接受正确的 Bearer 密钥
 - 附件下载正常
-- Gmail / Outlook / QQ 发信正常
+- Gmail / Outlook / IMAP/SMTP 发信正常
 - `audit:prod` 报告生产依赖零漏洞
 
 ## 10. 已知部署注意事项
 
-- QQ 发信现在依赖 SMTP 授权码登录而非 OAuth；如果发信失败，优先检查是否已开启 IMAP / SMTP，并重新生成 QQ 授权码
+- IMAP/SMTP 发信依赖邮箱授权码或密码；如果发信失败，优先检查是否已开启 IMAP / SMTP，并更新登录凭据
 - Done / Archive / Snooze 仍只保存在 Origami 本地；Read / Star 回写是可选能力，并依赖正确的 provider scopes
 - Outlook 发信在当前实现下仍限制单个附件小于 3 MB
 - provider 回调 URL 必须与实际配置的应用 URL 完全一致

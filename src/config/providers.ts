@@ -21,6 +21,11 @@ export const PROVIDER_META: Record<
     dotClass: "bg-green-500",
     badgeClass: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
   },
+  imap_smtp: {
+    label: "IMAP / SMTP",
+    dotClass: "bg-emerald-500",
+    badgeClass: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
+  },
 };
 
 export function getProviderMeta(provider: string) {
