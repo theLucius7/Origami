@@ -24,6 +24,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Audit production dependencies
+        run: npm run audit:prod
+
       - name: Run tests
         run: npm test
 
@@ -31,7 +34,7 @@ jobs:
         run: npm run lint
 
       - name: Run type check
-        run: npx tsc --noEmit
+        run: npm run typecheck
 
       - name: Run build
         run: npm run build
