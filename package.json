@@ -13,8 +13,8 @@
     "docs:preview": "vitepress preview docs --host 0.0.0.0",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:setup": "node scripts/db/push.mjs",
-    "db:push": "node scripts/db/push.mjs",
+    "db:setup": "tsx scripts/db/push.mjs",
+    "db:push": "tsx scripts/db/push.mjs",
     "db:push:raw": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "bench:seed": "node scripts/bench/seed-search-benchmark.mjs",
@@ -57,6 +57,7 @@
     "eslint-config-next": "^16.1.7",
     "postcss": "^8.5.8",
     "tailwindcss": "^4.2.1",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitepress": "^1.6.4",
     "vitest": "^4.1.0"
