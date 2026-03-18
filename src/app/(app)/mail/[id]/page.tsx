@@ -31,7 +31,7 @@ export default async function MailDetailPage({ params, searchParams }: PageProps
   });
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       <div className="border-b p-2 md:hidden">
         <Button variant="ghost" size="sm" asChild>
           <Link href={backHref}>
@@ -40,7 +40,7 @@ export default async function MailDetailPage({ params, searchParams }: PageProps
           </Link>
         </Button>
       </div>
-      <div className="flex-1">
+      <div className="min-h-0 flex-1 overflow-hidden">
         <MailDetail email={detail.email} attachments={detail.attachments} />
       </div>
     </div>

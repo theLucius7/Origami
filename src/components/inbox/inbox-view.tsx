@@ -253,8 +253,8 @@ export function InboxView({
 
   return (
     <>
-      <div className="flex h-full flex-1">
-        <div className={`${shouldShowMobileDetail ? "hidden md:flex" : "flex"} w-[23rem] flex-col border-r border-border/70 xl:w-[28rem]`}>
+      <div className="flex h-full min-h-0 flex-1 overflow-hidden">
+        <div className={`${shouldShowMobileDetail ? "hidden md:flex" : "flex"} min-h-0 w-[23rem] flex-col border-r border-border/70 xl:w-[28rem]`}>
           <div className="border-b border-border/70 p-4">
             <form onSubmit={handleSearchSubmit} className="flex gap-2">
               <div className="relative flex-1">
@@ -359,9 +359,9 @@ export function InboxView({
           />
         </div>
 
-        <div className={`${shouldShowMobileDetail ? "flex" : "hidden md:flex"} flex-1`}>
+        <div className={`${shouldShowMobileDetail ? "flex" : "hidden md:flex"} min-h-0 flex-1 overflow-hidden`}>
           {selectedEmail || detailLoading ? (
-            <div className="flex-1">
+            <div className="min-h-0 flex-1">
               {selectedEmail ? (
                 <MailDetail
                   email={selectedEmail}

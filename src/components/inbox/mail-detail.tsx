@@ -197,7 +197,7 @@ export function MailDetail({
 
   return (
     <>
-      <div className="flex h-full flex-col bg-background/65">
+      <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background/65">
         <div className="flex items-center gap-2 border-b border-border/70 px-5 py-4">
           <h2 className="flex-1 truncate text-lg font-semibold">
             {email.subject || messages.common.untitled}
@@ -276,7 +276,7 @@ export function MailDetail({
 
         <Separator />
 
-        <ScrollArea className="flex-1 p-5">
+        <ScrollArea className="min-h-0 flex-1 p-5">
           {hydrationStatus === "hydrating" ? (
             <div className="flex h-full min-h-48 items-center justify-center text-sm text-muted-foreground">
               {messages.mailDetail.bodyLoading}
