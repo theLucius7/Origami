@@ -187,8 +187,13 @@ export function AccountCard({ account, oauthApps }: AccountCardProps) {
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            {isMailboxAccount && <EditMailboxAccountDialog account={account} />}
-            <SyncAccountButton accountId={account.id} />
+            {isMailboxAccount && (
+              <EditMailboxAccountDialog
+                account={account}
+                buttonAriaLabel={t.accountCard.editButtonAria(account.email)}
+              />
+            )}
+            <SyncAccountButton accountId={account.id} ariaLabel={t.accountCard.syncButtonAria(account.email)} />
             <Button
               variant="ghost"
               size="icon"
@@ -251,6 +256,7 @@ export function AccountCard({ account, oauthApps }: AccountCardProps) {
             value={fetchLimit}
             onChange={(event) => handleFetchLimitChange(event.target.value)}
             disabled={isPending}
+            aria-label={t.accountCard.initialFetchAria(account.email)}
           >
             {fetchLimitOptions.map((option) => (
               <option key={option} value={option}>

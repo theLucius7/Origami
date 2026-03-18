@@ -40,7 +40,7 @@ export function SyncAllButton() {
   );
 }
 
-export function SyncAccountButton({ accountId }: { accountId: string }) {
+export function SyncAccountButton({ accountId, ariaLabel }: { accountId: string; ariaLabel?: string }) {
   const { isPending, run } = useClientAction();
   const { messages } = useI18n();
   const [result, setResult] = useState<string | null>(null);
@@ -73,6 +73,7 @@ export function SyncAccountButton({ accountId }: { accountId: string }) {
         size="sm"
         onClick={handleSync}
         disabled={isPending}
+        aria-label={ariaLabel}
       >
         <RefreshCw className={`mr-1 h-3 w-3 ${isPending ? "animate-spin" : ""}`} />
         {isPending ? messages.sync.syncing : messages.sync.sync}

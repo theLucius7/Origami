@@ -29,7 +29,13 @@ function getInitialPresetKey(account: AccountSettingsView) {
     : "custom";
 }
 
-export function EditMailboxAccountDialog({ account }: { account: AccountSettingsView }) {
+export function EditMailboxAccountDialog({
+  account,
+  buttonAriaLabel,
+}: {
+  account: AccountSettingsView;
+  buttonAriaLabel?: string;
+}) {
   const { isPending, run } = useClientAction();
   const { locale } = useI18n();
   const t = getAccountsMessages(locale);
@@ -101,7 +107,7 @@ export function EditMailboxAccountDialog({ account }: { account: AccountSettings
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+      <Button variant="outline" size="sm" onClick={() => setOpen(true)} aria-label={buttonAriaLabel}>
         <Pencil className="mr-2 h-4 w-4" />
         {t.edit}
       </Button>
