@@ -1,6 +1,17 @@
+import type { AppLocale } from "@/i18n/locale";
 import type { MailboxPreset } from "./types";
 
 export const MAILBOX_PRESET_KEYS = ["qq", "163", "vip163", "126", "vip126", "yeah", "custom"] as const;
+
+const MAILBOX_PRESET_LABELS: Record<string, Record<AppLocale, string>> = {
+  qq: { "zh-CN": "QQ 邮箱", "zh-TW": "QQ 郵箱", en: "QQ Mail", ja: "QQ メール" },
+  "163": { "zh-CN": "163 邮箱", "zh-TW": "163 郵箱", en: "163 Mail", ja: "163 メール" },
+  vip163: { "zh-CN": "VIP 163 邮箱", "zh-TW": "VIP 163 郵箱", en: "VIP 163 Mail", ja: "VIP 163 メール" },
+  "126": { "zh-CN": "126 邮箱", "zh-TW": "126 郵箱", en: "126 Mail", ja: "126 メール" },
+  vip126: { "zh-CN": "VIP 126 邮箱", "zh-TW": "VIP 126 郵箱", en: "VIP 126 Mail", ja: "VIP 126 メール" },
+  yeah: { "zh-CN": "Yeah 邮箱", "zh-TW": "Yeah 郵箱", en: "Yeah Mail", ja: "Yeah メール" },
+  custom: { "zh-CN": "自定义 IMAP/SMTP", "zh-TW": "自訂 IMAP/SMTP", en: "Custom IMAP/SMTP", ja: "カスタム IMAP/SMTP" },
+};
 
 export const MAILBOX_PRESETS: Record<string, MailboxPreset> = {
   qq: {
@@ -96,4 +107,9 @@ export function getMailboxPreset(key?: string | null): MailboxPreset | null {
 
 export function listMailboxPresets(): MailboxPreset[] {
   return Object.values(MAILBOX_PRESETS);
+}
+
+export function getMailboxPresetLabel(key: string | undefined | null, locale: AppLocale): string {
+  if (!key) return locale === "en" ? "Mailbox" : locale === "ja" ? "メール" : locale === "zh-TW" ? "信箱" : "邮箱";
+  return MAILBOX_PRESET_LABELS[key]?.[locale] ?? MAILBOX_PRESETS[key]?.label ?? key;
 }

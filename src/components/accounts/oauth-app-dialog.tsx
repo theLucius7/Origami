@@ -15,6 +15,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getClientActionErrorMessage, useClientAction } from "@/hooks/use-client-action";
+import { useI18n } from "@/components/providers/i18n-provider";
+import { getAccountsMessages } from "@/i18n/accounts";
 
 interface OAuthAppDialogProps {
   app?: OAuthAppUsageView;
@@ -26,6 +28,8 @@ export function OAuthAppDialog({
   defaultProvider = "gmail",
 }: OAuthAppDialogProps) {
   const { isPending, run } = useClientAction();
+  const { locale } = useI18n();
+  const t = getAccountsMessages(locale);
   const isEdit = Boolean(app);
   const [open, setOpen] = useState(false);
   const [provider, setProvider] = useState<OAuthProviderKind>(app?.provider ?? defaultProvider);
@@ -62,11 +66,11 @@ export function OAuthAppDialog({
       },
       refresh: true,
       successToast: {
-        title: isEdit ? "OAuth 应用已保存" : "OAuth 应用已创建",
-        description: isEdit ? "新的应用配置已经生效。" : "你现在可以在接入账号时使用这个应用。",
+        title: isEdit ? t.oauthDialog.saveSuccessTitle : t.oauthDialog.createSuccessTitle,
+        description: isEdit ? t.oauthDialog.saveSuccessDescription : t.oauthDialog.createSuccessDescription,
       },
       errorToast: (error) => ({
-        title: isEdit ? "保存 OAuth 应用失败" : "创建 OAuth 应用失败",
+        title: isEdit ? t.oauthDialog.saveFailed : t.oauthDialog.createFailed,
         description: getClientActionErrorMessage(error),
         variant: "error",
       }),
@@ -91,15 +95,15 @@ export function OAuthAppDialog({
         }}
       >
         {isEdit ? <Pencil className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
-        {isEdit ? "编辑" : "添加 OAuth 应用"}
+        {isEdit ? t.oauthDialog.edit : t.oauthDialog.add}
       </Button>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "编辑 OAuth 应用" : "添加 OAuth 应用"}</DialogTitle>
+          <DialogTitle>{isEdit ? t.oauthDialog.titleEdit : t.oauthDialog.titleAdd}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="oauth-provider">提供商</Label>
+            <Label htmlFor="oauth-provider">{t.oauthDialog.provider}</Label>
             <select
               id="oauth-provider"
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
@@ -113,68 +117,66 @@ export function OAuthAppDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="oauth-app-id">App ID</Label>
+            <Label htmlFor="oauth-app-id">{t.oauthDialog.appId}</Label>
             <Input
               id="oauth-app-id"
               value={id}
               onChange={(event) => setId(event.target.value)}
-              placeholder="例如：corp-gmail"
+              placeholder={t.oauthDialog.appIdPlaceholder}
               disabled={isPending || isEdit}
               required
             />
-            <p className="text-xs text-muted-foreground">
-              仅允许小写字母、数字、下划线和连字符；保存后作为账号绑定和 OAuth state 中的稳定标识。
-            </p>
+            <p className="text-xs text-muted-foreground">{t.oauthDialog.appIdHelp}</p>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="oauth-label">显示名称</Label>
+            <Label htmlFor="oauth-label">{t.oauthDialog.displayName}</Label>
             <Input
               id="oauth-label"
               value={label}
               onChange={(event) => setLabel(event.target.value)}
-              placeholder="例如：公司 Gmail 应用"
+              placeholder={t.oauthDialog.displayNamePlaceholder}
               required
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="oauth-client-id">Client ID</Label>
+            <Label htmlFor="oauth-client-id">{t.oauthDialog.clientId}</Label>
             <Input
               id="oauth-client-id"
               value={clientId}
               onChange={(event) => setClientId(event.target.value)}
-              placeholder={isEdit ? "留空表示保持原 Client ID 不变（当前实现需重新填写）" : "输入 OAuth Client ID"}
+              placeholder={isEdit ? t.oauthDialog.clientIdPlaceholderEdit : t.oauthDialog.clientIdPlaceholderAdd}
               required
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="oauth-client-secret">Client Secret</Label>
+            <Label htmlFor="oauth-client-secret">{t.oauthDialog.clientSecret}</Label>
             <Input
               id="oauth-client-secret"
               type="password"
               value={clientSecret}
               onChange={(event) => setClientSecret(event.target.value)}
-              placeholder={isEdit ? "留空表示保持现有 Client Secret" : "输入 OAuth Client Secret"}
+              placeholder={isEdit ? t.oauthDialog.clientSecretPlaceholderEdit : t.oauthDialog.clientSecretPlaceholderAdd}
               required={!isEdit}
             />
           </div>
 
           {provider === "outlook" && (
             <div className="space-y-2">
-              <Label htmlFor="oauth-tenant">Tenant</Label>
+              <Label htmlFor="oauth-tenant">{t.oauthDialog.tenant}</Label>
               <Input
                 id="oauth-tenant"
                 value={tenant}
                 onChange={(event) => setTenant(event.target.value)}
-                placeholder="默认 common"
+                placeholder={t.oauthDialog.tenantPlaceholder}
               />
             </div>
           )}
 
           <Button type="submit" className="w-full" disabled={isPending}>
-            {isPending ? "保存中..." : isEdit ? "保存 OAuth 应用" : "创建 OAuth 应用"}
+            {isPending ? t.saving : isEdit ? t.oauthDialog.saveButton : t.oauthDialog.createButton}
           </Button>
         </form>
       </DialogContent>

@@ -7,7 +7,7 @@ import {
   buildOAuthAppsWithUsage,
 } from "@/components/accounts/view-models";
 import { Separator } from "@/components/ui/separator";
-import { listOAuthAppOptions } from "@/lib/oauth-apps";
+import { listOAuthAppOptions, localizeOAuthAppOptions } from "@/lib/oauth-apps";
 import { listAccountRuntimeHealth, listAccounts } from "@/lib/queries/accounts";
 import { getRequestLocale } from "@/i18n/locale.server";
 import { getMessages } from "@/i18n/messages";
@@ -22,7 +22,8 @@ export default async function AccountsPage({ searchParams }: PageProps) {
   const messages = getMessages(locale);
   const accounts = await listAccounts();
   const runtimeHealthByAccount = await listAccountRuntimeHealth();
-  const oauthAppOptions = await listOAuthAppOptions();
+  const rawOAuthAppOptions = await listOAuthAppOptions();
+  const oauthAppOptions = localizeOAuthAppOptions(rawOAuthAppOptions, locale);
   const oauthAppsWithUsage = buildOAuthAppsWithUsage(accounts, oauthAppOptions);
   const gmailOAuthApps = oauthAppOptions.filter((app) => app.provider === "gmail");
   const outlookOAuthApps = oauthAppOptions.filter((app) => app.provider === "outlook");

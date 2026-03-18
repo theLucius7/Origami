@@ -8,31 +8,31 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getClientActionErrorMessage, useClientAction } from "@/hooks/use-client-action";
+import { useI18n } from "@/components/providers/i18n-provider";
+import { getAccountsMessages } from "@/i18n/accounts";
 
 interface OAuthAppsPanelProps {
   apps: OAuthAppUsageView[];
 }
 
-function renderProviderTitle(provider: "gmail" | "outlook") {
-  return provider === "gmail" ? "Gmail OAuth 应用" : "Outlook OAuth 应用";
-}
-
 export function OAuthAppsPanel({ apps }: OAuthAppsPanelProps) {
   const { isPending, run } = useClientAction();
+  const { locale } = useI18n();
+  const t = getAccountsMessages(locale);
 
   const gmailApps = apps.filter((app) => app.provider === "gmail");
   const outlookApps = apps.filter((app) => app.provider === "outlook");
 
   function handleRemove(app: OAuthAppUsageView) {
     if (app.source !== "db") return;
-    if (!confirm(`确定要删除 OAuth 应用 ${app.label}（${app.id}）吗？`)) return;
+    if (!confirm(t.oauthPanel.removeConfirm(app.label, app.id))) return;
 
     void run({
       action: () => removeOAuthApp(app.id),
       refresh: true,
-      successToast: { title: "OAuth 应用已删除", description: `${app.label} 已从数据库配置中移除。` },
+      successToast: { title: t.oauthPanel.removeSuccessTitle, description: t.oauthPanel.removeSuccessDescription(app.label) },
       errorToast: (error) => ({
-        title: "删除 OAuth 应用失败",
+        title: t.oauthPanel.removeFailed,
         description: getClientActionErrorMessage(error),
         variant: "error",
       }),
@@ -44,17 +44,15 @@ export function OAuthAppsPanel({ apps }: OAuthAppsPanelProps) {
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h3 className="text-sm font-semibold">{renderProviderTitle(provider)}</h3>
-            <p className="mt-1 text-xs text-muted-foreground">
-              可用于新账号授权，也可在已有账号卡片里切换应用后重新授权。
-            </p>
+            <h3 className="text-sm font-semibold">{provider === "gmail" ? t.oauthPanel.gmailTitle : t.oauthPanel.outlookTitle}</h3>
+            <p className="mt-1 text-xs text-muted-foreground">{t.oauthPanel.groupDescription}</p>
           </div>
           <OAuthAppDialog defaultProvider={provider} />
         </div>
 
         {group.length === 0 ? (
           <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-            暂无可用应用。
+            {t.oauthPanel.empty}
           </div>
         ) : (
           <div className="grid gap-3">
@@ -66,14 +64,14 @@ export function OAuthAppsPanel({ apps }: OAuthAppsPanelProps) {
                       <div className="flex items-center gap-2">
                         <span className="truncate font-medium">{app.label}</span>
                         <Badge variant={app.source === "env" ? "secondary" : "outline"}>
-                          {app.source === "env" ? "环境变量" : "数据库"}
+                          {app.source === "env" ? t.oauthPanel.env : t.oauthPanel.db}
                         </Badge>
                       </div>
-                      <p className="mt-1 text-sm text-muted-foreground">App ID: {app.id}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">{t.oauthPanel.appId}: {app.id}</p>
                       {app.provider === "outlook" && app.tenant && (
-                        <p className="mt-1 text-xs text-muted-foreground">Tenant: {app.tenant}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">{t.oauthPanel.tenant}: {app.tenant}</p>
                       )}
-                      <p className="mt-1 text-xs text-muted-foreground">当前被 {app.usageCount} 个账号使用</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{t.oauthPanel.usageCount(app.usageCount)}</p>
                     </div>
                     {app.source === "db" && (
                       <div className="flex items-center gap-2">
@@ -102,10 +100,8 @@ export function OAuthAppsPanel({ apps }: OAuthAppsPanelProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold">OAuth 应用管理</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          这里管理 Gmail / Outlook 的授权应用。环境变量中的 default 应用会自动显示为只读项；数据库应用可自由新增、编辑和删除。
-        </p>
+        <h2 className="text-lg font-semibold">{t.oauthPanel.title}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{t.oauthPanel.description}</p>
       </div>
       <div className="grid gap-6 lg:grid-cols-2">
         {renderGroup(gmailApps, "gmail")}

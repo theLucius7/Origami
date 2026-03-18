@@ -3,6 +3,7 @@ import { requireEnv } from "@/config/env";
 import { db } from "@/lib/db";
 import { oauthApps } from "@/lib/db/schema";
 import { decrypt } from "@/lib/crypto";
+import type { AppLocale } from "@/i18n/locale";
 import {
   DEFAULT_OAUTH_APP_ID,
   type OAuthAppOption,
@@ -51,6 +52,40 @@ function hasEnvGmailApp() {
 
 function hasEnvOutlookApp() {
   return Boolean(process.env.OUTLOOK_CLIENT_ID && process.env.OUTLOOK_CLIENT_SECRET && process.env.NEXT_PUBLIC_APP_URL);
+}
+
+export function getDefaultOAuthAppLabel(provider: OAuthProviderKind, locale: AppLocale): string {
+  if (provider === "gmail") {
+    switch (locale) {
+      case "zh-TW":
+        return "預設 Gmail 應用（環境變數）";
+      case "en":
+        return "Default Gmail app (environment)";
+      case "ja":
+        return "既定の Gmail アプリ（環境変数）";
+      default:
+        return "默认 Gmail 应用（环境变量）";
+    }
+  }
+
+  switch (locale) {
+    case "zh-TW":
+      return "預設 Outlook 應用（環境變數）";
+    case "en":
+      return "Default Outlook app (environment)";
+    case "ja":
+      return "既定の Outlook アプリ（環境変数）";
+    default:
+      return "默认 Outlook 应用（环境变量）";
+  }
+}
+
+export function localizeOAuthAppOptions(options: OAuthAppOption[], locale: AppLocale): OAuthAppOption[] {
+  return options.map((option) =>
+    option.source === "env" && option.id === DEFAULT_OAUTH_APP_ID
+      ? { ...option, label: getDefaultOAuthAppLabel(option.provider, locale) }
+      : option
+  );
 }
 
 export function getDefaultGmailOAuthAppSync(): ResolvedGmailOAuthApp {

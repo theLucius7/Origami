@@ -8,6 +8,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { getClientActionErrorMessage, useClientAction } from "@/hooks/use-client-action";
+import { useI18n } from "@/components/providers/i18n-provider";
+import { getAccountsMessages } from "@/i18n/accounts";
 
 interface AccountsPanelProps {
   accounts: AccountSettingsView[];
@@ -22,6 +24,8 @@ export function AccountsPanel({
 }: AccountsPanelProps) {
   const { toast } = useToast();
   const { isPending, run } = useClientAction();
+  const { locale, messages } = useI18n();
+  const t = getAccountsMessages(locale);
 
   const eligibleReadAccounts = accounts.filter((account) => account.canWriteBackRead);
   const eligibleStarAccounts = accounts.filter((account) => account.canWriteBackStar);
@@ -40,13 +44,13 @@ export function AccountsPanel({
         ),
       refresh: true,
       errorToast: (error) => ({
-        title: checked ? "批量开启写回失败" : "批量关闭写回失败",
+        title: checked ? t.globalWriteBack.enableFailed : t.globalWriteBack.disableFailed,
         description: getClientActionErrorMessage(error),
         variant: "error",
       }),
       onSuccess: () => {
         if (checked) {
-          maybeShowWriteBackEnabledToastOnce(toast);
+          maybeShowWriteBackEnabledToastOnce(toast, messages);
         }
       },
     });
@@ -57,29 +61,25 @@ export function AccountsPanel({
       <Card className="border-primary/20 bg-primary/[0.03]">
         <CardContent className="space-y-4 p-4">
           <div>
-            <h2 className="text-sm font-semibold">全局写回开关</h2>
-            <p className="mt-1 text-xs text-muted-foreground">
-              这里的“全局”是批量设置：默认只会影响当前具备对应写回能力 / 权限的账号；没有权限的账号会被自动跳过。写回失败会静默降级，不影响本地 triage。
-            </p>
+            <h2 className="text-sm font-semibold">{t.globalWriteBack.title}</h2>
+            <p className="mt-1 text-xs text-muted-foreground">{t.globalWriteBack.description}</p>
           </div>
 
           <div className="grid gap-3 md:grid-cols-2">
             <div className="rounded-md border bg-background p-3">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-sm font-medium">全局开启“已读写回”</p>
-                  <p className="text-xs text-muted-foreground">
-                    当你在 Origami 标记已读时，尝试同步把远端邮件也标为已读。
-                  </p>
+                  <p className="text-sm font-medium">{t.globalWriteBack.readTitle}</p>
+                  <p className="text-xs text-muted-foreground">{t.globalWriteBack.readDescription}</p>
                   <p className="mt-1 text-[11px] text-muted-foreground">
-                    仅作用于 {eligibleReadAccounts.length}/{accounts.length} 个可写回账号
+                    {t.globalWriteBack.eligibleCount(eligibleReadAccounts.length, accounts.length)}
                   </p>
                 </div>
                 <Switch
                   checked={allReadEnabled}
                   disabled={isPending || eligibleReadAccounts.length === 0}
                   onCheckedChange={(checked) => toggleAll("syncReadBack", checked)}
-                  aria-label="全局已读写回"
+                  aria-label={t.globalWriteBack.readAria}
                 />
               </div>
             </div>
@@ -87,19 +87,17 @@ export function AccountsPanel({
             <div className="rounded-md border bg-background p-3">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-sm font-medium">全局开启“星标写回”</p>
-                  <p className="text-xs text-muted-foreground">
-                    当你在 Origami 加星标/去星标时，尝试同步远端的星标状态。
-                  </p>
+                  <p className="text-sm font-medium">{t.globalWriteBack.starTitle}</p>
+                  <p className="text-xs text-muted-foreground">{t.globalWriteBack.starDescription}</p>
                   <p className="mt-1 text-[11px] text-muted-foreground">
-                    仅作用于 {eligibleStarAccounts.length}/{accounts.length} 个可写回账号
+                    {t.globalWriteBack.eligibleCount(eligibleStarAccounts.length, accounts.length)}
                   </p>
                 </div>
                 <Switch
                   checked={allStarEnabled}
                   disabled={isPending || eligibleStarAccounts.length === 0}
                   onCheckedChange={(checked) => toggleAll("syncStarBack", checked)}
-                  aria-label="全局星标写回"
+                  aria-label={t.globalWriteBack.starAria}
                 />
               </div>
             </div>

@@ -14,9 +14,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getClientActionErrorMessage, useClientAction } from "@/hooks/use-client-action";
+import { useI18n } from "@/components/providers/i18n-provider";
+import { getAccountsMessages } from "@/i18n/accounts";
 import {
   MAILBOX_PRESET_KEYS,
   MAILBOX_PRESETS,
+  getMailboxPresetLabel,
 } from "@/lib/providers/imap-smtp/presets";
 
 function getInitialPresetKey(account: AccountSettingsView) {
@@ -28,6 +31,8 @@ function getInitialPresetKey(account: AccountSettingsView) {
 
 export function EditMailboxAccountDialog({ account }: { account: AccountSettingsView }) {
   const { isPending, run } = useClientAction();
+  const { locale } = useI18n();
+  const t = getAccountsMessages(locale);
   const [open, setOpen] = useState(false);
   const [displayName, setDisplayName] = useState(account.displayName ?? account.email);
   const [authUser, setAuthUser] = useState(account.authUser ?? account.email);
@@ -84,9 +89,9 @@ export function EditMailboxAccountDialog({ account }: { account: AccountSettings
           smtpSecure: canChangePreset && isCustom ? smtpSecure : undefined,
         }),
       refresh: true,
-      successToast: { title: "账号设置已保存", description: "新的邮箱配置已经生效。" },
+      successToast: { title: t.editDialog.saveSuccessTitle, description: t.editDialog.saveSuccessDescription },
       errorToast: (error) => ({
-        title: "保存账号设置失败",
+        title: t.editDialog.saveFailed,
         description: getClientActionErrorMessage(error),
         variant: "error",
       }),
@@ -98,26 +103,26 @@ export function EditMailboxAccountDialog({ account }: { account: AccountSettings
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
         <Pencil className="mr-2 h-4 w-4" />
-        编辑
+        {t.edit}
       </Button>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>编辑邮箱账号</DialogTitle>
+          <DialogTitle>{t.editDialog.title}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor={`display-name-${account.id}`}>显示名称</Label>
+            <Label htmlFor={`display-name-${account.id}`}>{t.editDialog.displayName}</Label>
             <Input
               id={`display-name-${account.id}`}
               value={displayName}
               onChange={(event) => setDisplayName(event.target.value)}
-              placeholder="用于侧边栏显示"
+              placeholder={t.editDialog.displayNamePlaceholder}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor={`preset-key-${account.id}`}>邮箱类型</Label>
+            <Label htmlFor={`preset-key-${account.id}`}>{t.editDialog.mailboxType}</Label>
             <select
               id={`preset-key-${account.id}`}
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
@@ -137,48 +142,46 @@ export function EditMailboxAccountDialog({ account }: { account: AccountSettings
             >
               {MAILBOX_PRESET_KEYS.map((key) => (
                 <option key={key} value={key}>
-                  {MAILBOX_PRESETS[key].label}
+                  {getMailboxPresetLabel(key, locale)}
                 </option>
               ))}
             </select>
             {!canChangePreset && (
-              <p className="text-xs text-muted-foreground">
-                旧版 QQ 账号保留兼容模式；这里先只允许更新显示名和授权码。
-              </p>
+              <p className="text-xs text-muted-foreground">{t.editDialog.legacyQQNotice}</p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor={`auth-user-${account.id}`}>登录用户名</Label>
+            <Label htmlFor={`auth-user-${account.id}`}>{t.editDialog.loginUser}</Label>
             <Input
               id={`auth-user-${account.id}`}
               value={authUser}
               onChange={(event) => setAuthUser(event.target.value)}
-              placeholder="默认使用邮箱地址"
+              placeholder={t.editDialog.loginUserPlaceholder}
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor={`auth-pass-${account.id}`}>
-              {selectedPreset.authType === "authcode" ? "授权码" : "密码 / 授权码"}
+              {selectedPreset.authType === "authcode" ? t.editDialog.authCode : t.editDialog.passwordOrAuthCode}
             </Label>
             <Input
               id={`auth-pass-${account.id}`}
               type="password"
               value={authPass}
               onChange={(event) => setAuthPass(event.target.value)}
-              placeholder="留空则保持当前凭据不变"
+              placeholder={t.editDialog.credentialPlaceholder}
             />
             {selectedPreset.helpUrl && (
               <p className="text-xs text-muted-foreground">
-                需要重新获取？
+                {t.editDialog.reissueHint}
                 <a
                   href={selectedPreset.helpUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="ml-1 underline underline-offset-4"
                 >
-                  查看帮助文档
+                  {t.editDialog.openHelp}
                 </a>
               </p>
             )}
@@ -187,7 +190,7 @@ export function EditMailboxAccountDialog({ account }: { account: AccountSettings
           {canChangePreset && isCustom && (
             <div className="grid gap-4 rounded-md border p-3">
               <div className="space-y-2">
-                <Label htmlFor={`imap-host-${account.id}`}>IMAP 服务器</Label>
+                <Label htmlFor={`imap-host-${account.id}`}>{t.editDialog.imapHost}</Label>
                 <Input
                   id={`imap-host-${account.id}`}
                   value={imapHost}
@@ -197,7 +200,7 @@ export function EditMailboxAccountDialog({ account }: { account: AccountSettings
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label htmlFor={`imap-port-${account.id}`}>IMAP 端口</Label>
+                  <Label htmlFor={`imap-port-${account.id}`}>{t.editDialog.imapPort}</Label>
                   <Input
                     id={`imap-port-${account.id}`}
                     type="number"
@@ -212,11 +215,11 @@ export function EditMailboxAccountDialog({ account }: { account: AccountSettings
                     checked={imapSecure}
                     onChange={(event) => setImapSecure(event.target.checked)}
                   />
-                  使用 SSL/TLS
+                  {t.editDialog.ssl}
                 </label>
               </div>
               <div className="space-y-2">
-                <Label htmlFor={`smtp-host-${account.id}`}>SMTP 服务器</Label>
+                <Label htmlFor={`smtp-host-${account.id}`}>{t.editDialog.smtpHost}</Label>
                 <Input
                   id={`smtp-host-${account.id}`}
                   value={smtpHost}
@@ -226,7 +229,7 @@ export function EditMailboxAccountDialog({ account }: { account: AccountSettings
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label htmlFor={`smtp-port-${account.id}`}>SMTP 端口</Label>
+                  <Label htmlFor={`smtp-port-${account.id}`}>{t.editDialog.smtpPort}</Label>
                   <Input
                     id={`smtp-port-${account.id}`}
                     type="number"
@@ -241,14 +244,14 @@ export function EditMailboxAccountDialog({ account }: { account: AccountSettings
                     checked={smtpSecure}
                     onChange={(event) => setSmtpSecure(event.target.checked)}
                   />
-                  使用 SSL/TLS
+                  {t.editDialog.ssl}
                 </label>
               </div>
             </div>
           )}
 
           <Button type="submit" className="w-full" disabled={isPending}>
-            {isPending ? "保存中..." : "保存账号设置"}
+            {isPending ? t.saving : t.editDialog.saveButton}
           </Button>
         </form>
       </DialogContent>
