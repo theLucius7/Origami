@@ -21,11 +21,13 @@ import { getAccountsMessages } from "@/i18n/accounts";
 interface OAuthAppDialogProps {
   app?: OAuthAppUsageView;
   defaultProvider?: OAuthProviderKind;
+  buttonAriaLabel?: string;
 }
 
 export function OAuthAppDialog({
   app,
   defaultProvider = "gmail",
+  buttonAriaLabel,
 }: OAuthAppDialogProps) {
   const { isPending, run } = useClientAction();
   const { locale } = useI18n();
@@ -93,6 +95,7 @@ export function OAuthAppDialog({
           resetForm();
           setOpen(true);
         }}
+        aria-label={buttonAriaLabel}
       >
         {isEdit ? <Pencil className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
         {isEdit ? t.oauthDialog.edit : t.oauthDialog.add}

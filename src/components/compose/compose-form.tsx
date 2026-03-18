@@ -324,8 +324,15 @@ export function ComposeForm({
                       {attachment.error && ` · ${attachment.error}`}
                     </div>
                   </div>
-                  <Button type="button" variant="ghost" size="icon" onClick={() => removeAttachment(attachment.id)}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeAttachment(attachment.id)}
+                    aria-label={messages.compose.removeAttachmentAria(attachment.filename)}
+                  >
                     <X className="h-4 w-4" />
+                    <span className="sr-only">{messages.compose.removeAttachmentAria(attachment.filename)}</span>
                   </Button>
                 </div>
               ))}

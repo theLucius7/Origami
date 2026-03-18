@@ -201,20 +201,19 @@ export function InboxView({
 
   function applyLocalPatch(emailId: string, patch: Partial<Email>) {
     const now = Math.floor(Date.now() / 1000);
-    let removedSelectedEmail = false;
-
-    setEmails((current) => {
-      const nextState = applyInboxEmailPatch(current, emailId, patch, {
-        starred,
-        nowTs: now,
-        selectedId,
-      });
-      removedSelectedEmail = nextState.removedSelectedEmail;
-      return nextState.emails;
+    const nextState = applyInboxEmailPatch(emails, emailId, patch, {
+      starred,
+      nowTs: now,
+      selectedId,
     });
 
-    if (removedSelectedEmail) {
+    setEmails(nextState.emails);
+
+    if (nextState.removedSelectedEmail) {
+      setSelectedEmail(null);
+      setSelectedAttachments([]);
       router.replace(buildCurrentInboxHref({ mailId: undefined }), { scroll: false });
+      return;
     }
 
     setSelectedEmail((current) =>

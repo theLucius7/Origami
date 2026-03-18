@@ -37,6 +37,17 @@ describe("compose attachments route", () => {
   it("returns localized validation errors", async () => {
     const { POST } = await import("./route");
 
+    const missingContentTypeResponse = await POST(
+      new NextRequest("http://localhost/api/compose-attachments", {
+        method: "POST",
+        headers: { cookie: "origami_locale=en" },
+      })
+    );
+    expect(missingContentTypeResponse.status).toBe(400);
+    await expect(missingContentTypeResponse.json()).resolves.toEqual({
+      error: "Missing attachment file.",
+    });
+
     const missingResponse = await POST(
       new NextRequest("http://localhost/api/compose-attachments", {
         method: "POST",
