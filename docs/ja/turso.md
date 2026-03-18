@@ -136,7 +136,7 @@ TURSO_AUTH_TOKEN=...
 
 ```txt
 TURSO_DATABASE_URL=libsql://origami-prod-xxxxx.turso.io
-TURSO_AUTH_TOKEN=eyJhbGciOi...
+TURSO_AUTH_TOKEN=your-turso-auth-token
 ```
 
 ## テスト前の確認

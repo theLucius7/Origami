@@ -109,8 +109,8 @@ Cloudflare が表示する 2 つの値をすぐにコピーします。
 
 ```txt
 R2_ACCOUNT_ID=1234567890abcdef1234567890abcdef
-R2_ACCESS_KEY_ID=xxxxxxxxxxxxxxxxxxxx
-R2_SECRET_ACCESS_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+R2_ACCESS_KEY_ID=your-r2-access-key-id
+R2_SECRET_ACCESS_KEY=your-r2-secret-access-key
 R2_BUCKET_NAME=origami-attachments-prod
 R2_ENDPOINT=https://1234567890abcdef1234567890abcdef.r2.cloudflarestorage.com
 ```

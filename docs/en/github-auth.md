@@ -125,10 +125,10 @@ Then copy:
 
 ```txt
 NEXT_PUBLIC_APP_URL=https://mail.example.com
-GITHUB_CLIENT_ID=Iv1.xxxxxxxxxxxxx
-GITHUB_CLIENT_SECRET=xxxxxxxxxxxxxxxxxxxxxxxx
+GITHUB_CLIENT_ID=your-github-oauth-client-id
+GITHUB_CLIENT_SECRET=your-github-oauth-client-secret
 GITHUB_ALLOWED_LOGIN=your-github-login
-AUTH_SECRET=replace-with-a-random-secret
+AUTH_SECRET=generate-a-random-32-byte-secret
 ```
 
 If you do not have `AUTH_SECRET` yet, generate one:

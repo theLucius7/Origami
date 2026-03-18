@@ -1,0 +1,17 @@
+title = "Origami gitleaks config"
+
+[allowlist]
+description = "Allow obvious documentation placeholders and test fixture values."
+regexes = [
+  '''(?i)your-(github|google|microsoft|turso|r2)-[a-z0-9.-]+''',
+  '''(?i)generate-a-random-32-byte-secret''',
+  '''(?i)64-char-hex-key''',
+  '''(?i)mail\.example\.com''',
+  '''(?i)1234567890abcdef1234567890abcdef''',
+  '''(?i)(alice|bob|cc|bcc|origami|user|qq)@example\.com''',
+  '''(?i)example@163\.com''',
+  '''(?i)qq-auth''',
+]
+paths = [
+  '''(^|/)package-lock\.json$''',
+]

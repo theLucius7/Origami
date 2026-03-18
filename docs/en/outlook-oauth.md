@@ -150,7 +150,7 @@ If your tenant requires it, also handle **Grant admin consent** here.
 ```txt
 NEXT_PUBLIC_APP_URL=https://mail.example.com
 OUTLOOK_CLIENT_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-OUTLOOK_CLIENT_SECRET=xxxxxxxxxxxxxxxxxxxxxxxx
+OUTLOOK_CLIENT_SECRET=your-microsoft-oauth-client-secret
 ```
 
 ## Check before testing

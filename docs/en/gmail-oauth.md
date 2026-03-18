@@ -136,8 +136,8 @@ Copy both values immediately.
 
 ```txt
 NEXT_PUBLIC_APP_URL=https://mail.example.com
-GMAIL_CLIENT_ID=xxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com
-GMAIL_CLIENT_SECRET=GOCSPX-xxxxxxxxxxxxxxxxxxxx
+GMAIL_CLIENT_ID=your-google-oauth-client-id.apps.googleusercontent.com
+GMAIL_CLIENT_SECRET=your-google-oauth-client-secret
 ```
 
 ## Check before testing
