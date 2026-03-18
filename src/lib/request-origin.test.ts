@@ -6,13 +6,20 @@ afterEach(() => {
 });
 
 describe("request-origin", () => {
-  it("strips an explicit port from the request host", () => {
+  it("strips an explicit port from public preview hosts", () => {
     const req = new Request("https://sturdy-fiesta-xyz-3000.app.github.dev:3000/api/auth/github/callback");
 
     expect(getPublicOrigin(req)).toBe("https://sturdy-fiesta-xyz-3000.app.github.dev");
     expect(toPublicUrl(req, "/login?error=github_callback").toString()).toBe(
       "https://sturdy-fiesta-xyz-3000.app.github.dev/login?error=github_callback"
     );
+  });
+
+  it("preserves the local dev port on localhost requests", () => {
+    const req = new Request("http://localhost:3003/api/auth/github/callback");
+
+    expect(getPublicOrigin(req)).toBe("http://localhost:3003");
+    expect(toPublicUrl(req, "/login").toString()).toBe("http://localhost:3003/login");
   });
 
   it("uses forwarded host for local proxy requests", () => {

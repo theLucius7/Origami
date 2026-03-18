@@ -13,6 +13,23 @@ function stripExplicitPort(host: string): string {
   return host.replace(/:(\d+)$/, "");
 }
 
+function normalizeHost(host: string, hostname?: string): string {
+  if (!host) return host;
+  const resolvedHostname = hostname ?? (() => {
+    try {
+      return new URL(`https://${host}`).hostname;
+    } catch {
+      return stripExplicitPort(host);
+    }
+  })();
+
+  if (isLocalHostname(resolvedHostname)) {
+    return host;
+  }
+
+  return stripExplicitPort(host);
+}
+
 function getRequestProto(request: NextRequest | Request): string {
   const headerProto = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
   if (headerProto) return headerProto;
@@ -20,7 +37,8 @@ function getRequestProto(request: NextRequest | Request): string {
 }
 
 function getRequestHost(request: NextRequest | Request): string {
-  return stripExplicitPort(getRequestUrl(request).host);
+  const requestUrl = getRequestUrl(request);
+  return normalizeHost(requestUrl.host, requestUrl.hostname);
 }
 
 function normalizeForwardedHost(host: string | null): string | null {
@@ -32,7 +50,8 @@ function normalizeForwardedHost(host: string | null): string | null {
   }
 
   try {
-    return stripExplicitPort(new URL(`https://${firstHost}`).host);
+    const parsed = new URL(`https://${firstHost}`);
+    return normalizeHost(parsed.host, parsed.hostname);
   } catch {
     return null;
   }
