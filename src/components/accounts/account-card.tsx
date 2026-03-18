@@ -22,6 +22,7 @@ import { getClientActionErrorMessage, useClientAction } from "@/hooks/use-client
 import { getAccountsMessages } from "@/i18n/accounts";
 import { formatRelativeTime } from "@/lib/format";
 import { getMailboxPreset, getMailboxPresetLabel } from "@/lib/providers/imap-smtp/presets";
+import { mapRuntimeErrorToMessage } from "@/lib/runtime-errors";
 import { useToast } from "@/hooks/use-toast";
 
 interface AccountCardProps {
@@ -353,7 +354,11 @@ export function AccountCard({ account, oauthApps }: AccountCardProps) {
                 </p>
                 {account.latestHydrationError && (
                   <div className="mt-2 text-xs text-muted-foreground">
-                    <p className="line-clamp-2 text-foreground/90">{t.accountCard.latestError(account.latestHydrationError)}</p>
+                    <p className="line-clamp-2 text-foreground/90">
+                      {t.accountCard.latestError(
+                        mapRuntimeErrorToMessage({ locale, error: account.latestHydrationError }) ?? account.latestHydrationError
+                      )}
+                    </p>
                     {account.latestHydrationAt && (
                       <p className="mt-1 flex items-center gap-1">
                         <Clock3 className="h-3 w-3" />
@@ -377,7 +382,11 @@ export function AccountCard({ account, oauthApps }: AccountCardProps) {
                 </p>
                 {account.latestReadWriteBackError && (
                   <div className="mt-2 text-xs text-muted-foreground">
-                    <p className="line-clamp-2 text-foreground/90">{t.accountCard.latestError(account.latestReadWriteBackError)}</p>
+                    <p className="line-clamp-2 text-foreground/90">
+                      {t.accountCard.latestError(
+                        mapRuntimeErrorToMessage({ locale, error: account.latestReadWriteBackError }) ?? account.latestReadWriteBackError
+                      )}
+                    </p>
                     {account.latestReadWriteBackAt && (
                       <p className="mt-1 flex items-center gap-1">
                         <Clock3 className="h-3 w-3" />
@@ -401,7 +410,11 @@ export function AccountCard({ account, oauthApps }: AccountCardProps) {
                 </p>
                 {account.latestStarWriteBackError && (
                   <div className="mt-2 text-xs text-muted-foreground">
-                    <p className="line-clamp-2 text-foreground/90">{t.accountCard.latestError(account.latestStarWriteBackError)}</p>
+                    <p className="line-clamp-2 text-foreground/90">
+                      {t.accountCard.latestError(
+                        mapRuntimeErrorToMessage({ locale, error: account.latestStarWriteBackError }) ?? account.latestStarWriteBackError
+                      )}
+                    </p>
                     {account.latestStarWriteBackAt && (
                       <p className="mt-1 flex items-center gap-1">
                         <Clock3 className="h-3 w-3" />

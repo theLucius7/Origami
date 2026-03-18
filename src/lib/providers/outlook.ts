@@ -5,6 +5,7 @@ import {
   resolveOutlookOAuthApp,
   type ResolvedOutlookOAuthApp,
 } from "@/lib/oauth-apps";
+import type { AppLocale } from "@/i18n/locale";
 import type {
   EmailProvider,
   SendMailParams,
@@ -42,6 +43,19 @@ export function hasOutlookSendScope(scopes?: string[]): boolean {
 
 export function hasOutlookWriteBackScope(scopes?: string[]): boolean {
   return normalizeScopes(scopes).includes(OUTLOOK_REQUIRED_WRITEBACK_SCOPE);
+}
+
+function getOutlookWriteBackNotice(locale: AppLocale) {
+  switch (locale) {
+    case "zh-TW":
+      return `需要重新授權以啟用回寫功能（需要 Outlook Delegated 權限：${OUTLOOK_REQUIRED_WRITEBACK_SCOPE}）`;
+    case "en":
+      return `Reauthorization is required to enable write-back (requires Outlook delegated permission: ${OUTLOOK_REQUIRED_WRITEBACK_SCOPE}).`;
+    case "ja":
+      return `書き戻しを有効にするには再認可が必要です（Outlook Delegated 権限が必要です: ${OUTLOOK_REQUIRED_WRITEBACK_SCOPE}）。`;
+    default:
+      return `需要重新授权以启用写回功能（需要 Outlook Delegated 权限：${OUTLOOK_REQUIRED_WRITEBACK_SCOPE}）`;
+  }
 }
 
 function resolveSyncOutlookOAuthApp(appId?: string, oauthApp?: ResolvedOutlookOAuthApp) {
@@ -203,15 +217,16 @@ export class OutlookProvider implements EmailProvider {
     return { ...this.creds, scopes: normalizeScopes(this.creds.scopes) };
   }
 
-  getCapabilities() {
+  getCapabilities(locale: AppLocale = "zh-CN") {
     const canWriteBack = hasOutlookWriteBackScope(this.creds.scopes);
+    const notice = canWriteBack ? null : getOutlookWriteBackNotice(locale);
 
     return {
       canSend: hasOutlookSendScope(this.creds.scopes),
       canWriteBackRead: canWriteBack,
       canWriteBackStar: canWriteBack,
-      readWriteBackNotice: canWriteBack ? null : `需要重新授权以启用写回功能（需要 Outlook Delegated 权限：${OUTLOOK_REQUIRED_WRITEBACK_SCOPE}）`,
-      starWriteBackNotice: canWriteBack ? null : `需要重新授权以启用写回功能（需要 Outlook Delegated 权限：${OUTLOOK_REQUIRED_WRITEBACK_SCOPE}）`,
+      readWriteBackNotice: notice,
+      starWriteBackNotice: notice,
     };
   }
 
@@ -268,7 +283,7 @@ export class OutlookProvider implements EmailProvider {
       try {
         await this.client.api("/me/sendMail").post({
           message: {
-            subject: params.subject || "(无主题)",
+            subject: params.subject || "",
             body: {
               contentType: params.htmlBody ? "HTML" : "Text",
               content: params.htmlBody || params.textBody || "",
@@ -462,7 +477,7 @@ export class OutlookProvider implements EmailProvider {
     return {
       remoteId: String(msg.id),
       messageId: String(msg.internetMessageId ?? msg.id),
-      subject: String(msg.subject ?? "(无主题)"),
+      subject: String(msg.subject ?? ""),
       sender: String((msg.from as { emailAddress?: { address?: string } } | undefined)?.emailAddress?.address ?? ""),
       recipients: toRecipients,
       snippet: String(msg.bodyPreview ?? ""),

@@ -1,3 +1,6 @@
+import type { Buffer } from "node:buffer";
+import type { AppLocale } from "@/i18n/locale";
+
 export interface SyncedEmail {
   remoteId: string;
   messageId: string;
@@ -78,6 +81,6 @@ export type SendMailResult =
 export interface EmailProvider {
   syncEmails(cursor: string | null, options?: SyncOptions): Promise<SyncResult>;
   fetchEmail(remoteId: string): Promise<SyncedEmail | null>;
-  getCapabilities(): ProviderCapabilities;
+  getCapabilities(locale?: AppLocale): ProviderCapabilities;
   sendMail(params: SendMailParams): Promise<SendMailResult>;
 }

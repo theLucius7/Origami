@@ -52,6 +52,26 @@ describe("ImapSmtpProvider", () => {
     smtpCloseMock.mockResolvedValue(undefined);
   });
 
+  it("localizes IMAP write-back capability notices", async () => {
+    const { ImapSmtpProvider } = await import("./provider");
+
+    const provider = new ImapSmtpProvider({
+      label: "163 邮箱",
+      email: "163@example.com",
+      authUser: "163@example.com",
+      authPass: "auth-code",
+      imap: { host: "imap.163.com", port: 993, secure: true },
+      smtp: { host: "smtp.163.com", port: 465, secure: true },
+    });
+
+    expect(provider.getCapabilities("en").readWriteBackNotice).toBe(
+      "IMAP flag write-back is best effort and depends on the server flag support and mailbox implementation."
+    );
+    expect(provider.getCapabilities("ja").starWriteBackNotice).toBe(
+      "IMAP flags の書き戻しは best effort であり、サーバー側の flags 対応状況とメールボックス実装に依存します。"
+    );
+  });
+
   it("uses provided runtime config for SMTP sending", async () => {
     const { ImapSmtpProvider } = await import("./provider");
 

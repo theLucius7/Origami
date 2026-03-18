@@ -6,6 +6,7 @@ import {
   resolveGmailOAuthApp,
   type ResolvedGmailOAuthApp,
 } from "@/lib/oauth-apps";
+import type { AppLocale } from "@/i18n/locale";
 import { buildMimeMessage, encodeMimeMessageBase64Url } from "./mime";
 import type {
   EmailProvider,
@@ -39,6 +40,19 @@ export function hasGmailSendScope(scopes?: string[]): boolean {
 
 export function hasGmailModifyScope(scopes?: string[]): boolean {
   return normalizeScopes(scopes).includes(GMAIL_MODIFY_SCOPE);
+}
+
+function getGmailWriteBackNotice(locale: AppLocale) {
+  switch (locale) {
+    case "zh-TW":
+      return `需要重新授權以啟用回寫功能（需要 Gmail 修改權限：${GMAIL_MODIFY_SCOPE}）`;
+    case "en":
+      return `Reauthorization is required to enable write-back (requires Gmail modify scope: ${GMAIL_MODIFY_SCOPE}).`;
+    case "ja":
+      return `書き戻しを有効にするには再認可が必要です（Gmail modify scope が必要です: ${GMAIL_MODIFY_SCOPE}）。`;
+    default:
+      return `需要重新授权以启用写回功能（需要 Gmail 修改权限：${GMAIL_MODIFY_SCOPE}）`;
+  }
 }
 
 function getOAuth2Client(config: ResolvedGmailOAuthApp) {
@@ -149,15 +163,16 @@ export class GmailProvider implements EmailProvider {
     };
   }
 
-  getCapabilities() {
+  getCapabilities(locale: AppLocale = "zh-CN") {
     const canWriteBack = hasGmailModifyScope(this.creds.scopes);
+    const notice = canWriteBack ? null : getGmailWriteBackNotice(locale);
 
     return {
       canSend: hasGmailSendScope(this.creds.scopes),
       canWriteBackRead: canWriteBack,
       canWriteBackStar: canWriteBack,
-      readWriteBackNotice: canWriteBack ? null : `需要重新授权以启用写回功能（需要 Gmail 修改权限：${GMAIL_MODIFY_SCOPE}）`,
-      starWriteBackNotice: canWriteBack ? null : `需要重新授权以启用写回功能（需要 Gmail 修改权限：${GMAIL_MODIFY_SCOPE}）`,
+      readWriteBackNotice: notice,
+      starWriteBackNotice: notice,
     };
   }
 
@@ -346,7 +361,7 @@ export class GmailProvider implements EmailProvider {
     return {
       remoteId: msg.id!,
       messageId: headers["message-id"] ?? msg.id!,
-      subject: headers.subject ?? "(无主题)",
+      subject: headers.subject ?? "",
       sender: headers.from ?? "",
       recipients: headers.to ? headers.to.split(/,\s*/) : [],
       snippet: msg.snippet ?? "",

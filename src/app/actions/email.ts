@@ -12,6 +12,7 @@ import {
 } from "@/lib/queries/emails";
 import { writeBackRead, writeBackStar, type WriteBackResult } from "@/lib/providers/writeBack";
 import { revalidateMailboxPages } from "@/lib/revalidate";
+import { encodeRuntimeError } from "@/lib/runtime-errors";
 import { getHydratedEmailDetail, hydrateEmailIfNeeded } from "@/lib/services/email-service";
 
 type WriteBackKind = "read" | "star";
@@ -79,7 +80,7 @@ async function scheduleReadWriteBack(emailId: string) {
   if (!row.email.remoteId) {
     await persistWriteBackState([emailId], "read", {
       status: "skipped",
-      error: "missing remote message id",
+      error: encodeRuntimeError("WRITEBACK_MISSING_REMOTE_ID"),
       at: Math.floor(Date.now() / 1000),
     });
     return;
@@ -119,7 +120,7 @@ async function scheduleStarWriteBack(emailIds: string[], starred: boolean) {
       "star",
       {
         status: "skipped",
-        error: "missing remote message id",
+        error: encodeRuntimeError("WRITEBACK_MISSING_REMOTE_ID"),
         at: Math.floor(Date.now() / 1000),
       }
     );

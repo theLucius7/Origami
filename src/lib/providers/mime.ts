@@ -47,7 +47,7 @@ export function buildMimeMessage(params: SendMailParams): string {
     `To: ${params.to.map(escapeHeader).join(", ")}`,
     ...(params.cc?.length ? [`Cc: ${params.cc.map(escapeHeader).join(", ")}`] : []),
     ...(params.bcc?.length ? [`Bcc: ${params.bcc.map(escapeHeader).join(", ")}`] : []),
-    `Subject: ${encodeHeader(escapeHeader(params.subject || "(无主题)"))}`,
+    `Subject: ${encodeHeader(escapeHeader(params.subject || ""))}`,
     "MIME-Version: 1.0",
   ];
 

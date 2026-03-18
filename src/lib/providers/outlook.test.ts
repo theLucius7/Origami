@@ -115,6 +115,23 @@ describe("OutlookProvider", () => {
     });
   });
 
+  it("localizes write-back capability notices", async () => {
+    const { OutlookProvider, OUTLOOK_REQUIRED_WRITEBACK_SCOPE } = await import("./outlook");
+
+    const provider = new OutlookProvider({
+      accessToken: "access",
+      refreshToken: "refresh",
+      scopes: ["Mail.Send"],
+    });
+
+    expect(provider.getCapabilities("en").readWriteBackNotice).toBe(
+      `Reauthorization is required to enable write-back (requires Outlook delegated permission: ${OUTLOOK_REQUIRED_WRITEBACK_SCOPE}).`
+    );
+    expect(provider.getCapabilities("zh-TW").starWriteBackNotice).toBe(
+      `需要重新授權以啟用回寫功能（需要 Outlook Delegated 權限：${OUTLOOK_REQUIRED_WRITEBACK_SCOPE}）`
+    );
+  });
+
   it("bootstraps a delta cursor during initial sync and maps remote state", async () => {
     const { OutlookProvider } = await import("./outlook");
 

@@ -110,7 +110,7 @@ async function persistSentMessage(
     toRecipients: JSON.stringify(normalizeAddressList(input.to)),
     ccRecipients: JSON.stringify(normalizeAddressList(input.cc)),
     bccRecipients: JSON.stringify(normalizeAddressList(input.bcc)),
-    subject: input.subject || "(无主题)",
+    subject: input.subject.trim(),
     snippet: buildSnippet(input.textBody, input.htmlBody),
     bodyText: input.textBody,
     bodyHtml: input.htmlBody ?? null,

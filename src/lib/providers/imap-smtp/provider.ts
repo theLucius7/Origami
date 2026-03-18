@@ -10,9 +10,21 @@ import type {
   SyncedAttachment,
   SyncedEmail,
 } from "@/lib/providers/types";
+import type { AppLocale } from "@/i18n/locale";
 import type { ImapSmtpRuntimeConfig } from "./types";
 
-const IMAP_FLAG_WRITEBACK_NOTICE = "基于 IMAP flags 的 best effort 写回：依赖服务端 flags 能力与邮箱实现，不保证每个 provider 都完全一致。";
+function getImapFlagWriteBackNotice(locale: AppLocale) {
+  switch (locale) {
+    case "zh-TW":
+      return "基於 IMAP flags 的 best effort 回寫：依賴伺服器 flags 能力與信箱實作，不保證每個 provider 都完全一致。";
+    case "en":
+      return "IMAP flag write-back is best effort and depends on the server flag support and mailbox implementation.";
+    case "ja":
+      return "IMAP flags の書き戻しは best effort であり、サーバー側の flags 対応状況とメールボックス実装に依存します。";
+    default:
+      return "基于 IMAP flags 的 best effort 写回：依赖服务端 flags 能力与邮箱实现，不保证每个 provider 都完全一致。";
+  }
+}
 
 type ImapFlags = Set<string> | string[] | undefined;
 
@@ -88,13 +100,15 @@ export class ImapSmtpProvider implements EmailProvider {
     }
   }
 
-  getCapabilities() {
+  getCapabilities(locale: AppLocale = "zh-CN") {
+    const notice = getImapFlagWriteBackNotice(locale);
+
     return {
       canSend: true,
       canWriteBackRead: true,
       canWriteBackStar: true,
-      readWriteBackNotice: IMAP_FLAG_WRITEBACK_NOTICE,
-      starWriteBackNotice: IMAP_FLAG_WRITEBACK_NOTICE,
+      readWriteBackNotice: notice,
+      starWriteBackNotice: notice,
     };
   }
 
@@ -116,7 +130,7 @@ export class ImapSmtpProvider implements EmailProvider {
         to: params.to,
         ...(params.cc?.length ? { cc: params.cc } : {}),
         ...(params.bcc?.length ? { bcc: params.bcc } : {}),
-        subject: params.subject || "(无主题)",
+        subject: params.subject || "",
         text: params.textBody || "",
         ...(params.htmlBody ? { html: params.htmlBody } : {}),
         ...(params.attachments?.length
@@ -343,7 +357,7 @@ export class ImapSmtpProvider implements EmailProvider {
     return {
       remoteId: String(msg.uid),
       messageId: msg.envelope?.messageId ?? `${this.config.email}-${msg.uid}`,
-      subject: msg.envelope?.subject ?? "(无主题)",
+      subject: msg.envelope?.subject ?? "",
       sender,
       recipients,
       snippet: msg.envelope?.subject ?? "",
@@ -376,7 +390,7 @@ export class ImapSmtpProvider implements EmailProvider {
     return {
       remoteId: String(uid),
       messageId: parsed?.messageId ?? `${this.config.email}-${uid}`,
-      subject: parsed?.subject ?? "(无主题)",
+      subject: parsed?.subject ?? "",
       sender: parsed?.from?.text ?? "",
       recipients: parsed?.to
         ? Array.isArray(parsed.to)

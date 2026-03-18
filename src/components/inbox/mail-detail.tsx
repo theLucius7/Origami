@@ -30,6 +30,7 @@ import {
 import type { Email, Attachment } from "@/lib/db/schema";
 import { formatRelativeTime, formatFileSize } from "@/lib/format";
 import { parseStoredStringList } from "@/lib/string-list";
+import { mapRuntimeErrorToMessage } from "@/lib/runtime-errors";
 import { SnoozeDialog } from "./snooze-dialog";
 import { shouldPollMailDetailStatus } from "./mail-detail-state";
 import { getClientActionErrorMessage, useClientAction } from "@/hooks/use-client-action";
@@ -47,8 +48,11 @@ function renderWriteBackStatus(
   label: string,
   status: string | null | undefined,
   error: string | null | undefined,
+  locale: ReturnType<typeof useI18n>["locale"],
   messages: ReturnType<typeof useI18n>["messages"]
 ) {
+  const description = mapRuntimeErrorToMessage({ locale, error });
+
   switch (status) {
     case "pending":
       return (
@@ -68,14 +72,14 @@ function renderWriteBackStatus(
       return (
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
           <MinusCircle className="h-3 w-3" />
-          <span>{messages.mailDetail.writeBackSkipped(label, error)}</span>
+          <span>{messages.mailDetail.writeBackSkipped(label, description)}</span>
         </div>
       );
     case "failed":
       return (
         <div className="flex items-center gap-1 text-xs text-destructive">
           <AlertCircle className="h-3 w-3" />
-          <span>{messages.mailDetail.writeBackFailed(label, error)}</span>
+          <span>{messages.mailDetail.writeBackFailed(label, description)}</span>
         </div>
       );
     default:
@@ -257,12 +261,14 @@ export function MailDetail({
             </p>
           )}
           <div className="mt-2 space-y-1">
-            {renderWriteBackStatus(messages.mailDetail.readWriteBackLabel, email.readWriteBackStatus, email.readWriteBackError, messages)}
-            {renderWriteBackStatus(messages.mailDetail.starWriteBackLabel, email.starWriteBackStatus, email.starWriteBackError, messages)}
+            {renderWriteBackStatus(messages.mailDetail.readWriteBackLabel, email.readWriteBackStatus, email.readWriteBackError, locale, messages)}
+            {renderWriteBackStatus(messages.mailDetail.starWriteBackLabel, email.starWriteBackStatus, email.starWriteBackError, locale, messages)}
             {hydrationStatus === "failed" && email.hydrationError && (
               <div className="flex items-center gap-1 text-xs text-destructive">
                 <AlertCircle className="h-3 w-3" />
-                <span>{messages.mailDetail.hydrationFailedDetail(email.hydrationError)}</span>
+                <span>{messages.mailDetail.hydrationFailedDetail(
+                  mapRuntimeErrorToMessage({ locale, error: email.hydrationError }) ?? email.hydrationError
+                )}</span>
               </div>
             )}
           </div>

@@ -1,3 +1,4 @@
+import type { AppLocale } from "@/i18n/locale";
 import type { EmailProvider, SendMailParams, SendMailResult, SyncOptions, SyncResult, SyncedEmail } from "./types";
 import { resolveImapSmtpConfigFromAccount } from "./imap-smtp/account-config";
 import { ImapSmtpProvider } from "./imap-smtp/provider";
@@ -44,8 +45,8 @@ export class QQProvider implements EmailProvider {
     );
   }
 
-  getCapabilities() {
-    return this.delegate.getCapabilities();
+  getCapabilities(locale?: AppLocale) {
+    return this.delegate.getCapabilities(locale);
   }
 
   sendMail(params: SendMailParams): Promise<SendMailResult> {

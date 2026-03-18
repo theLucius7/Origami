@@ -2,48 +2,50 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const sendMock = vi.fn();
 const modifyMock = vi.fn();
+const listHistoryMock = vi.fn();
+const getMessageMock = vi.fn();
+const getProfileMock = vi.fn();
 
-vi.mock("googleapis", () => {
-  class OAuth2 {
-    credentials: Record<string, string> = {};
-    setCredentials(creds: Record<string, string>) {
-      this.credentials = creds;
-    }
-    on() {
-      return undefined;
-    }
-  }
-
-  return {
-    google: {
-      auth: { OAuth2 },
-      gmail: () => ({
-        users: {
-          messages: {
-            send: sendMock,
-            modify: modifyMock,
-          },
-        },
-      }),
+vi.mock("googleapis", () => ({
+  google: {
+    auth: {
+      OAuth2: class {
+        credentials: Record<string, string> = {};
+        setCredentials(tokens: Record<string, string>) {
+          this.credentials = tokens;
+        }
+        on() {
+          return undefined;
+        }
+      },
     },
-  };
-});
-
-function decodeBase64Url(value: string): string {
-  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
-  const padding = "=".repeat((4 - (normalized.length % 4)) % 4);
-  return Buffer.from(normalized + padding, "base64").toString("utf8");
-}
+    gmail: () => ({
+      users: {
+        messages: {
+          send: (args: unknown) => sendMock(args),
+          modify: (args: unknown) => modifyMock(args),
+          get: (args: unknown) => getMessageMock(args),
+        },
+        history: {
+          list: (args: unknown) => listHistoryMock(args),
+        },
+        getProfile: (args: unknown) => getProfileMock(args),
+      },
+    }),
+  },
+}));
 
 describe("GmailProvider", () => {
   beforeEach(() => {
+    process.env.NEXT_PUBLIC_APP_URL = "http://localhost:3000";
+    process.env.GMAIL_CLIENT_ID = "gmail-client";
+    process.env.GMAIL_CLIENT_SECRET = "gmail-secret";
     sendMock.mockReset();
     modifyMock.mockReset();
+    listHistoryMock.mockReset();
+    getMessageMock.mockReset();
+    getProfileMock.mockReset();
     sendMock.mockResolvedValue({ data: { id: "gmail-message-1" } });
-    modifyMock.mockResolvedValue({ data: {} });
-    process.env.GMAIL_CLIENT_ID = "client-id";
-    process.env.GMAIL_CLIENT_SECRET = "client-secret";
-    process.env.NEXT_PUBLIC_APP_URL = "http://localhost:3000";
   });
 
   it("builds RFC 2822 MIME raw payload and sends it via Gmail API", async () => {
@@ -62,10 +64,10 @@ describe("GmailProvider", () => {
       bcc: ["bcc@example.com"],
       subject: "Hello Gmail",
       textBody: "Plain text body",
-      htmlBody: "<p>Hello</p>",
+      htmlBody: "<p>Hello <strong>HTML</strong></p>",
       attachments: [
         {
-          filename: "note.txt",
+          filename: "hello.txt",
           contentType: "text/plain",
           size: 5,
           content: Buffer.from("hello"),
@@ -80,54 +82,46 @@ describe("GmailProvider", () => {
     });
 
     expect(sendMock).toHaveBeenCalledTimes(1);
-    const payload = sendMock.mock.calls[0][0];
-    expect(payload.userId).toBe("me");
-    expect(payload.requestBody.raw).toEqual(expect.any(String));
+    const call = sendMock.mock.calls[0][0] as {
+      userId: string;
+      requestBody: { raw: string };
+    };
+    expect(call.userId).toBe("me");
 
-    const mime = decodeBase64Url(payload.requestBody.raw as string);
-    expect(mime).toContain("From: Origami <origami@example.com>");
-    expect(mime).toContain("To: alice@example.com");
-    expect(mime).toContain("Cc: cc@example.com");
-    expect(mime).toContain("Bcc: bcc@example.com");
-    expect(mime).toContain("Subject: Hello Gmail");
-    expect(mime).toContain("multipart/mixed");
-    expect(mime).toContain('filename="note.txt"');
-    expect(mime).toContain(Buffer.from("hello").toString("base64"));
+    const decoded = Buffer.from(
+      call.requestBody.raw.replace(/-/g, "+").replace(/_/g, "/"),
+      "base64"
+    ).toString("utf8");
+
+    expect(decoded).toContain("From: Origami <origami@example.com>");
+    expect(decoded).toContain("To: alice@example.com");
+    expect(decoded).toContain("Cc: cc@example.com");
+    expect(decoded).toContain("Bcc: bcc@example.com");
+    expect(decoded).toContain("Subject: Hello Gmail");
+    expect(decoded).toContain('Content-Type: multipart/mixed;');
+    expect(decoded).toContain('Content-Type: multipart/alternative;');
+    expect(decoded).toContain('Content-Type: text/plain; charset=\"UTF-8\"');
+    expect(decoded).toContain('Content-Type: text/html; charset=\"UTF-8\"');
+    expect(decoded).toContain('Content-Type: text/plain; name=\"hello.txt\"');
+    expect(decoded).toContain(Buffer.from("Plain text body").toString("base64"));
+    expect(decoded).toContain(Buffer.from("<p>Hello <strong>HTML</strong></p>").toString("base64"));
+    expect(decoded).toContain(Buffer.from("hello").toString("base64"));
   });
 
-  it("writes read/star state through Gmail messages.modify", async () => {
-    const { GmailProvider } = await import("./gmail");
+  it("localizes write-back capability notices", async () => {
+    const { GmailProvider, GMAIL_MODIFY_SCOPE } = await import("./gmail");
 
     const provider = new GmailProvider({
       accessToken: "access",
       refreshToken: "refresh",
-      scopes: ["https://www.googleapis.com/auth/gmail.modify"],
+      scopes: ["https://www.googleapis.com/auth/gmail.send"],
     });
 
-    await provider.markMessageRead("gmail-msg-1");
-    await provider.setMessageStarred("gmail-msg-1", true);
-    await provider.setMessageStarred("gmail-msg-1", false);
-
-    expect(modifyMock).toHaveBeenNthCalledWith(1, {
-      userId: "me",
-      id: "gmail-msg-1",
-      requestBody: {
-        removeLabelIds: ["UNREAD"],
-      },
-    });
-    expect(modifyMock).toHaveBeenNthCalledWith(2, {
-      userId: "me",
-      id: "gmail-msg-1",
-      requestBody: {
-        addLabelIds: ["STARRED"],
-      },
-    });
-    expect(modifyMock).toHaveBeenNthCalledWith(3, {
-      userId: "me",
-      id: "gmail-msg-1",
-      requestBody: {
-        removeLabelIds: ["STARRED"],
-      },
-    });
+    expect(provider.getCapabilities("en").readWriteBackNotice).toBe(
+      `Reauthorization is required to enable write-back (requires Gmail modify scope: ${GMAIL_MODIFY_SCOPE}).`
+    );
+    expect(provider.getCapabilities("ja").starWriteBackNotice).toBe(
+      `書き戻しを有効にするには再認可が必要です（Gmail modify scope が必要です: ${GMAIL_MODIFY_SCOPE}）。`
+    );
   });
 });

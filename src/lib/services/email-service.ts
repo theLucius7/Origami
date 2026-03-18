@@ -5,6 +5,7 @@ import { nanoid } from "nanoid";
 import { buildObjectKey, uploadAttachment } from "@/lib/r2";
 import { getAccountWithProvider, persistProviderCredentialsIfNeeded } from "@/lib/account-providers";
 import { getEmailRecordById, listEmailAttachments } from "@/lib/queries/emails";
+import { encodeRuntimeError } from "@/lib/runtime-errors";
 
 function nowUnix() {
   return Math.floor(Date.now() / 1000);
@@ -69,7 +70,7 @@ export async function hydrateEmailIfNeeded(email: Email): Promise<Email> {
       await setHydrationState(email.id, {
         hydrationStatus: "failed",
         hydratedAt: nowUnix(),
-        hydrationError: "账号不存在或 provider 初始化失败。",
+        hydrationError: encodeRuntimeError("HYDRATION_ACCOUNT_UNAVAILABLE"),
       });
       return (await getEmailRecordById(email.id)) ?? email;
     }
@@ -80,7 +81,7 @@ export async function hydrateEmailIfNeeded(email: Email): Promise<Email> {
       await setHydrationState(email.id, {
         hydrationStatus: "failed",
         hydratedAt: nowUnix(),
-        hydrationError: "远端未找到这封邮件，可能已被删除或移动。",
+        hydrationError: encodeRuntimeError("HYDRATION_REMOTE_NOT_FOUND"),
       });
       return (await getEmailRecordById(email.id)) ?? email;
     }
