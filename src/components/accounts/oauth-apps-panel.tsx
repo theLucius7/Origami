@@ -47,7 +47,10 @@ export function OAuthAppsPanel({ apps }: OAuthAppsPanelProps) {
             <h3 className="text-sm font-semibold">{provider === "gmail" ? t.oauthPanel.gmailTitle : t.oauthPanel.outlookTitle}</h3>
             <p className="mt-1 text-xs text-muted-foreground">{t.oauthPanel.groupDescription}</p>
           </div>
-          <OAuthAppDialog defaultProvider={provider} />
+          <OAuthAppDialog
+            defaultProvider={provider}
+            buttonAriaLabel={provider === "gmail" ? t.oauthPanel.addGmailAria : t.oauthPanel.addOutlookAria}
+          />
         </div>
 
         {group.length === 0 ? (
@@ -75,15 +78,21 @@ export function OAuthAppsPanel({ apps }: OAuthAppsPanelProps) {
                     </div>
                     {app.source === "db" && (
                       <div className="flex items-center gap-2">
-                        <OAuthAppDialog app={app} defaultProvider={provider} />
+                        <OAuthAppDialog
+                          app={app}
+                          defaultProvider={provider}
+                          buttonAriaLabel={t.oauthPanel.editButtonAria(app.label)}
+                        />
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => handleRemove(app)}
                           disabled={isPending}
                           className="text-destructive hover:text-destructive"
+                          aria-label={t.oauthPanel.removeButtonAria(app.label)}
                         >
                           <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">{t.oauthPanel.removeButtonAria(app.label)}</span>
                         </Button>
                       </div>
                     )}

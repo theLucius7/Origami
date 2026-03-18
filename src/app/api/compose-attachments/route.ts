@@ -53,10 +53,27 @@ function getAttachmentUploadErrorMessage(
   }
 }
 
+function isInvalidFormDataRequest(error: unknown) {
+  return (
+    error instanceof TypeError &&
+    error.message.includes('Content-Type was not one of "multipart/form-data" or "application/x-www-form-urlencoded"')
+  );
+}
+
 export async function POST(request: NextRequest) {
   const locale = getRequestLocale(request);
   await cleanupExpiredComposeUploads();
-  const formData = await request.formData();
+
+  let formData: FormData;
+  try {
+    formData = await request.formData();
+  } catch (error) {
+    if (isInvalidFormDataRequest(error)) {
+      return NextResponse.json({ error: getAttachmentUploadErrorMessage("missing", locale) }, { status: 400 });
+    }
+    throw error;
+  }
+
   const file = formData.get("file");
 
   if (!(file instanceof File)) {

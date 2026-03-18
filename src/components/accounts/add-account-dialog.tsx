@@ -298,7 +298,7 @@ export function AddAccountDialog({
                     </div>
                     <label className="mt-8 flex items-center gap-2 text-sm">
                       <input type="checkbox" checked={imapSecure} onChange={(e) => setImapSecure(e.target.checked)} />
-                      {t.addDialog.ssl}
+                      {t.addDialog.imapSsl}
                     </label>
                   </div>
                   <div className="space-y-2">
@@ -312,7 +312,7 @@ export function AddAccountDialog({
                     </div>
                     <label className="mt-8 flex items-center gap-2 text-sm">
                       <input type="checkbox" checked={smtpSecure} onChange={(e) => setSmtpSecure(e.target.checked)} />
-                      {t.addDialog.ssl}
+                      {t.addDialog.smtpSsl}
                     </label>
                   </div>
                 </div>

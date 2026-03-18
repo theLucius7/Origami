@@ -206,12 +206,25 @@ export function MailDetail({
           <h2 className="flex-1 truncate text-lg font-semibold">
             {email.subject || messages.common.untitled}
           </h2>
-          <Button variant="ghost" size="icon" onClick={handleStar} disabled={isPending}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleStar}
+            disabled={isPending}
+            aria-label={messages.mailDetail.starWriteBackLabel}
+          >
             <Star className={`h-4 w-4 ${email.isStarred ? "fill-yellow-400 text-yellow-400" : ""}`} />
           </Button>
           {onClose && (
-            <Button variant="ghost" size="icon" onClick={onClose} disabled={isPending}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              disabled={isPending}
+              aria-label={messages.common.back}
+            >
               <X className="h-4 w-4" />
+              <span className="sr-only">{messages.common.back}</span>
             </Button>
           )}
         </div>

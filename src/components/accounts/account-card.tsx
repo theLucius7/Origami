@@ -50,6 +50,9 @@ export function AccountCard({ account, oauthApps }: AccountCardProps) {
   const currentOauthAppId = account.oauthAppId ?? "default";
   const [selectedOauthAppId, setSelectedOauthAppId] = useState(currentOauthAppId);
   const selectedOAuthApp = oauthApps.find((item) => item.id === selectedOauthAppId) ?? null;
+  const fetchLimitOptions = useMemo(() => {
+    return Array.from(new Set([50, 200, 1000, account.initialFetchLimit ?? 200])).sort((a, b) => a - b);
+  }, [account.initialFetchLimit]);
 
   function handleRemove() {
     if (!confirm(t.accountCard.removeConfirm(account.email))) return;
@@ -184,16 +187,23 @@ export function AccountCard({ account, oauthApps }: AccountCardProps) {
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            {isMailboxAccount && <EditMailboxAccountDialog account={account} />}
-            <SyncAccountButton accountId={account.id} />
+            {isMailboxAccount && (
+              <EditMailboxAccountDialog
+                account={account}
+                buttonAriaLabel={t.accountCard.editButtonAria(account.email)}
+              />
+            )}
+            <SyncAccountButton accountId={account.id} ariaLabel={t.accountCard.syncButtonAria(account.email)} />
             <Button
               variant="ghost"
               size="icon"
               onClick={handleRemove}
               disabled={isPending}
               className="text-destructive hover:text-destructive"
+              aria-label={t.accountCard.removeButtonAria(account.email)}
             >
               <Trash2 className="h-4 w-4" />
+              <span className="sr-only">{t.accountCard.removeButtonAria(account.email)}</span>
             </Button>
           </div>
         </div>
@@ -246,10 +256,13 @@ export function AccountCard({ account, oauthApps }: AccountCardProps) {
             value={fetchLimit}
             onChange={(event) => handleFetchLimitChange(event.target.value)}
             disabled={isPending}
+            aria-label={t.accountCard.initialFetchAria(account.email)}
           >
-            <option value="50">50</option>
-            <option value="200">200</option>
-            <option value="1000">1000</option>
+            {fetchLimitOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -273,7 +286,7 @@ export function AccountCard({ account, oauthApps }: AccountCardProps) {
                   checked={account.syncReadBack === 1}
                   disabled={isPending || readScopeMissing}
                   onCheckedChange={(checked) => handleWriteBackToggle("syncReadBack", checked)}
-                  aria-label={t.accountCard.readAria}
+                  aria-label={t.accountCard.readAria(account.email)}
                 />
               </div>
               {readScopeMissing && (
@@ -304,7 +317,7 @@ export function AccountCard({ account, oauthApps }: AccountCardProps) {
                   checked={account.syncStarBack === 1}
                   disabled={isPending || starScopeMissing}
                   onCheckedChange={(checked) => handleWriteBackToggle("syncStarBack", checked)}
-                  aria-label={t.accountCard.starAria}
+                  aria-label={t.accountCard.starAria(account.email)}
                 />
               </div>
               {starScopeMissing && (
