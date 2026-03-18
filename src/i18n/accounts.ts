@@ -120,6 +120,7 @@ const accountsMessages = {
       removeSuccessDescription: (label: string) => `${label} 已从数据库配置中移除。`,
       addGmailAria: "添加 Gmail OAuth 应用",
       addOutlookAria: "添加 Outlook OAuth 应用",
+      editButtonAria: (label: string) => `编辑 OAuth 应用 ${label}`,
       removeButtonAria: (label: string) => `删除 OAuth 应用 ${label}`,
     },
     globalWriteBack: {
@@ -305,6 +306,7 @@ const accountsMessages = {
       removeSuccessDescription: (label: string) => `${label} 已從資料庫設定中移除。`,
       addGmailAria: "新增 Gmail OAuth 應用",
       addOutlookAria: "新增 Outlook OAuth 應用",
+      editButtonAria: (label: string) => `編輯 OAuth 應用 ${label}`,
       removeButtonAria: (label: string) => `刪除 OAuth 應用 ${label}`,
     },
     globalWriteBack: {
@@ -490,6 +492,7 @@ const accountsMessages = {
       removeSuccessDescription: (label: string) => `${label} has been removed from database-backed config.`,
       addGmailAria: "Add Gmail OAuth app",
       addOutlookAria: "Add Outlook OAuth app",
+      editButtonAria: (label: string) => `Edit OAuth app ${label}`,
       removeButtonAria: (label: string) => `Remove OAuth app ${label}`,
     },
     globalWriteBack: {
@@ -675,6 +678,7 @@ const accountsMessages = {
       removeSuccessDescription: (label: string) => `${label} をデータベース設定から削除しました。`,
       addGmailAria: "Gmail OAuth アプリを追加",
       addOutlookAria: "Outlook OAuth アプリを追加",
+      editButtonAria: (label: string) => `OAuth アプリ ${label} を編集`,
       removeButtonAria: (label: string) => `OAuth アプリ ${label} を削除`,
     },
     globalWriteBack: {

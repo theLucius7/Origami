@@ -78,7 +78,11 @@ export function OAuthAppsPanel({ apps }: OAuthAppsPanelProps) {
                     </div>
                     {app.source === "db" && (
                       <div className="flex items-center gap-2">
-                        <OAuthAppDialog app={app} defaultProvider={provider} />
+                        <OAuthAppDialog
+                          app={app}
+                          defaultProvider={provider}
+                          buttonAriaLabel={t.oauthPanel.editButtonAria(app.label)}
+                        />
                         <Button
                           variant="ghost"
                           size="icon"
