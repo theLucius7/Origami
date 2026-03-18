@@ -35,7 +35,7 @@ export function AccountCard({ account, oauthApps }: AccountCardProps) {
   const { locale, messages } = useI18n();
   const t = getAccountsMessages(locale);
   const [fetchLimit, setFetchLimit] = useState(String(account.initialFetchLimit ?? 200));
-  const provider = getProviderMeta(account.provider);
+  const provider = getProviderMeta(account.provider, locale);
   const isMailboxAccount = account.provider === "qq" || account.provider === "imap_smtp";
   const supportsOauthReauth = account.provider === "gmail" || account.provider === "outlook";
   const preset = useMemo(

@@ -130,4 +130,38 @@ describe("oauth app resolver", () => {
       ])
     );
   });
+
+  it("localizes env-backed default app labels without touching db labels", async () => {
+    const { localizeOAuthAppOptions } = await import("./oauth-apps");
+
+    const localized = localizeOAuthAppOptions(
+      [
+        { id: "default", provider: "gmail", label: "默认 Gmail 应用（环境变量）", source: "env" },
+        { id: "default", provider: "outlook", label: "默认 Outlook 应用（环境变量）", source: "env" },
+        { id: "team-gmail", provider: "gmail", label: "Team Gmail", source: "db" },
+      ],
+      "en"
+    );
+
+    expect(localized).toEqual([
+      {
+        id: "default",
+        provider: "gmail",
+        label: "Default Gmail app (environment)",
+        source: "env",
+      },
+      {
+        id: "default",
+        provider: "outlook",
+        label: "Default Outlook app (environment)",
+        source: "env",
+      },
+      {
+        id: "team-gmail",
+        provider: "gmail",
+        label: "Team Gmail",
+        source: "db",
+      },
+    ]);
+  });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getMailboxPreset, listMailboxPresets, MAILBOX_PRESETS } from "./presets";
+import { getMailboxPreset, getMailboxPresetLabel, listMailboxPresets, MAILBOX_PRESETS } from "./presets";
 
 describe("MAILBOX_PRESETS", () => {
   it("includes major Chinese mailbox presets and custom", () => {
@@ -19,5 +19,11 @@ describe("MAILBOX_PRESETS", () => {
     expect(listMailboxPresets().map((preset) => preset.key)).toEqual(
       expect.arrayContaining(["qq", "163", "126", "yeah", "custom"])
     );
+  });
+
+  it("returns localized preset labels", () => {
+    expect(getMailboxPresetLabel("qq", "zh-TW")).toBe("QQ 郵箱");
+    expect(getMailboxPresetLabel("custom", "en")).toBe("Custom IMAP/SMTP");
+    expect(getMailboxPresetLabel(undefined, "ja")).toBe("メール");
   });
 });
