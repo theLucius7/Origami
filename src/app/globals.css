@@ -82,7 +82,39 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-inter), "SF Pro Text", "Segoe UI", sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html[lang="zh-CN"] body {
+    font-family: var(--font-noto-sans-sc), var(--font-inter), "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+
+  html[lang="zh-TW"] body {
+    font-family: var(--font-noto-sans-tc), var(--font-inter), "PingFang TC", "Microsoft JhengHei", sans-serif;
+  }
+
+  html[lang="ja"] body {
+    font-family: var(--font-noto-sans-jp), var(--font-inter), "Hiragino Sans", "Yu Gothic UI", sans-serif;
+  }
+
+  code,
+  pre,
+  kbd,
+  samp {
+    font-family: var(--font-jetbrains-mono), "SFMono-Regular", "Cascadia Code", monospace;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    letter-spacing: -0.02em;
   }
 
   ::selection {

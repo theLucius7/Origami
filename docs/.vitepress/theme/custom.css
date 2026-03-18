@@ -1,0 +1,92 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;800&display=swap");
+
+:root {
+  --vp-font-family-base: "Inter", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --vp-font-family-mono: "JetBrains Mono", "SFMono-Regular", "Cascadia Code", monospace;
+  --vp-layout-max-width: 1480px;
+}
+
+html:lang(zh-CN) {
+  --vp-font-family-base: "Noto Sans SC", "Inter", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+html:lang(zh-TW) {
+  --vp-font-family-base: "Noto Sans TC", "Inter", "PingFang TC", "Microsoft JhengHei", sans-serif;
+}
+
+html:lang(ja) {
+  --vp-font-family-base: "Noto Sans JP", "Inter", "Hiragino Sans", "Yu Gothic UI", sans-serif;
+}
+
+body {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.VPNavBar .title,
+.VPHero .name,
+.VPDoc h1,
+.VPDoc h2,
+.VPDoc h3,
+.VPDoc h4,
+.VPDoc h5,
+.VPDoc h6 {
+  letter-spacing: -0.025em;
+}
+
+.VPHero .name,
+.VPHero .text {
+  line-height: 1.06;
+}
+
+.VPDoc {
+  font-size: 16px;
+}
+
+.VPDoc p,
+.VPDoc li {
+  line-height: 1.82;
+}
+
+.VPDoc h1 {
+  margin-top: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.VPDoc h2 {
+  margin-top: 2.5rem;
+  padding-top: 0.4rem;
+}
+
+.VPDoc a {
+  text-underline-offset: 0.18em;
+}
+
+.VPDoc div[class*="language-"] pre,
+.VPDoc div[class*="language-"] code,
+.VPDoc :not(pre) > code {
+  font-family: var(--vp-font-family-mono);
+}
+
+.VPFeature,
+.VPDoc .vp-adaptive-theme,
+.VPDoc .custom-block,
+.VPDoc div[class*="language-"] {
+  border-radius: 18px;
+}
+
+.VPFeature {
+  border: 1px solid color-mix(in srgb, var(--vp-c-divider) 78%, transparent);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.72));
+}
+
+.dark .VPFeature {
+  background: linear-gradient(180deg, rgba(36, 36, 40, 0.92), rgba(30, 30, 34, 0.72));
+}
+
+.VPDoc .container,
+.VPNavBar .content,
+.VPHome .container {
+  max-width: min(1280px, calc(100vw - 48px));
+}
