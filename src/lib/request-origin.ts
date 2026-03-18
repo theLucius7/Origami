@@ -1,10 +1,5 @@
 import type { NextRequest } from "next/server";
 
-type CookieCompatOptions = {
-  secure?: boolean;
-  sameSite?: "lax" | "strict" | "none" | boolean;
-};
-
 function getRequestUrl(request: NextRequest | Request): URL {
   return "nextUrl" in request ? request.nextUrl : new URL(request.url);
 }
@@ -15,13 +10,15 @@ function stripExplicitPort(host: string): string {
 
 function normalizeHost(host: string, hostname?: string): string {
   if (!host) return host;
-  const resolvedHostname = hostname ?? (() => {
-    try {
-      return new URL(`https://${host}`).hostname;
-    } catch {
-      return stripExplicitPort(host);
-    }
-  })();
+  const resolvedHostname =
+    hostname ??
+    (() => {
+      try {
+        return new URL(`https://${host}`).hostname;
+      } catch {
+        return stripExplicitPort(host);
+      }
+    })();
 
   if (isLocalHostname(resolvedHostname)) {
     return host;
@@ -85,18 +82,5 @@ export function toPublicUrl(request: NextRequest | Request, path: string): URL {
   return new URL(path, getPublicOrigin(request));
 }
 
-export function withHttpsPreviewCookieCompat<T extends CookieCompatOptions>(
-  request: NextRequest | Request,
-  options: T
-): T {
-  const proto = getRequestProto(request);
-  if (process.env.NODE_ENV !== "production" && proto === "https") {
-    return {
-      ...options,
-      secure: true,
-      sameSite: "none",
-    } as T;
-  }
-
-  return options;
-}
+// Back-compat re-export: cookie compat logic is centralized in src/lib/cookie-compat.ts
+export { withHttpsPreviewCookieCompat } from "@/lib/cookie-compat";

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { claimInstallation, getInstallation } from "@/lib/queries/installation";
 import { exchangeGitHubCode, fetchGitHubUser, isAllowedGitHubUser } from "@/lib/github-auth";
-import { toPublicUrl, withHttpsPreviewCookieCompat } from "@/lib/request-origin";
+import { toPublicUrl } from "@/lib/request-origin";
+import { withHttpsPreviewCookieCompat } from "@/lib/cookie-compat";
 import {
   createSessionCookieValue,
   getOAuthStateCookieName,
