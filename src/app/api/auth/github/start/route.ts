@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { getGitHubAuthUrl } from "@/lib/github-auth";
-import { withHttpsPreviewCookieCompat } from "@/lib/request-origin";
+import { withHttpsPreviewCookieCompat } from "@/lib/cookie-compat";
 import {
   createOAuthStateCookieValue,
   getOAuthStateCookieName,
