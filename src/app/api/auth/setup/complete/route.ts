@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { toPublicUrl, withHttpsPreviewCookieCompat } from "@/lib/request-origin";
 import { markInstallationSetupComplete } from "@/lib/queries/installation";
 import {
   createSessionCookieValue,
@@ -10,16 +11,16 @@ import {
 export async function POST(request: NextRequest) {
   const session = await readSessionFromCookies(request.cookies);
   if (!session) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(toPublicUrl(request, "/login"));
   }
 
   await markInstallationSetupComplete();
 
-  const response = NextResponse.redirect(new URL("/", request.url));
+  const response = NextResponse.redirect(toPublicUrl(request, "/"));
   response.cookies.set(
     getSessionCookieName(),
     await createSessionCookieValue({ ...session, setupComplete: true }),
-    getSessionCookieOptions()
+    withHttpsPreviewCookieCompat(request, getSessionCookieOptions())
   );
   return response;
 }

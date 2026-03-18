@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { claimInstallation, getInstallation } from "@/lib/queries/installation";
 import { exchangeGitHubCode, fetchGitHubUser, isAllowedGitHubUser } from "@/lib/github-auth";
+import { toPublicUrl, withHttpsPreviewCookieCompat } from "@/lib/request-origin";
 import {
   createSessionCookieValue,
   getOAuthStateCookieName,
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest) {
   const stateCookie = request.cookies.get(getOAuthStateCookieName())?.value;
 
   if (!code || !(await verifyOAuthStateCookie(stateCookie, state))) {
-    return NextResponse.redirect(new URL("/login?error=github_state", request.url));
+    return NextResponse.redirect(toPublicUrl(request, "/login?error=github_state"));
   }
 
   try {
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
     const githubUser = await fetchGitHubUser(accessToken);
 
     if (!isAllowedGitHubUser(githubUser.login)) {
-      return NextResponse.redirect(new URL("/login?error=github_not_allowed", request.url));
+      return NextResponse.redirect(toPublicUrl(request, "/login?error=github_not_allowed"));
     }
 
     const existingInstallation = await getInstallation();
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
         });
 
     if (installation.ownerGithubId !== githubUser.id) {
-      return NextResponse.redirect(new URL("/login?error=github_not_owner", request.url));
+      return NextResponse.redirect(toPublicUrl(request, "/login?error=github_not_owner"));
     }
 
     const sessionValue = await createSessionCookieValue({
@@ -49,16 +50,20 @@ export async function GET(request: NextRequest) {
       setupComplete: Boolean(installation.setupCompletedAt),
     });
 
-    const redirectUrl = new URL(installation.setupCompletedAt ? "/" : "/setup", request.url);
+    const redirectUrl = toPublicUrl(request, installation.setupCompletedAt ? "/" : "/setup");
     const response = NextResponse.redirect(redirectUrl);
-    response.cookies.set(getSessionCookieName(), sessionValue, getSessionCookieOptions());
+    response.cookies.set(
+      getSessionCookieName(),
+      sessionValue,
+      withHttpsPreviewCookieCompat(request, getSessionCookieOptions())
+    );
     response.cookies.set(getOAuthStateCookieName(), "", {
-      ...getOAuthStateCookieOptions(),
+      ...withHttpsPreviewCookieCompat(request, getOAuthStateCookieOptions()),
       maxAge: 0,
     });
     return response;
   } catch (error) {
     console.error(error);
-    return NextResponse.redirect(new URL("/login?error=github_callback", request.url));
+    return NextResponse.redirect(toPublicUrl(request, "/login?error=github_callback"));
   }
 }
