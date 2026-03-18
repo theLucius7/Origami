@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
       withHttpsPreviewCookieCompat(request, getSessionCookieOptions())
     );
     response.cookies.set(getOAuthStateCookieName(), "", {
-      ...withHttpsPreviewCookieCompat(request, getOAuthStateCookieOptions() as any),
+      ...withHttpsPreviewCookieCompat(request, getOAuthStateCookieOptions()),
       maxAge: 0,
     });
     return response;
