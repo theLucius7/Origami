@@ -2,11 +2,13 @@ import { AddAccountDialog } from "@/components/accounts/add-account-dialog";
 import { AccountsPageNotifications } from "@/components/accounts/accounts-page-notifications";
 import { AccountsPanel } from "@/components/accounts/accounts-panel";
 import { OAuthAppsPanel } from "@/components/accounts/oauth-apps-panel";
+import {
+  buildAccountSettingsViews,
+  buildOAuthAppsWithUsage,
+} from "@/components/accounts/view-models";
 import { Separator } from "@/components/ui/separator";
-import { DEFAULT_OAUTH_APP_ID } from "@/lib/oauth-apps.shared";
 import { listOAuthAppOptions } from "@/lib/oauth-apps";
-import { getAccountWriteBackAvailability } from "@/lib/providers/writeBack";
-import { EMPTY_ACCOUNT_RUNTIME_HEALTH, listAccountRuntimeHealth, listAccounts } from "@/lib/queries/accounts";
+import { listAccountRuntimeHealth, listAccounts } from "@/lib/queries/accounts";
 
 interface PageProps {
   searchParams: Promise<{ success?: string; error?: string; writebackEnabled?: string }>;
@@ -17,36 +19,13 @@ export default async function AccountsPage({ searchParams }: PageProps) {
   const accounts = await listAccounts();
   const runtimeHealthByAccount = await listAccountRuntimeHealth();
   const oauthAppOptions = await listOAuthAppOptions();
+  const oauthAppsWithUsage = buildOAuthAppsWithUsage(accounts, oauthAppOptions);
   const gmailOAuthApps = oauthAppOptions.filter((app) => app.provider === "gmail");
   const outlookOAuthApps = oauthAppOptions.filter((app) => app.provider === "outlook");
-
-  const usageByAppKey = new Map<string, number>();
-  for (const account of accounts) {
-    if (account.provider !== "gmail" && account.provider !== "outlook") continue;
-    const effectiveAppId = account.oauthAppId ?? DEFAULT_OAUTH_APP_ID;
-    const key = `${account.provider}:${effectiveAppId}`;
-    usageByAppKey.set(key, (usageByAppKey.get(key) ?? 0) + 1);
-  }
-
-  const oauthAppsWithUsage = oauthAppOptions.map((app) => ({
-    ...app,
-    usageCount: usageByAppKey.get(`${app.provider}:${app.id}`) ?? 0,
-  }));
-
-  const accountViews = accounts.map((account) => {
-    const oauthAppLabel = account.provider === "gmail" || account.provider === "outlook"
-      ? oauthAppOptions.find(
-          (app) => app.provider === account.provider && app.id === (account.oauthAppId ?? DEFAULT_OAUTH_APP_ID)
-        )?.label ?? (account.oauthAppId ?? DEFAULT_OAUTH_APP_ID)
-      : null;
-
-    return {
-      ...account,
-      ...EMPTY_ACCOUNT_RUNTIME_HEALTH,
-      ...runtimeHealthByAccount.get(account.id),
-      oauthAppLabel,
-      ...getAccountWriteBackAvailability(account),
-    };
+  const accountViews = buildAccountSettingsViews({
+    accounts,
+    oauthAppOptions,
+    runtimeHealthByAccount,
   });
 
   return (

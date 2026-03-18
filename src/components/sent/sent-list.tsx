@@ -2,17 +2,8 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { formatRelativeTime } from "@/lib/format";
 import { buildSentDetailHref } from "@/lib/inbox-route";
+import { parseStoredStringList } from "@/lib/string-list";
 import type { SentMessage } from "@/lib/db/schema";
-
-function parseJsonList(value: string | null | undefined): string[] {
-  if (!value) return [];
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
 
 export function SentList({
   messages,
@@ -41,7 +32,7 @@ export function SentList({
 
       <div className="space-y-3">
         {messages.map((message) => {
-          const toRecipients = parseJsonList(message.toRecipients);
+          const toRecipients = parseStoredStringList(message.toRecipients);
           return (
             <Link
               key={message.id}

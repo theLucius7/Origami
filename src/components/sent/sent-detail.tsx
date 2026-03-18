@@ -1,18 +1,9 @@
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { formatFileSize, formatRelativeTime } from "@/lib/format";
+import { parseStoredStringList } from "@/lib/string-list";
 import type { Account, SentMessage, SentMessageAttachment } from "@/lib/db/schema";
 import { Download, Paperclip } from "lucide-react";
-
-function parseJsonList(value: string | null | undefined): string[] {
-  if (!value) return [];
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
 
 export function SentDetail({
   message,
@@ -23,9 +14,9 @@ export function SentDetail({
   account: Account | null;
   attachments: SentMessageAttachment[];
 }) {
-  const toRecipients = parseJsonList(message.toRecipients);
-  const ccRecipients = parseJsonList(message.ccRecipients);
-  const bccRecipients = parseJsonList(message.bccRecipients);
+  const toRecipients = parseStoredStringList(message.toRecipients);
+  const ccRecipients = parseStoredStringList(message.ccRecipients);
+  const bccRecipients = parseStoredStringList(message.bccRecipients);
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col p-6">

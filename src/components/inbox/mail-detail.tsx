@@ -29,6 +29,7 @@ import {
 } from "@/app/actions/email";
 import type { Email, Attachment } from "@/lib/db/schema";
 import { formatRelativeTime, formatFileSize } from "@/lib/format";
+import { parseStoredStringList } from "@/lib/string-list";
 import { SnoozeDialog } from "./snooze-dialog";
 import { getClientActionErrorMessage, useClientAction } from "@/hooks/use-client-action";
 
@@ -166,15 +167,7 @@ export function MailDetail({
     });
   }
 
-  let recipients: string[] = [];
-  if (email.recipients) {
-    try {
-      const parsed = JSON.parse(email.recipients);
-      recipients = Array.isArray(parsed) ? parsed : [];
-    } catch {
-      recipients = [];
-    }
-  }
+  const recipients = parseStoredStringList(email.recipients);
 
   const isSnoozed = !!email.localSnoozeUntil && email.localSnoozeUntil > nowTs;
   const hydrationStatus = isHydrating ? "hydrating" : email.hydrationStatus;
