@@ -21,7 +21,7 @@ export default async function SentDetailPage({ params, searchParams }: PageProps
   if (!detail) notFound();
 
   return (
-    <div className="flex flex-1 flex-col overflow-auto">
+    <div className="flex min-h-0 flex-1 flex-col overflow-auto">
       <div className="border-b border-border/70 p-3">
         <Button variant="ghost" size="sm" asChild>
           <Link href={buildSentHref(query.account)}>

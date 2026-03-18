@@ -35,7 +35,7 @@ export default async function AccountsPage({ searchParams }: PageProps) {
   });
 
   return (
-    <div className="flex-1 overflow-auto">
+    <div className="min-h-0 flex-1 overflow-auto">
       <div className="mx-auto max-w-6xl p-6">
         <AccountsPageNotifications />
         <div className="rounded-[2rem] border border-border/80 bg-background/72 p-6 shadow-sm">

@@ -43,7 +43,7 @@ export function Sidebar({ accounts, unreadCount, hasSendAccounts }: SidebarProps
 
   return (
     <aside className="flex h-full w-[18rem] shrink-0 border-r border-border/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.84),rgba(248,244,238,0.92))] backdrop-blur dark:bg-[linear-gradient(180deg,rgba(18,18,20,0.96),rgba(16,16,18,0.9))]">
-      <div className="flex h-full w-full flex-col gap-4 p-4">
+      <div className="flex h-full min-h-0 w-full flex-col gap-4 p-4">
         <div className="rounded-3xl border border-border/80 bg-background/85 p-4 shadow-[0_12px_40px_rgba(15,23,42,0.06)] backdrop-blur dark:shadow-none">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
@@ -60,7 +60,7 @@ export function Sidebar({ accounts, unreadCount, hasSendAccounts }: SidebarProps
           </div>
         </div>
 
-        <ScrollArea className="flex-1 pr-1">
+        <ScrollArea className="min-h-0 flex-1 pr-1">
           <div className="space-y-4">
             <div className="rounded-3xl border border-border/80 bg-background/80 p-3 shadow-sm backdrop-blur">
               <div className="space-y-1">

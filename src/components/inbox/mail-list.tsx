@@ -32,14 +32,14 @@ export function MailList({
 
   if (emails.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center text-muted-foreground">
+      <div className="flex min-h-0 flex-1 items-center justify-center text-muted-foreground">
         <p>{messages.mailList.empty}</p>
       </div>
     );
   }
 
   return (
-    <ScrollArea className="h-full">
+    <ScrollArea className="min-h-0 flex-1">
       <div className="divide-y divide-border/70">
         {emails.map((email) => {
           const provider = accountProviders[email.accountId] ?? "qq";
