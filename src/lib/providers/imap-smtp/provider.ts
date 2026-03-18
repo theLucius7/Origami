@@ -103,7 +103,8 @@ export class ImapSmtpProvider implements EmailProvider {
       return {
         ok: false,
         errorCode: "VALIDATION",
-        errorMessage: "至少需要一个收件人。",
+        errorKey: "TO_REQUIRED",
+        errorMessage: "At least one recipient is required",
       };
     }
 
@@ -155,7 +156,9 @@ export class ImapSmtpProvider implements EmailProvider {
         return {
           ok: false,
           errorCode: "AUTH_EXPIRED",
-          errorMessage: `${this.config.label}授权码或密码无效，请重新检查登录凭据。`,
+          errorKey: "IMAP_AUTH_INVALID",
+          errorMessage: `${this.config.label} credential rejected`,
+          errorDetails: this.config.label,
           providerRawError,
         };
       }
@@ -164,7 +167,9 @@ export class ImapSmtpProvider implements EmailProvider {
         return {
           ok: false,
           errorCode: "RATE_LIMITED",
-          errorMessage: `${this.config.label}当前触发了频率或临时限制，请稍后重试。`,
+          errorKey: "IMAP_RATE_LIMITED",
+          errorMessage: `${this.config.label} is rate limited`,
+          errorDetails: this.config.label,
           providerRawError,
         };
       }
@@ -173,7 +178,9 @@ export class ImapSmtpProvider implements EmailProvider {
         return {
           ok: false,
           errorCode: "NETWORK",
-          errorMessage: `连接 ${this.config.label} SMTP 服务失败，请稍后重试。`,
+          errorKey: "IMAP_NETWORK",
+          errorMessage: `Failed to connect to ${this.config.label} SMTP service`,
+          errorDetails: this.config.label,
           providerRawError,
         };
       }
@@ -181,7 +188,9 @@ export class ImapSmtpProvider implements EmailProvider {
       return {
         ok: false,
         errorCode: "PROVIDER_ERROR",
-        errorMessage: smtpError.message ?? `${this.config.label}发信失败。`,
+        errorKey: "IMAP_SEND_FAILED",
+        errorMessage: smtpError.message ?? `${this.config.label} send failed`,
+        errorDetails: this.config.label,
         providerRawError,
       };
     } finally {

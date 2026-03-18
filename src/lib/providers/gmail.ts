@@ -166,7 +166,8 @@ export class GmailProvider implements EmailProvider {
       return {
         ok: false,
         errorCode: "VALIDATION",
-        errorMessage: "至少需要一个收件人。",
+        errorKey: "TO_REQUIRED",
+        errorMessage: "At least one recipient is required",
       };
     }
 
@@ -174,7 +175,8 @@ export class GmailProvider implements EmailProvider {
       return {
         ok: false,
         errorCode: "INSUFFICIENT_SCOPE",
-        errorMessage: "当前 Gmail 账号没有发送权限，请重新授权并包含 gmail.send/gmail.modify。",
+        errorKey: "GMAIL_SEND_SCOPE_REQUIRED",
+        errorMessage: "Gmail send permission is missing",
       };
     }
 
@@ -205,7 +207,8 @@ export class GmailProvider implements EmailProvider {
         return {
           ok: false,
           errorCode: "AUTH_EXPIRED",
-          errorMessage: "Gmail 登录已过期，请重新授权。",
+          errorKey: "GMAIL_AUTH_EXPIRED",
+          errorMessage: "Gmail authorization expired",
           providerRawError,
         };
       }
@@ -214,7 +217,8 @@ export class GmailProvider implements EmailProvider {
         return {
           ok: false,
           errorCode: "INSUFFICIENT_SCOPE",
-          errorMessage: "Gmail 账号缺少发送权限或当前被策略限制。",
+          errorKey: "GMAIL_POLICY_RESTRICTED",
+          errorMessage: "Gmail sending is restricted",
           providerRawError,
         };
       }
@@ -223,7 +227,8 @@ export class GmailProvider implements EmailProvider {
         return {
           ok: false,
           errorCode: "RATE_LIMITED",
-          errorMessage: "Gmail 当前触发了发送频率限制，请稍后重试。",
+          errorKey: "GMAIL_RATE_LIMITED",
+          errorMessage: "Gmail is rate limited",
           providerRawError,
         };
       }
@@ -231,7 +236,8 @@ export class GmailProvider implements EmailProvider {
       return {
         ok: false,
         errorCode: "PROVIDER_ERROR",
-        errorMessage: gmailError.message ?? "Gmail 发信失败。",
+        errorKey: "GMAIL_SEND_FAILED",
+        errorMessage: gmailError.message ?? "Gmail send failed",
         providerRawError,
       };
     }

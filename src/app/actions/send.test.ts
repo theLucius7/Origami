@@ -150,7 +150,8 @@ describe("sendMailAction", () => {
     expect(result).toEqual({
       ok: false,
       errorCode: "INSUFFICIENT_SCOPE",
-      errorMessage: "当前账号未配置发送权限，请重新授权后再试。",
+      errorKey: "SEND_NOT_ALLOWED",
+      errorMessage: "This account is not configured to send mail",
     });
     expect(providerMock.sendMail).not.toHaveBeenCalled();
   });

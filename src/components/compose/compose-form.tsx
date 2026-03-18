@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { getClientActionErrorMessage } from "@/hooks/use-client-action";
 import { sendMailAction } from "@/app/actions/send";
 import { formatFileSize } from "@/lib/format";
 import { mapSendErrorToMessage } from "@/lib/send-errors";
@@ -48,7 +49,7 @@ export function ComposeForm({
 }) {
   const router = useRouter();
   const { toast } = useToast();
-  const { messages } = useI18n();
+  const { locale, messages } = useI18n();
   const defaultAccountId = resolveComposeAccountId(accounts, initialAccountId);
   const [selectedAccountId, setSelectedAccountId] = useState(defaultAccountId);
   const [to, setTo] = useState("");
@@ -157,37 +158,51 @@ export function ComposeForm({
     }
 
     startTransition(async () => {
-      const result = await sendMailAction({
-        accountId: selectedAccount.id,
-        from: selectedAccount.fromAddress,
-        to: splitAddresses(to),
-        cc: splitAddresses(cc),
-        bcc: splitAddresses(bcc),
-        subject,
-        textBody,
-        htmlBody: null,
-        attachmentIds: attachments.filter((item) => item.id && !item.error).map((item) => item.id!),
-      });
+      try {
+        const result = await sendMailAction({
+          accountId: selectedAccount.id,
+          from: selectedAccount.fromAddress,
+          to: splitAddresses(to),
+          cc: splitAddresses(cc),
+          bcc: splitAddresses(bcc),
+          subject,
+          textBody,
+          htmlBody: null,
+          attachmentIds: attachments.filter((item) => item.id && !item.error).map((item) => item.id!),
+        });
 
-      if (!result.ok) {
+        if (!result.ok) {
+          toast({
+            title: messages.compose.sendFailed,
+            description: mapSendErrorToMessage({
+              locale,
+              errorCode: result.errorCode,
+              errorKey: result.errorKey,
+              errorMessage: result.errorMessage,
+              errorDetails: result.errorDetails,
+            }),
+            variant: "error",
+          });
+          return;
+        }
+
+        setTo("");
+        setCc("");
+        setBcc("");
+        setSubject("");
+        setTextBody("");
+        setAttachments([]);
+
+        toast({ title: messages.compose.sendSuccess, description: messages.compose.sendSuccessDescription });
+        router.push(buildComposeSuccessHref(result.localMessageId, selectedAccount.id));
+        router.refresh();
+      } catch (error) {
         toast({
           title: messages.compose.sendFailed,
-          description: mapSendErrorToMessage(result.errorCode, result.errorMessage),
+          description: getClientActionErrorMessage(error, undefined, locale),
           variant: "error",
         });
-        return;
       }
-
-      setTo("");
-      setCc("");
-      setBcc("");
-      setSubject("");
-      setTextBody("");
-      setAttachments([]);
-
-      toast({ title: messages.compose.sendSuccess, description: messages.compose.sendSuccessDescription });
-      router.push(buildComposeSuccessHref(result.localMessageId, selectedAccount.id));
-      router.refresh();
     });
   }
 

@@ -70,6 +70,8 @@ export type SendMailResult =
       ok: false;
       errorCode: SendMailErrorCode;
       errorMessage: string;
+      errorKey?: string;
+      errorDetails?: string;
       providerRawError?: string;
     };
 

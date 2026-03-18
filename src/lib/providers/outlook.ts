@@ -250,7 +250,8 @@ export class OutlookProvider implements EmailProvider {
       return {
         ok: false,
         errorCode: "VALIDATION",
-        errorMessage: "至少需要一个收件人。",
+        errorKey: "TO_REQUIRED",
+        errorMessage: "At least one recipient is required",
       };
     }
 
@@ -258,7 +259,8 @@ export class OutlookProvider implements EmailProvider {
       return {
         ok: false,
         errorCode: "INSUFFICIENT_SCOPE",
-        errorMessage: "当前 Outlook 账号没有 Mail.Send 权限，请重新授权。",
+        errorKey: "OUTLOOK_SEND_SCOPE_REQUIRED",
+        errorMessage: "Outlook Mail.Send permission is missing",
       };
     }
 
@@ -315,7 +317,8 @@ export class OutlookProvider implements EmailProvider {
           return {
             ok: false,
             errorCode: "AUTH_EXPIRED",
-            errorMessage: "Outlook 登录已过期，请重新授权。",
+            errorKey: "OUTLOOK_AUTH_EXPIRED",
+            errorMessage: "Outlook authorization expired",
             providerRawError,
           };
         }
@@ -324,7 +327,8 @@ export class OutlookProvider implements EmailProvider {
           return {
             ok: false,
             errorCode: "INSUFFICIENT_SCOPE",
-            errorMessage: "Outlook 账号缺少 Mail.Send 权限或当前被策略限制。",
+            errorKey: "OUTLOOK_POLICY_RESTRICTED",
+            errorMessage: "Outlook sending is restricted",
             providerRawError,
           };
         }
@@ -333,7 +337,8 @@ export class OutlookProvider implements EmailProvider {
           return {
             ok: false,
             errorCode: "PROVIDER_ERROR",
-            errorMessage: "附件或邮件内容过大，当前 Outlook 路径不支持更大的请求体。",
+            errorKey: "OUTLOOK_PAYLOAD_TOO_LARGE",
+            errorMessage: "Outlook payload is too large",
             providerRawError,
           };
         }
@@ -342,7 +347,8 @@ export class OutlookProvider implements EmailProvider {
           return {
             ok: false,
             errorCode: "RATE_LIMITED",
-            errorMessage: "Outlook 当前触发了发送频率限制，请稍后重试。",
+            errorKey: "OUTLOOK_RATE_LIMITED",
+            errorMessage: "Outlook is rate limited",
             providerRawError,
           };
         }
@@ -350,7 +356,8 @@ export class OutlookProvider implements EmailProvider {
         return {
           ok: false,
           errorCode: "PROVIDER_ERROR",
-          errorMessage: graphError.message ?? "Outlook 发信失败。",
+          errorKey: "OUTLOOK_SEND_FAILED",
+          errorMessage: graphError.message ?? "Outlook send failed",
           providerRawError,
         };
       }

@@ -69,7 +69,7 @@ async function loadComposeAttachments(attachmentIds: string[]): Promise<Array<{
   const orderedRows = attachmentIds.map((id) => byId.get(id)).filter(Boolean);
 
   if (orderedRows.length !== attachmentIds.length) {
-    throw new Error("部分附件不存在或已失效，请重新上传。");
+    return [];
   }
 
   return Promise.all(
@@ -148,7 +148,8 @@ export async function sendMailAction(input: SendMailActionInput): Promise<SendMa
     return {
       ok: false,
       errorCode: "VALIDATION",
-      errorMessage: "至少填写一个 To 收件人。",
+      errorKey: "TO_REQUIRED",
+      errorMessage: "At least one To recipient is required",
     };
   }
 
@@ -156,7 +157,8 @@ export async function sendMailAction(input: SendMailActionInput): Promise<SendMa
     return {
       ok: false,
       errorCode: "VALIDATION",
-      errorMessage: "主题和正文至少填写一项。",
+      errorKey: "CONTENT_REQUIRED",
+      errorMessage: "A subject or message body is required",
     };
   }
 
@@ -165,7 +167,8 @@ export async function sendMailAction(input: SendMailActionInput): Promise<SendMa
     return {
       ok: false,
       errorCode: "VALIDATION",
-      errorMessage: "发件账号不存在。",
+      errorKey: "ACCOUNT_NOT_FOUND",
+      errorMessage: "Sending account not found",
     };
   }
 
@@ -175,11 +178,22 @@ export async function sendMailAction(input: SendMailActionInput): Promise<SendMa
     return {
       ok: false,
       errorCode: "INSUFFICIENT_SCOPE",
-      errorMessage: "当前账号未配置发送权限，请重新授权后再试。",
+      errorKey: "SEND_NOT_ALLOWED",
+      errorMessage: "This account is not configured to send mail",
     };
   }
 
-  const uploadedAttachments = await loadComposeAttachments(input.attachmentIds ?? []);
+  const requestedAttachmentIds = input.attachmentIds ?? [];
+  const uploadedAttachments = await loadComposeAttachments(requestedAttachmentIds);
+
+  if (uploadedAttachments.length !== requestedAttachmentIds.length) {
+    return {
+      ok: false,
+      errorCode: "VALIDATION",
+      errorKey: "ATTACHMENTS_MISSING",
+      errorMessage: "Attachments are missing or expired",
+    };
+  }
 
   if (
     account.provider === "outlook" &&
@@ -188,7 +202,8 @@ export async function sendMailAction(input: SendMailActionInput): Promise<SendMa
     return {
       ok: false,
       errorCode: "VALIDATION",
-      errorMessage: "Outlook 直发模式暂只支持小于 3 MB 的单个附件。",
+      errorKey: "OUTLOOK_ATTACHMENT_TOO_LARGE",
+      errorMessage: "Outlook direct-send only supports attachments smaller than 3 MB",
     };
   }
 

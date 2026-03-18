@@ -135,7 +135,9 @@ describe("QQProvider", () => {
     expect(result).toEqual({
       ok: false,
       errorCode: "AUTH_EXPIRED",
-      errorMessage: "QQ 邮箱授权码或密码无效，请重新检查登录凭据。",
+      errorKey: "IMAP_AUTH_INVALID",
+      errorMessage: "QQ 邮箱 credential rejected",
+      errorDetails: "QQ 邮箱",
       providerRawError: expect.any(String),
     });
   });
