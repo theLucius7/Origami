@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import { sendMailAction } from "@/app/actions/send";
 import { formatFileSize } from "@/lib/format";
 import { mapSendErrorToMessage } from "@/lib/send-errors";
+import { buildComposeHref } from "@/lib/inbox-route";
+import { buildComposeSuccessHref, resolveComposeAccountId } from "./compose-state";
 import { Paperclip, X } from "lucide-react";
 
 interface SendCapableAccount {
@@ -31,7 +33,7 @@ interface UploadedComposeAttachment {
 
 function splitAddresses(input: string): string[] {
   return input
-    .split(/[,\n]/)
+    .split(/,|\n/)
     .map((value) => value.trim())
     .filter(Boolean);
 }
@@ -45,11 +47,8 @@ export function ComposeForm({
 }) {
   const router = useRouter();
   const { toast } = useToast();
-  const [selectedAccountId, setSelectedAccountId] = useState(
-    accounts.some((account) => account.id === initialAccountId)
-      ? initialAccountId!
-      : accounts[0]?.id ?? ""
-  );
+  const defaultAccountId = resolveComposeAccountId(accounts, initialAccountId);
+  const [selectedAccountId, setSelectedAccountId] = useState(defaultAccountId);
   const [to, setTo] = useState("");
   const [cc, setCc] = useState("");
   const [bcc, setBcc] = useState("");
@@ -63,6 +62,10 @@ export function ComposeForm({
     () => accounts.find((account) => account.id === selectedAccountId) ?? accounts[0] ?? null,
     [accounts, selectedAccountId]
   );
+
+  useEffect(() => {
+    setSelectedAccountId(defaultAccountId);
+  }, [defaultAccountId]);
 
   async function uploadFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
@@ -129,6 +132,11 @@ export function ComposeForm({
     setAttachments((current) => current.filter((item) => item.id !== id));
   }
 
+  function handleAccountChange(nextAccountId: string) {
+    setSelectedAccountId(nextAccountId);
+    router.replace(buildComposeHref(nextAccountId), { scroll: false });
+  }
+
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
 
@@ -152,7 +160,7 @@ export function ComposeForm({
         subject,
         textBody,
         htmlBody: null,
-        attachmentIds: attachments.filter((item) => item.id && !item.error).map((item) => item.id!) ,
+        attachmentIds: attachments.filter((item) => item.id && !item.error).map((item) => item.id!),
       });
 
       if (!result.ok) {
@@ -172,7 +180,7 @@ export function ComposeForm({
       setAttachments([]);
 
       toast({ title: "发送成功", description: "邮件已交给服务端发送，并写入本地已发送记录。" });
-      router.push(result.localMessageId ? `/sent/${result.localMessageId}` : "/sent");
+      router.push(buildComposeSuccessHref(result.localMessageId, selectedAccount.id));
       router.refresh();
     });
   }
@@ -193,7 +201,7 @@ export function ComposeForm({
             id="compose-from"
             className="rounded-md border bg-background px-3 py-2 text-sm"
             value={selectedAccountId}
-            onChange={(event) => setSelectedAccountId(event.target.value)}
+            onChange={(event) => handleAccountChange(event.target.value)}
             disabled={isPending}
           >
             {accounts.map((account) => (

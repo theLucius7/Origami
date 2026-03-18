@@ -1,7 +1,5 @@
 "use client";
 
-import { useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { updateAllAccountsWriteBackSettings } from "@/app/actions/account";
 import { AccountCard } from "@/components/accounts/account-card";
 import { maybeShowWriteBackEnabledToastOnce } from "@/components/accounts/accounts-page-notifications";
@@ -9,6 +7,7 @@ import type { AccountSettingsView, OAuthAppUsageView } from "@/components/accoun
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { getClientActionErrorMessage, useClientAction } from "@/hooks/use-client-action";
 
 interface AccountsPanelProps {
   accounts: AccountSettingsView[];
@@ -21,9 +20,8 @@ export function AccountsPanel({
   gmailOAuthApps,
   outlookOAuthApps,
 }: AccountsPanelProps) {
-  const router = useRouter();
   const { toast } = useToast();
-  const [isPending, startTransition] = useTransition();
+  const { isPending, run } = useClientAction();
 
   const eligibleReadAccounts = accounts.filter((account) => account.canWriteBackRead);
   const eligibleStarAccounts = accounts.filter((account) => account.canWriteBackStar);
@@ -33,16 +31,24 @@ export function AccountsPanel({
     eligibleStarAccounts.length > 0 && eligibleStarAccounts.every((account) => account.syncStarBack === 1);
 
   function toggleAll(key: "syncReadBack" | "syncStarBack", checked: boolean) {
-    startTransition(async () => {
-      await updateAllAccountsWriteBackSettings(
-        key === "syncReadBack"
-          ? { syncReadBack: checked }
-          : { syncStarBack: checked }
-      );
-      if (checked) {
-        maybeShowWriteBackEnabledToastOnce(toast);
-      }
-      router.refresh();
+    void run({
+      action: () =>
+        updateAllAccountsWriteBackSettings(
+          key === "syncReadBack"
+            ? { syncReadBack: checked }
+            : { syncStarBack: checked }
+        ),
+      refresh: true,
+      errorToast: (error) => ({
+        title: checked ? "批量开启写回失败" : "批量关闭写回失败",
+        description: getClientActionErrorMessage(error),
+        variant: "error",
+      }),
+      onSuccess: () => {
+        if (checked) {
+          maybeShowWriteBackEnabledToastOnce(toast);
+        }
+      },
     });
   }
 

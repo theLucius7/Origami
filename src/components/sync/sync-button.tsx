@@ -1,19 +1,27 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { syncAll, syncAccount } from "@/app/actions/sync";
+import { useClientAction } from "@/hooks/use-client-action";
 
 export function SyncAllButton() {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const { isPending, run } = useClientAction();
 
   function handleSync() {
-    startTransition(async () => {
-      await syncAll();
-      router.refresh();
+    void run({
+      action: syncAll,
+      refresh: true,
+      getFailure: (result) =>
+        result.ok ? null : { title: "同步失败", description: result.error },
+      successToast: (result) =>
+        result.ok
+          ? {
+              title: "同步完成",
+              description: `已处理 ${result.results.length} 个账号。`,
+            }
+          : null,
     });
   }
 
@@ -31,20 +39,27 @@ export function SyncAllButton() {
 }
 
 export function SyncAccountButton({ accountId }: { accountId: string }) {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const { isPending, run } = useClientAction();
   const [result, setResult] = useState<string | null>(null);
 
+  function showResult(message: string) {
+    setResult(message);
+    window.setTimeout(() => setResult(null), 3000);
+  }
+
   function handleSync() {
-    startTransition(async () => {
-      const res = await syncAccount(accountId);
-      if (!res.ok) {
-        setResult(`错误: ${res.error}`);
-      } else {
-        setResult(`同步了 ${res.synced} 封邮件`);
-        router.refresh();
-      }
-      setTimeout(() => setResult(null), 3000);
+    void run({
+      action: () => syncAccount(accountId),
+      refresh: true,
+      getFailure: (res) =>
+        res.ok ? null : { title: "同步失败", description: res.error, toast: false },
+      onSuccess: (res) => {
+        if (!res.ok) return;
+        showResult(`同步了 ${res.synced} 封邮件`);
+      },
+      onFailure: (failure) => {
+        showResult(`错误: ${failure.description ?? "同步失败"}`);
+      },
     });
   }
 

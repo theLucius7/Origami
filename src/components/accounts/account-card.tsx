@@ -1,7 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 import { AlertCircle, Clock3, Trash2 } from "lucide-react";
 import {
   removeAccount,
@@ -19,6 +18,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { getProviderMeta } from "@/config/providers";
 import { useToast } from "@/hooks/use-toast";
+import { getClientActionErrorMessage, useClientAction } from "@/hooks/use-client-action";
 import { formatRelativeTime } from "@/lib/format";
 import { getMailboxPreset } from "@/lib/providers/imap-smtp/presets";
 
@@ -28,9 +28,8 @@ interface AccountCardProps {
 }
 
 export function AccountCard({ account, oauthApps }: AccountCardProps) {
-  const router = useRouter();
   const { toast } = useToast();
-  const [isPending, startTransition] = useTransition();
+  const { isPending, run } = useClientAction();
   const [fetchLimit, setFetchLimit] = useState(String(account.initialFetchLimit ?? 200));
   const provider = getProviderMeta(account.provider);
   const isMailboxAccount = account.provider === "qq" || account.provider === "imap_smtp";
@@ -45,49 +44,82 @@ export function AccountCard({ account, oauthApps }: AccountCardProps) {
 
   function handleRemove() {
     if (!confirm(`确定要删除 ${account.email} 吗？关联的邮件数据也会被删除。`)) return;
-    startTransition(async () => {
-      await removeAccount(account.id);
-      router.refresh();
+
+    void run({
+      action: () => removeAccount(account.id),
+      refresh: true,
+      successToast: { title: "账号已删除", description: `${account.email} 已从 Origami 移除。` },
+      errorToast: (error) => ({
+        title: "删除账号失败",
+        description: getClientActionErrorMessage(error),
+        variant: "error",
+      }),
     });
   }
 
   function handleFetchLimitChange(value: string) {
+    const previous = fetchLimit;
     setFetchLimit(value);
-    startTransition(async () => {
-      await updateAccountInitialFetchLimit(account.id, Number(value));
-      router.refresh();
+
+    void run({
+      action: () => updateAccountInitialFetchLimit(account.id, Number(value)),
+      refresh: true,
+      errorToast: (error) => ({
+        title: "更新同步范围失败",
+        description: getClientActionErrorMessage(error),
+        variant: "error",
+      }),
+      onError: () => setFetchLimit(previous),
     });
   }
 
   function handleWriteBackToggle(key: "syncReadBack" | "syncStarBack", checked: boolean) {
-    startTransition(async () => {
-      await updateAccountWriteBackSettings(
-        account.id,
-        key === "syncReadBack"
-          ? { syncReadBack: checked }
-          : { syncStarBack: checked }
-      );
-      if (checked) {
-        maybeShowWriteBackEnabledToastOnce(toast);
-      }
-      router.refresh();
+    const label = key === "syncReadBack" ? "已读写回" : "星标写回";
+
+    void run({
+      action: () =>
+        updateAccountWriteBackSettings(
+          account.id,
+          key === "syncReadBack"
+            ? { syncReadBack: checked }
+            : { syncStarBack: checked }
+        ),
+      refresh: true,
+      errorToast: (error) => ({
+        title: `${checked ? "开启" : "关闭"}${label}失败`,
+        description: getClientActionErrorMessage(error),
+        variant: "error",
+      }),
+      onSuccess: () => {
+        if (checked) {
+          maybeShowWriteBackEnabledToastOnce(toast);
+        }
+      },
     });
   }
 
   function handleReauthorize(target?: "read" | "star") {
-    startTransition(async () => {
-      const options = {
-        appId: selectedOauthAppId,
-        intent: "writeback" as const,
-        enableReadBack: target === "read" || account.syncReadBack === 1,
-        enableStarBack: target === "star" || account.syncStarBack === 1,
-      };
+    void run({
+      action: async () => {
+        const options = {
+          appId: selectedOauthAppId,
+          intent: "writeback" as const,
+          enableReadBack: target === "read" || account.syncReadBack === 1,
+          enableStarBack: target === "star" || account.syncStarBack === 1,
+        };
 
-      const url = account.provider === "gmail"
-        ? await getGmailOAuthUrl(options)
-        : await getOutlookOAuthUrl(options);
-
-      window.location.href = url;
+        return account.provider === "gmail"
+          ? getGmailOAuthUrl(options)
+          : getOutlookOAuthUrl(options);
+      },
+      onSuccess: (url) => {
+        window.location.href = url;
+      },
+      errorToast: (error) => ({
+        title: "生成重新授权链接失败",
+        description: getClientActionErrorMessage(error),
+        variant: "error",
+      }),
     });
   }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition, useCallback } from "react";
+import { useMemo, useState, useTransition, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { MailList } from "./mail-list";
 import { MailDetail } from "./mail-detail";
@@ -8,6 +8,7 @@ import { SnoozeDialog } from "./snooze-dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { getClientActionErrorMessage, useClientAction } from "@/hooks/use-client-action";
 import {
   Archive,
   CheckCircle2,
@@ -25,12 +26,20 @@ import {
   snooze,
 } from "@/app/actions/email";
 import type { Email, EmailListItem, Attachment } from "@/lib/db/schema";
+import { buildInboxHref } from "@/lib/inbox-route";
+import {
+  applyInboxEmailPatch,
+  buildInboxSearchNavigationState,
+  resolveVisibleSelectedMailId,
+} from "./inbox-view-state";
 
 interface InboxViewProps {
   initialEmails: EmailListItem[];
   accountProviders: Record<string, string>;
   accountId?: string;
   starred?: boolean;
+  initialSearch: string;
+  selectedMailId?: string;
 }
 
 export function InboxView({
@@ -38,38 +47,121 @@ export function InboxView({
   accountProviders,
   accountId,
   starred,
+  initialSearch,
+  selectedMailId,
 }: InboxViewProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const { isPending: isMutating, run } = useClientAction();
   const [emails, setEmails] = useState(initialEmails);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
   const [selectedAttachments, setSelectedAttachments] = useState<Attachment[]>([]);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch);
+  const [activeSearch, setActiveSearch] = useState(initialSearch);
   const [batchSnoozeOpen, setBatchSnoozeOpen] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const [isSearching, startSearchTransition] = useTransition();
 
+  const selectedId = selectedMailId ?? null;
   const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const allVisibleSelected = emails.length > 0 && selectedIds.length === emails.length;
+  const isPending = isSearching || isMutating;
+
+  const buildCurrentInboxHref = useCallback(
+    (overrides?: { search?: string; mailId?: string }) =>
+      buildInboxHref({
+        accountId,
+        starred,
+        search: overrides?.search ?? activeSearch,
+        mailId: overrides?.mailId,
+      }),
+    [accountId, activeSearch, starred]
+  );
+
+  useEffect(() => {
+    setEmails(initialEmails);
+  }, [initialEmails]);
+
+  useEffect(() => {
+    setSearch(initialSearch);
+    setActiveSearch(initialSearch);
+  }, [initialSearch]);
+
+  useEffect(() => {
+    if (!selectedId) {
+      setSelectedEmail(null);
+      setSelectedAttachments([]);
+      setDetailLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setDetailLoading(true);
+
+    setSelectedEmail((current) => (current?.id === selectedId ? current : null));
+    setSelectedAttachments([]);
+
+    void getEmailDetail(selectedId)
+      .then((detail) => {
+        if (cancelled) return;
+        setSelectedEmail(detail?.email ?? null);
+        setSelectedAttachments(detail?.attachments ?? []);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        const message = error instanceof Error ? error.message : "加载邮件详情失败，请稍后重试。";
+        toast({
+          title: "加载邮件详情失败",
+          description: message,
+          variant: "error",
+        });
+        setSelectedEmail(null);
+        setSelectedAttachments([]);
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setDetailLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initialEmails, selectedId, toast]);
+
+  useEffect(() => {
+    if (!selectedId) return;
+
+    const nextSelectedId = resolveVisibleSelectedMailId(selectedId, emails);
+    if (!nextSelectedId) {
+      router.replace(buildCurrentInboxHref({ mailId: undefined }), { scroll: false });
+    }
+  }, [buildCurrentInboxHref, emails, router, selectedId]);
 
   const doSearch = useCallback(
     (query: string) => {
-      startTransition(async () => {
+      const normalizedQuery = query.trim();
+
+      startSearchTransition(async () => {
         try {
           const results = await getEmails({
             accountId,
-            search: query || undefined,
+            search: normalizedQuery || undefined,
             starred,
           });
+          const nextState = buildInboxSearchNavigationState({
+            accountId,
+            starred,
+            query: normalizedQuery,
+            selectedId,
+            results,
+          });
+
           setEmails(results);
           setSelectedIds([]);
-          if (selectedId && !results.some((email) => email.id === selectedId)) {
-            setSelectedId(null);
-            setSelectedEmail(null);
-            setSelectedAttachments([]);
-          }
+          setActiveSearch(nextState.normalizedQuery);
+
+          router.replace(nextState.href, { scroll: false });
         } catch (error) {
           const message = error instanceof Error ? error.message : "搜索失败，请换个关键词重试。";
           toast({
@@ -80,7 +172,7 @@ export function InboxView({
         }
       });
     },
-    [accountId, selectedId, starred, toast]
+    [accountId, router, selectedId, starred, toast]
   );
 
   function handleSearchSubmit(e: React.FormEvent) {
@@ -107,27 +199,21 @@ export function InboxView({
 
   function applyLocalPatch(emailId: string, patch: Partial<Email>) {
     const now = Math.floor(Date.now() / 1000);
+    let removedSelectedEmail = false;
 
     setEmails((current) => {
-      const updated = current
-        .map((email) =>
-          email.id === emailId ? { ...email, ...patch } : email
-        )
-        .filter((email) => {
-          if (email.localArchived === 1) return false;
-          if (email.localSnoozeUntil && email.localSnoozeUntil > now) return false;
-          if (starred && email.isStarred !== 1) return false;
-          return true;
-        });
-
-      if (!updated.some((email) => email.id === emailId) && selectedId === emailId) {
-        setSelectedId(null);
-        setSelectedEmail(null);
-        setSelectedAttachments([]);
-      }
-
-      return updated;
+      const nextState = applyInboxEmailPatch(current, emailId, patch, {
+        starred,
+        nowTs: now,
+        selectedId,
+      });
+      removedSelectedEmail = nextState.removedSelectedEmail;
+      return nextState.emails;
     });
+
+    if (removedSelectedEmail) {
+      router.replace(buildCurrentInboxHref({ mailId: undefined }), { scroll: false });
+    }
 
     setSelectedEmail((current) =>
       current && current.id === emailId ? { ...current, ...patch } : current
@@ -140,37 +226,36 @@ export function InboxView({
   }
 
   function handleSelect(id: string) {
-    setSelectedId(id);
-    setDetailLoading(true);
-    setSelectedEmail(null);
-    setSelectedAttachments([]);
-    startTransition(async () => {
-      const detail = await getEmailDetail(id);
-      setSelectedEmail(detail?.email ?? null);
-      setSelectedAttachments(detail?.attachments ?? []);
-      setDetailLoading(false);
-    });
+    router.push(buildCurrentInboxHref({ mailId: id }), { scroll: false });
   }
 
   function handleClose() {
-    setSelectedId(null);
-    setSelectedEmail(null);
-    setSelectedAttachments([]);
-    setDetailLoading(false);
+    router.replace(buildCurrentInboxHref({ mailId: undefined }), { scroll: false });
   }
 
-  async function runBatchAction(action: () => Promise<void>) {
+  function runBatchAction(
+    action: () => Promise<void>,
+    errorTitle: string
+  ) {
     if (selectedIds.length === 0) return;
-    startTransition(async () => {
-      await action();
-      router.refresh();
+
+    void run({
+      action,
+      refresh: true,
+      errorToast: (error) => ({
+        title: errorTitle,
+        description: getClientActionErrorMessage(error),
+        variant: "error",
+      }),
     });
   }
+
+  const shouldShowMobileDetail = Boolean(selectedId);
 
   return (
     <>
       <div className="flex h-full flex-1">
-        <div className="flex w-80 flex-col border-r lg:w-96">
+        <div className={`${shouldShowMobileDetail ? "hidden md:flex" : "flex"} w-80 flex-col border-r lg:w-96`}>
           <div className="border-b p-3">
             <form onSubmit={handleSearchSubmit} className="flex gap-2">
               <div className="relative flex-1">
@@ -195,6 +280,7 @@ export function InboxView({
             <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <span>{emails.length} 封邮件</span>
               {starred && <span>• 仅已标星</span>}
+              {activeSearch && <span>• 搜索中</span>}
               {isPending && <span>• 加载中...</span>}
             </div>
             <div className="mt-2 text-xs text-muted-foreground">
@@ -215,11 +301,12 @@ export function InboxView({
                   <Button
                     size="sm"
                     variant="outline"
+                    disabled={isPending}
                     onClick={() =>
                       runBatchAction(async () => {
                         await markDone(selectedIds, true);
                         applyBatchPatch(selectedIds, { localDone: 1 });
-                      })
+                      }, "批量标记 Done 失败")
                     }
                   >
                     <CheckCircle2 className="h-4 w-4" /> Done
@@ -227,37 +314,39 @@ export function InboxView({
                   <Button
                     size="sm"
                     variant="outline"
+                    disabled={isPending}
                     onClick={() =>
                       runBatchAction(async () => {
                         await markArchived(selectedIds, true);
                         applyBatchPatch(selectedIds, { localArchived: 1 });
-                      })
+                      }, "批量归档失败")
                     }
                   >
                     <Archive className="h-4 w-4" /> 归档
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => setBatchSnoozeOpen(true)}>
+                  <Button size="sm" variant="outline" onClick={() => setBatchSnoozeOpen(true)} disabled={isPending}>
                     <Clock3 className="h-4 w-4" /> 稍后看
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
+                    disabled={isPending}
                     onClick={() =>
                       runBatchAction(async () => {
                         await setStarred(selectedIds, true);
                         applyBatchPatch(selectedIds, { isStarred: 1 });
-                      })
+                      }, "批量标星失败")
                     }
                   >
                     <Star className="h-4 w-4" /> 批量标星
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setSelectedIds([])}>
+                  <Button size="sm" variant="ghost" onClick={() => setSelectedIds([])} disabled={isPending}>
                     清空选择
                   </Button>
                 </div>
               </div>
             ) : (
-              <Button size="sm" variant="ghost" onClick={handleSelectAllVisible}>
+              <Button size="sm" variant="ghost" onClick={handleSelectAllVisible} disabled={isPending}>
                 {emails.length > 0 ? (allVisibleSelected ? "取消全选" : "全选当前列表") : "暂无可选邮件"}
               </Button>
             )}
@@ -273,7 +362,7 @@ export function InboxView({
           />
         </div>
 
-        <div className="hidden flex-1 md:flex">
+        <div className={`${shouldShowMobileDetail ? "flex" : "hidden md:flex"} flex-1`}>
           {selectedEmail || detailLoading ? (
             <div className="flex-1">
               {selectedEmail ? (
@@ -309,11 +398,20 @@ export function InboxView({
         onOpenChange={setBatchSnoozeOpen}
         title="批量设置稍后看"
         onConfirm={async (value) => {
-          await snooze(selectedIds, value);
-          applyBatchPatch(selectedIds, {
-            localSnoozeUntil: Math.floor(new Date(value).getTime() / 1000),
+          await run({
+            action: () => snooze(selectedIds, value),
+            refresh: true,
+            onSuccess: () => {
+              applyBatchPatch(selectedIds, {
+                localSnoozeUntil: Math.floor(new Date(value).getTime() / 1000),
+              });
+            },
+            errorToast: (error) => ({
+              title: "批量设置稍后看失败",
+              description: getClientActionErrorMessage(error),
+              variant: "error",
+            }),
           });
-          router.refresh();
         }}
       />
     </>

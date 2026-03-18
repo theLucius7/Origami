@@ -1,7 +1,5 @@
 "use client";
 
-import { useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { removeOAuthApp } from "@/app/actions/oauth-apps";
 import { OAuthAppDialog } from "@/components/accounts/oauth-app-dialog";
@@ -9,6 +7,7 @@ import type { OAuthAppUsageView } from "@/components/accounts/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { getClientActionErrorMessage, useClientAction } from "@/hooks/use-client-action";
 
 interface OAuthAppsPanelProps {
   apps: OAuthAppUsageView[];
@@ -19,8 +18,7 @@ function renderProviderTitle(provider: "gmail" | "outlook") {
 }
 
 export function OAuthAppsPanel({ apps }: OAuthAppsPanelProps) {
-  const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const { isPending, run } = useClientAction();
 
   const gmailApps = apps.filter((app) => app.provider === "gmail");
   const outlookApps = apps.filter((app) => app.provider === "outlook");
@@ -29,9 +27,15 @@ export function OAuthAppsPanel({ apps }: OAuthAppsPanelProps) {
     if (app.source !== "db") return;
     if (!confirm(`确定要删除 OAuth 应用 ${app.label}（${app.id}）吗？`)) return;
 
-    startTransition(async () => {
-      await removeOAuthApp(app.id);
-      router.refresh();
+    void run({
+      action: () => removeOAuthApp(app.id),
+      refresh: true,
+      successToast: { title: "OAuth 应用已删除", description: `${app.label} 已从数据库配置中移除。` },
+      errorToast: (error) => ({
+        title: "删除 OAuth 应用失败",
+        description: getClientActionErrorMessage(error),
+        variant: "error",
+      }),
     });
   }
 

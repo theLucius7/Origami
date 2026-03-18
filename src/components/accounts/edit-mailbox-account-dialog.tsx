@@ -1,7 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 import { Pencil } from "lucide-react";
 import { updateMailboxAccount } from "@/app/actions/account";
 import type { AccountSettingsView } from "@/components/accounts/types";
@@ -14,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getClientActionErrorMessage, useClientAction } from "@/hooks/use-client-action";
 import {
   MAILBOX_PRESET_KEYS,
   MAILBOX_PRESETS,
@@ -27,7 +27,7 @@ function getInitialPresetKey(account: AccountSettingsView) {
 }
 
 export function EditMailboxAccountDialog({ account }: { account: AccountSettingsView }) {
-  const router = useRouter();
+  const { isPending, run } = useClientAction();
   const [open, setOpen] = useState(false);
   const [displayName, setDisplayName] = useState(account.displayName ?? account.email);
   const [authUser, setAuthUser] = useState(account.authUser ?? account.email);
@@ -39,7 +39,6 @@ export function EditMailboxAccountDialog({ account }: { account: AccountSettings
   const [smtpHost, setSmtpHost] = useState(account.smtpHost ?? "");
   const [smtpPort, setSmtpPort] = useState(String(account.smtpPort ?? 465));
   const [smtpSecure, setSmtpSecure] = useState(Boolean(account.smtpSecure));
-  const [isPending, startTransition] = useTransition();
 
   const canChangePreset = account.provider === "imap_smtp";
   const selectedPreset = useMemo(() => MAILBOX_PRESETS[presetKey], [presetKey]);
@@ -68,22 +67,30 @@ export function EditMailboxAccountDialog({ account }: { account: AccountSettings
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    startTransition(async () => {
-      await updateMailboxAccount({
-        id: account.id,
-        displayName,
-        authUser: authUser || account.email,
-        authPass: authPass || undefined,
-        presetKey,
-        imapHost: canChangePreset && isCustom ? imapHost : undefined,
-        imapPort: canChangePreset && isCustom ? Number(imapPort) : undefined,
-        imapSecure: canChangePreset && isCustom ? imapSecure : undefined,
-        smtpHost: canChangePreset && isCustom ? smtpHost : undefined,
-        smtpPort: canChangePreset && isCustom ? Number(smtpPort) : undefined,
-        smtpSecure: canChangePreset && isCustom ? smtpSecure : undefined,
-      });
-      setOpen(false);
-      router.refresh();
+
+    void run({
+      action: () =>
+        updateMailboxAccount({
+          id: account.id,
+          displayName,
+          authUser: authUser || account.email,
+          authPass: authPass || undefined,
+          presetKey,
+          imapHost: canChangePreset && isCustom ? imapHost : undefined,
+          imapPort: canChangePreset && isCustom ? Number(imapPort) : undefined,
+          imapSecure: canChangePreset && isCustom ? imapSecure : undefined,
+          smtpHost: canChangePreset && isCustom ? smtpHost : undefined,
+          smtpPort: canChangePreset && isCustom ? Number(smtpPort) : undefined,
+          smtpSecure: canChangePreset && isCustom ? smtpSecure : undefined,
+        }),
+      refresh: true,
+      successToast: { title: "账号设置已保存", description: "新的邮箱配置已经生效。" },
+      errorToast: (error) => ({
+        title: "保存账号设置失败",
+        description: getClientActionErrorMessage(error),
+        variant: "error",
+      }),
+      onSuccess: () => setOpen(false),
     });
   }
 

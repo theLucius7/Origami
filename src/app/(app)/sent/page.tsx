@@ -7,7 +7,8 @@ interface PageProps {
 
 export default async function SentPage({ searchParams }: PageProps) {
   const params = await searchParams;
-  const messages = await listSentMessages(params.account);
+  const accountId = params.account;
+  const messages = await listSentMessages(accountId);
 
-  return <SentList messages={messages} />;
+  return <SentList messages={messages} accountId={accountId} />;
 }

@@ -1,7 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus } from "lucide-react";
 import { addImapSmtpAccount } from "@/app/actions/account";
 import { getGmailOAuthUrl, getOutlookOAuthUrl } from "@/app/actions/oauth";
+import { getClientActionErrorMessage, useClientAction } from "@/hooks/use-client-action";
 import type { OAuthAppOption } from "@/lib/oauth-apps.shared";
 import {
   MAILBOX_PRESET_KEYS,
@@ -30,7 +30,7 @@ export function AddAccountDialog({
   gmailOAuthApps,
   outlookOAuthApps,
 }: AddAccountDialogProps) {
-  const router = useRouter();
+  const { isPending, run } = useClientAction();
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [authUser, setAuthUser] = useState("");
@@ -46,7 +46,6 @@ export function AddAccountDialog({
   const [smtpSecure, setSmtpSecure] = useState(true);
   const [gmailAppId, setGmailAppId] = useState(gmailOAuthApps[0]?.id ?? "default");
   const [outlookAppId, setOutlookAppId] = useState(outlookOAuthApps[0]?.id ?? "default");
-  const [isPending, startTransition] = useTransition();
 
   const selectedPreset = useMemo(() => MAILBOX_PRESETS[presetKey], [presetKey]);
   const isCustom = presetKey === "custom";
@@ -68,38 +67,62 @@ export function AddAccountDialog({
 
   function handleAddImapSmtp(e: React.FormEvent) {
     e.preventDefault();
-    startTransition(async () => {
-      await addImapSmtpAccount({
-        email,
-        authUser: authUser || email,
-        authPass,
-        displayName: name || undefined,
-        presetKey,
-        imapHost: isCustom ? imapHost : undefined,
-        imapPort: isCustom ? Number(imapPort) : undefined,
-        imapSecure: isCustom ? imapSecure : undefined,
-        smtpHost: isCustom ? smtpHost : undefined,
-        smtpPort: isCustom ? Number(smtpPort) : undefined,
-        smtpSecure: isCustom ? smtpSecure : undefined,
-        initialFetchLimit: Number(initialFetchLimit),
-      });
-      resetForm();
-      setOpen(false);
-      router.refresh();
+
+    void run({
+      action: () =>
+        addImapSmtpAccount({
+          email,
+          authUser: authUser || email,
+          authPass,
+          displayName: name || undefined,
+          presetKey,
+          imapHost: isCustom ? imapHost : undefined,
+          imapPort: isCustom ? Number(imapPort) : undefined,
+          imapSecure: isCustom ? imapSecure : undefined,
+          smtpHost: isCustom ? smtpHost : undefined,
+          smtpPort: isCustom ? Number(smtpPort) : undefined,
+          smtpSecure: isCustom ? smtpSecure : undefined,
+          initialFetchLimit: Number(initialFetchLimit),
+        }),
+      refresh: true,
+      successToast: { title: "邮箱已添加", description: "新账号已保存，可以开始同步了。" },
+      errorToast: (error) => ({
+        title: "添加邮箱失败",
+        description: getClientActionErrorMessage(error),
+        variant: "error",
+      }),
+      onSuccess: () => {
+        resetForm();
+        setOpen(false);
+      },
     });
   }
 
   function handleGmailAuth() {
-    startTransition(async () => {
-      const url = await getGmailOAuthUrl({ appId: gmailAppId });
-      window.location.href = url;
+    void run({
+      action: () => getGmailOAuthUrl({ appId: gmailAppId }),
+      onSuccess: (url) => {
+        window.location.href = url;
+      },
+      errorToast: (error) => ({
+        title: "跳转 Google 授权失败",
+        description: getClientActionErrorMessage(error),
+        variant: "error",
+      }),
     });
   }
 
   function handleOutlookAuth() {
-    startTransition(async () => {
-      const url = await getOutlookOAuthUrl({ appId: outlookAppId });
-      window.location.href = url;
+    void run({
+      action: () => getOutlookOAuthUrl({ appId: outlookAppId }),
+      onSuccess: (url) => {
+        window.location.href = url;
+      },
+      errorToast: (error) => ({
+        title: "跳转 Microsoft 授权失败",
+        description: getClientActionErrorMessage(error),
+        variant: "error",
+      }),
     });
   }
 

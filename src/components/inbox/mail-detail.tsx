@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,10 @@ import {
 } from "@/app/actions/email";
 import type { Email, Attachment } from "@/lib/db/schema";
 import { formatRelativeTime, formatFileSize } from "@/lib/format";
+import { parseStoredStringList } from "@/lib/string-list";
 import { SnoozeDialog } from "./snooze-dialog";
+import { shouldPollMailDetailStatus } from "./mail-detail-state";
+import { getClientActionErrorMessage, useClientAction } from "@/hooks/use-client-action";
 
 interface MailDetailProps {
   email: Email;
@@ -82,65 +85,104 @@ export function MailDetail({
   onLocalUpdate,
 }: MailDetailProps) {
   const router = useRouter();
-  const [, startTransition] = useTransition();
+  const { isPending, run } = useClientAction();
   const [snoozeOpen, setSnoozeOpen] = useState(false);
   const [nowTs] = useState(() => Math.floor(Date.now() / 1000));
 
   useEffect(() => {
     if (!email.isRead) {
-      startTransition(async () => {
-        await markRead(email.id);
-        onLocalUpdate?.(email.id, { isRead: 1 });
-        router.refresh();
+      void run({
+        action: () => markRead(email.id),
+        refresh: true,
+        onSuccess: () => {
+          onLocalUpdate?.(email.id, { isRead: 1 });
+        },
+        errorToast: (error) => ({
+          title: "标记已读失败",
+          description: getClientActionErrorMessage(error),
+          variant: "error",
+        }),
       });
     }
-  }, [email.id, email.isRead, onLocalUpdate, router]);
+  }, [email.id, email.isRead, onLocalUpdate, run]);
 
   function handleStar() {
-    startTransition(async () => {
-      await toggleStar(email.id);
-      onLocalUpdate?.(email.id, { isStarred: email.isStarred ? 0 : 1 });
-      router.refresh();
+    void run({
+      action: () => toggleStar(email.id),
+      refresh: true,
+      onSuccess: () => {
+        onLocalUpdate?.(email.id, { isStarred: email.isStarred ? 0 : 1 });
+      },
+      errorToast: (error) => ({
+        title: "更新星标失败",
+        description: getClientActionErrorMessage(error),
+        variant: "error",
+      }),
     });
   }
 
   function handleDoneToggle() {
-    startTransition(async () => {
-      await markDone([email.id], email.localDone !== 1);
-      onLocalUpdate?.(email.id, { localDone: email.localDone === 1 ? 0 : 1 });
-      router.refresh();
+    void run({
+      action: () => markDone([email.id], email.localDone !== 1),
+      refresh: true,
+      onSuccess: () => {
+        onLocalUpdate?.(email.id, { localDone: email.localDone === 1 ? 0 : 1 });
+      },
+      errorToast: (error) => ({
+        title: "更新 Done 状态失败",
+        description: getClientActionErrorMessage(error),
+        variant: "error",
+      }),
     });
   }
 
   function handleArchiveToggle() {
-    startTransition(async () => {
-      const nextValue = email.localArchived !== 1;
-      await markArchived([email.id], nextValue);
-      onLocalUpdate?.(email.id, { localArchived: nextValue ? 1 : 0 });
-      router.refresh();
+    const nextValue = email.localArchived !== 1;
+
+    void run({
+      action: () => markArchived([email.id], nextValue),
+      refresh: true,
+      onSuccess: () => {
+        onLocalUpdate?.(email.id, { localArchived: nextValue ? 1 : 0 });
+      },
+      errorToast: (error) => ({
+        title: nextValue ? "归档失败" : "移回主视图失败",
+        description: getClientActionErrorMessage(error),
+        variant: "error",
+      }),
     });
   }
 
   function handleClearSnooze() {
-    startTransition(async () => {
-      await clearSnooze([email.id]);
-      onLocalUpdate?.(email.id, { localSnoozeUntil: null });
-      router.refresh();
+    void run({
+      action: () => clearSnooze([email.id]),
+      refresh: true,
+      onSuccess: () => {
+        onLocalUpdate?.(email.id, { localSnoozeUntil: null });
+      },
+      errorToast: (error) => ({
+        title: "清除稍后看失败",
+        description: getClientActionErrorMessage(error),
+        variant: "error",
+      }),
     });
   }
 
-  let recipients: string[] = [];
-  if (email.recipients) {
-    try {
-      const parsed = JSON.parse(email.recipients);
-      recipients = Array.isArray(parsed) ? parsed : [];
-    } catch {
-      recipients = [];
-    }
-  }
+  const recipients = parseStoredStringList(email.recipients);
 
   const isSnoozed = !!email.localSnoozeUntil && email.localSnoozeUntil > nowTs;
   const hydrationStatus = isHydrating ? "hydrating" : email.hydrationStatus;
+  const shouldPollStatus = shouldPollMailDetailStatus(email, isHydrating);
+
+  useEffect(() => {
+    if (!shouldPollStatus) return;
+
+    const timer = window.setTimeout(() => {
+      router.refresh();
+    }, 2000);
+
+    return () => window.clearTimeout(timer);
+  }, [router, shouldPollStatus]);
 
   return (
     <>
@@ -149,7 +191,7 @@ export function MailDetail({
           <h2 className="flex-1 truncate text-lg font-semibold">
             {email.subject || "(无主题)"}
           </h2>
-          <Button variant="ghost" size="icon" onClick={handleStar}>
+          <Button variant="ghost" size="icon" onClick={handleStar} disabled={isPending}>
             <Star
               className={`h-4 w-4 ${
                 email.isStarred ? "fill-yellow-400 text-yellow-400" : ""
@@ -157,7 +199,7 @@ export function MailDetail({
             />
           </Button>
           {onClose && (
-            <Button variant="ghost" size="icon" onClick={onClose}>
+            <Button variant="ghost" size="icon" onClick={onClose} disabled={isPending}>
               <X className="h-4 w-4" />
             </Button>
           )}
@@ -165,21 +207,21 @@ export function MailDetail({
 
         <div className="border-b px-4 py-3">
           <div className="mb-2 flex flex-wrap gap-2">
-            <Button variant={email.localDone ? "secondary" : "outline"} size="sm" onClick={handleDoneToggle}>
+            <Button variant={email.localDone ? "secondary" : "outline"} size="sm" onClick={handleDoneToggle} disabled={isPending}>
               <CheckCircle2 className="h-4 w-4" />
               {email.localDone ? "取消 Done" : "Done"}
             </Button>
-            <Button variant={email.localArchived ? "secondary" : "outline"} size="sm" onClick={handleArchiveToggle}>
+            <Button variant={email.localArchived ? "secondary" : "outline"} size="sm" onClick={handleArchiveToggle} disabled={isPending}>
               <Archive className="h-4 w-4" />
               {email.localArchived ? "移回主视图" : "归档"}
             </Button>
             {isSnoozed ? (
-              <Button variant="outline" size="sm" onClick={handleClearSnooze}>
+              <Button variant="outline" size="sm" onClick={handleClearSnooze} disabled={isPending}>
                 <Clock3 className="h-4 w-4" />
                 清除稍后看
               </Button>
             ) : (
-              <Button variant="outline" size="sm" onClick={() => setSnoozeOpen(true)}>
+              <Button variant="outline" size="sm" onClick={() => setSnoozeOpen(true)} disabled={isPending}>
                 <Clock3 className="h-4 w-4" />
                 稍后看
               </Button>
@@ -288,11 +330,20 @@ export function MailDetail({
         open={snoozeOpen}
         onOpenChange={setSnoozeOpen}
         onConfirm={async (value) => {
-          await snooze([email.id], value);
-          onLocalUpdate?.(email.id, {
-            localSnoozeUntil: Math.floor(new Date(value).getTime() / 1000),
+          await run({
+            action: () => snooze([email.id], value),
+            refresh: true,
+            onSuccess: () => {
+              onLocalUpdate?.(email.id, {
+                localSnoozeUntil: Math.floor(new Date(value).getTime() / 1000),
+              });
+            },
+            errorToast: (error) => ({
+              title: "设置稍后看失败",
+              description: getClientActionErrorMessage(error),
+              variant: "error",
+            }),
           });
-          router.refresh();
         }}
       />
     </>

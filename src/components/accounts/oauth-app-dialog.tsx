@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Plus, Pencil } from "lucide-react";
 import { addOAuthApp, updateOAuthApp } from "@/app/actions/oauth-apps";
 import type { OAuthAppUsageView } from "@/components/accounts/types";
@@ -15,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getClientActionErrorMessage, useClientAction } from "@/hooks/use-client-action";
 
 interface OAuthAppDialogProps {
   app?: OAuthAppUsageView;
@@ -25,7 +25,7 @@ export function OAuthAppDialog({
   app,
   defaultProvider = "gmail",
 }: OAuthAppDialogProps) {
-  const router = useRouter();
+  const { isPending, run } = useClientAction();
   const isEdit = Boolean(app);
   const [open, setOpen] = useState(false);
   const [provider, setProvider] = useState<OAuthProviderKind>(app?.provider ?? defaultProvider);
@@ -34,7 +34,6 @@ export function OAuthAppDialog({
   const [clientId, setClientId] = useState(app?.clientId ?? "");
   const [clientSecret, setClientSecret] = useState("");
   const [tenant, setTenant] = useState(app?.tenant ?? "common");
-  const [isPending, startTransition] = useTransition();
 
   function resetForm() {
     setProvider(app?.provider ?? defaultProvider);
@@ -47,24 +46,31 @@ export function OAuthAppDialog({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    startTransition(async () => {
-      const payload = {
-        id,
-        provider,
-        label,
-        clientId,
-        clientSecret: clientSecret || undefined,
-        tenant: provider === "outlook" ? tenant : undefined,
-      };
 
-      if (isEdit) {
-        await updateOAuthApp(payload);
-      } else {
-        await addOAuthApp(payload);
-      }
+    void run({
+      action: () => {
+        const payload = {
+          id,
+          provider,
+          label,
+          clientId,
+          clientSecret: clientSecret || undefined,
+          tenant: provider === "outlook" ? tenant : undefined,
+        };
 
-      setOpen(false);
-      router.refresh();
+        return isEdit ? updateOAuthApp(payload) : addOAuthApp(payload);
+      },
+      refresh: true,
+      successToast: {
+        title: isEdit ? "OAuth 应用已保存" : "OAuth 应用已创建",
+        description: isEdit ? "新的应用配置已经生效。" : "你现在可以在接入账号时使用这个应用。",
+      },
+      errorToast: (error) => ({
+        title: isEdit ? "保存 OAuth 应用失败" : "创建 OAuth 应用失败",
+        description: getClientActionErrorMessage(error),
+        variant: "error",
+      }),
+      onSuccess: () => setOpen(false),
     });
   }
 
