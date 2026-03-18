@@ -181,6 +181,19 @@ const messages = {
       nextStep: "下一步建议：进入主界面后先前往 /accounts，添加你的第一个 Gmail / Outlook / IMAP/SMTP 账号；如果你想把 GitHub 登录之外的环境变量再减到更少，我们可以继续把 cron secret 和 setup 流程再自动化。",
       finish: "完成初始化并进入 Origami",
     },
+    login: {
+      errors: {
+        github_state: "GitHub 登录状态校验失败，请重试。",
+        github_not_allowed: "这个 GitHub 账号不在允许名单内。",
+        github_not_owner: "这个 GitHub 账号不是当前实例 owner。",
+        github_callback: "GitHub 登录失败，请稍后重试。",
+        fallback: "登录失败，请重试。",
+      },
+      description: "单用户实例推荐直接使用 GitHub 登录。首次进入时，首个 owner 会完成实例绑定与初始化。",
+      continueWithGitHub: "使用 GitHub 登录",
+      missingConfig: "当前还没有配置 GitHub OAuth。请先设置 `GITHUB_CLIENT_ID`、`GITHUB_CLIENT_SECRET` 和 `NEXT_PUBLIC_APP_URL`。",
+      ownerNotice: "这是单 owner 实例：登录依赖 GitHub OAuth，邮箱账号的 Gmail / Outlook OAuth 仅用于接入邮箱本身，和应用登录是分开的。",
+    },
     accountsPage: {
       title: "邮箱账号",
       description: "管理你的邮箱连接、OAuth 应用，以及 IMAP/SMTP 凭据与服务器配置。",
@@ -375,6 +388,19 @@ const messages = {
       r2: "R2 物件儲存已設定",
       nextStep: "下一步建議：進入主介面後先前往 /accounts，新增你的第一個 Gmail / Outlook / IMAP/SMTP 帳號；如果你想把 GitHub 登入之外的環境變數再減到更少，我們也可以繼續把 cron secret 和 setup 流程做得更自動化。",
       finish: "完成初始化並進入 Origami",
+    },
+    login: {
+      errors: {
+        github_state: "GitHub 登入狀態驗證失敗，請再試一次。",
+        github_not_allowed: "這個 GitHub 帳號不在允許名單內。",
+        github_not_owner: "這個 GitHub 帳號不是目前實例的 owner。",
+        github_callback: "GitHub 登入失敗，請稍後再試。",
+        fallback: "登入失敗，請再試一次。",
+      },
+      description: "單使用者實例建議直接使用 GitHub 登入。首次進入時，第一個 owner 會完成實例綁定與初始化。",
+      continueWithGitHub: "使用 GitHub 登入",
+      missingConfig: "目前尚未設定 GitHub OAuth。請先設定 `GITHUB_CLIENT_ID`、`GITHUB_CLIENT_SECRET` 與 `NEXT_PUBLIC_APP_URL`。",
+      ownerNotice: "這是單 owner 實例：登入依賴 GitHub OAuth；信箱帳號的 Gmail / Outlook OAuth 只用來接入信箱本身，和應用登入是分開的。",
     },
     accountsPage: {
       title: "信箱帳號",
@@ -571,6 +597,19 @@ const messages = {
       nextStep: "Suggested next step: after entering the app, open /accounts and add your first Gmail / Outlook / IMAP/SMTP account. If you want even less environment setup beyond GitHub sign-in, Origami can keep automating more of the setup flow later.",
       finish: "Finish setup and enter Origami",
     },
+    login: {
+      errors: {
+        github_state: "GitHub sign-in state verification failed. Please try again.",
+        github_not_allowed: "This GitHub account is not in the allowlist.",
+        github_not_owner: "This GitHub account is not the current instance owner.",
+        github_callback: "GitHub sign-in failed. Please try again later.",
+        fallback: "Sign-in failed. Please try again.",
+      },
+      description: "For a single-user instance, GitHub sign-in is the recommended path. On the first visit, the first owner completes instance binding and initialization.",
+      continueWithGitHub: "Continue with GitHub",
+      missingConfig: "GitHub OAuth is not configured yet. Set `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, and `NEXT_PUBLIC_APP_URL` first.",
+      ownerNotice: "This is a single-owner instance. App sign-in depends on GitHub OAuth, while Gmail / Outlook OAuth is only used to connect mailbox accounts and is separate from app authentication.",
+    },
     accountsPage: {
       title: "Mail accounts",
       description: "Manage mailbox connections, OAuth apps, and IMAP/SMTP credentials and server settings.",
@@ -765,6 +804,19 @@ const messages = {
       r2: "R2 オブジェクトストレージ設定済み",
       nextStep: "次のおすすめ: アプリに入ったら /accounts を開き、最初の Gmail / Outlook / IMAP/SMTP アカウントを追加してください。GitHub サインイン以外の環境変数もさらに減らしたければ、今後 setup フローの自動化をさらに進められます。",
       finish: "セットアップを完了して Origami に入る",
+    },
+    login: {
+      errors: {
+        github_state: "GitHub サインイン状態の検証に失敗しました。もう一度お試しください。",
+        github_not_allowed: "この GitHub アカウントは許可リストに含まれていません。",
+        github_not_owner: "この GitHub アカウントは現在のインスタンス owner ではありません。",
+        github_callback: "GitHub サインインに失敗しました。しばらくしてからもう一度お試しください。",
+        fallback: "サインインに失敗しました。もう一度お試しください。",
+      },
+      description: "単一ユーザー向けインスタンスでは GitHub サインインが推奨です。初回アクセス時には最初の owner がインスタンスの紐付けと初期化を完了します。",
+      continueWithGitHub: "GitHub でサインイン",
+      missingConfig: "GitHub OAuth はまだ設定されていません。まず `GITHUB_CLIENT_ID`、`GITHUB_CLIENT_SECRET`、`NEXT_PUBLIC_APP_URL` を設定してください。",
+      ownerNotice: "これは単一 owner インスタンスです。アプリのサインインは GitHub OAuth に依存し、Gmail / Outlook OAuth はメールボックス接続専用で、アプリ認証とは別です。",
     },
     accountsPage: {
       title: "メールアカウント",

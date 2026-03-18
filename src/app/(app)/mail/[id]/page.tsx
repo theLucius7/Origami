@@ -1,10 +1,12 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getHydratedEmailDetail } from "@/lib/services/email-service";
+import { ArrowLeft } from "lucide-react";
 import { MailDetail } from "@/components/inbox/mail-detail";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
+import { getMessages } from "@/i18n/messages";
+import { getRequestLocale } from "@/i18n/locale.server";
 import { buildInboxHref } from "@/lib/inbox-route";
+import { getHydratedEmailDetail } from "@/lib/services/email-service";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -16,7 +18,8 @@ interface PageProps {
 }
 
 export default async function MailDetailPage({ params, searchParams }: PageProps) {
-  const [{ id }, query] = await Promise.all([params, searchParams]);
+  const [{ id }, query, locale] = await Promise.all([params, searchParams, getRequestLocale()]);
+  const messages = getMessages(locale);
   const detail = await getHydratedEmailDetail(id);
 
   if (!detail) notFound();
@@ -33,7 +36,7 @@ export default async function MailDetailPage({ params, searchParams }: PageProps
         <Button variant="ghost" size="sm" asChild>
           <Link href={backHref}>
             <ArrowLeft className="mr-1 h-4 w-4" />
-            返回
+            {messages.common.back}
           </Link>
         </Button>
       </div>
