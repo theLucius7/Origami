@@ -286,7 +286,7 @@ export function AccountCard({ account, oauthApps }: AccountCardProps) {
                   checked={account.syncReadBack === 1}
                   disabled={isPending || readScopeMissing}
                   onCheckedChange={(checked) => handleWriteBackToggle("syncReadBack", checked)}
-                  aria-label={t.accountCard.readAria}
+                  aria-label={t.accountCard.readAria(account.email)}
                 />
               </div>
               {readScopeMissing && (
@@ -317,7 +317,7 @@ export function AccountCard({ account, oauthApps }: AccountCardProps) {
                   checked={account.syncStarBack === 1}
                   disabled={isPending || starScopeMissing}
                   onCheckedChange={(checked) => handleWriteBackToggle("syncStarBack", checked)}
-                  aria-label={t.accountCard.starAria}
+                  aria-label={t.accountCard.starAria(account.email)}
                 />
               </div>
               {starScopeMissing && (
