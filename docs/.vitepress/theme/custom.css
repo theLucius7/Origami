@@ -90,3 +90,95 @@ body {
 .VPHome .container {
   max-width: min(1280px, calc(100vw - 48px));
 }
+
+body {
+  background:
+    radial-gradient(circle at top left, rgba(255, 108, 74, 0.08), transparent 28%),
+    radial-gradient(circle at top right, rgba(255, 186, 146, 0.1), transparent 24%),
+    var(--vp-c-bg);
+}
+
+.dark body {
+  background:
+    radial-gradient(circle at top left, rgba(255, 124, 84, 0.12), transparent 30%),
+    radial-gradient(circle at top right, rgba(255, 181, 140, 0.08), transparent 26%),
+    var(--vp-c-bg);
+}
+
+.VPNavBar {
+  background: color-mix(in srgb, var(--vp-c-bg) 82%, transparent);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid color-mix(in srgb, var(--vp-c-divider) 72%, transparent);
+}
+
+.VPHero {
+  padding-top: 2rem;
+}
+
+.VPHero .name {
+  max-width: 12ch;
+  text-wrap: balance;
+}
+
+.VPHero .text,
+.VPHero .tagline {
+  max-width: 44rem;
+}
+
+.VPHero .actions {
+  gap: 0.75rem;
+}
+
+.VPHero .action .VPButton {
+  border-radius: 999px;
+  padding-inline: 1.15rem;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
+.VPHero .action .VPButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+}
+
+.dark .VPHero .action .VPButton:hover {
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+}
+
+.VPFeature {
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+}
+
+.VPFeature:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--vp-c-brand-1) 25%, var(--vp-c-divider));
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+}
+
+.dark .VPFeature:hover {
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
+}
+
+.VPDocAside .outline-link,
+.VPSidebarItem .link {
+  border-radius: 12px;
+}
+
+.VPDocAside .outline-link:hover,
+.VPSidebarItem .link:hover {
+  background: color-mix(in srgb, var(--vp-c-brand-1) 8%, transparent);
+}
+
+.VPDoc :not(pre) > code {
+  padding: 0.22rem 0.42rem;
+  border-radius: 0.5rem;
+}
+
+.VPDoc .custom-block {
+  border: 1px solid color-mix(in srgb, var(--vp-c-divider) 82%, transparent);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
+}
+
+.dark .VPDoc .custom-block {
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
+}

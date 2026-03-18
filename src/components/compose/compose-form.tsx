@@ -235,7 +235,7 @@ export function ComposeForm({
           <Label htmlFor="compose-to">{messages.compose.to}</Label>
           <Input
             id="compose-to"
-            placeholder="alice@example.com, bob@example.com"
+            placeholder={messages.compose.toPlaceholder}
             value={to}
             onChange={(event) => setTo(event.target.value)}
             disabled={isPending}
@@ -256,7 +256,7 @@ export function ComposeForm({
         {showCcBcc && (
           <>
             <div className="grid gap-2">
-              <Label htmlFor="compose-cc">Cc</Label>
+              <Label htmlFor="compose-cc">{messages.compose.cc}</Label>
               <Input
                 id="compose-cc"
                 placeholder={messages.compose.ccPlaceholder}
@@ -266,7 +266,7 @@ export function ComposeForm({
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="compose-bcc">Bcc</Label>
+              <Label htmlFor="compose-bcc">{messages.compose.bcc}</Label>
               <Input
                 id="compose-bcc"
                 placeholder={messages.compose.bccPlaceholder}

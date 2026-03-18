@@ -44,13 +44,13 @@ export function SentDetail({
           </div>
           {ccRecipients.length > 0 && (
             <div>
-              <span className="font-medium">Cc: </span>
+              <span className="font-medium">{t.sent.cc}: </span>
               <span>{ccRecipients.join(", ")}</span>
             </div>
           )}
           {bccRecipients.length > 0 && (
             <div>
-              <span className="font-medium">Bcc: </span>
+              <span className="font-medium">{t.sent.bcc}: </span>
               <span>{bccRecipients.join(", ")}</span>
             </div>
           )}

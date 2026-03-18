@@ -241,7 +241,7 @@ export function AddAccountDialog({
                 <Input
                   id="imap-email"
                   type="email"
-                  placeholder="example@163.com"
+                  placeholder={t.addDialog.emailPlaceholder}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
