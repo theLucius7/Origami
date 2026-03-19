@@ -23,13 +23,25 @@ export function SyncAllButton() {
               title: messages.sync.failed,
               description: getSyncFailureMessage(locale, result),
             },
-      successToast: (result) =>
-        result.ok
-          ? {
-              title: messages.sync.completed,
-              description: messages.sync.processedAccounts(result.results.length),
-            }
-          : null,
+      successToast: (result) => {
+        if (!result.ok) return null;
+
+        const failed = result.results.filter((item) => item.error).length;
+        const succeeded = result.results.length - failed;
+
+        if (failed > 0) {
+          return {
+            title: messages.sync.partialFailureTitle,
+            description: messages.sync.partialFailureSummary(succeeded, failed),
+            variant: "error" as const,
+          };
+        }
+
+        return {
+          title: messages.sync.completed,
+          description: messages.sync.processedAccounts(result.results.length),
+        };
+      },
     });
   }
 

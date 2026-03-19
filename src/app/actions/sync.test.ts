@@ -77,7 +77,10 @@ describe("sync actions", () => {
   });
 
   it("revalidates mailbox pages after full sync succeeds", async () => {
-    runActionResultMock.mockResolvedValue({ ok: true, data: { results: [{ accountId: "acc-1", synced: 2 }] } });
+    runActionResultMock.mockResolvedValue({
+      ok: true,
+      data: { results: [{ accountId: "acc-1", synced: 2 }] },
+    });
 
     const { syncAll } = await import("./sync");
     const result = await syncAll();

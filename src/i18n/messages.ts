@@ -41,7 +41,9 @@ const messages = {
     sync: {
       failed: "同步失败",
       completed: "同步完成",
+      partialFailureTitle: "同步部分失败",
       processedAccounts: (count: number) => `已处理 ${count} 个账号。`,
+      partialFailureSummary: (succeeded: number, failed: number) => `成功 ${succeeded} 个，失败 ${failed} 个账号。`,
       syncing: "同步中...",
       syncAll: "同步所有邮箱",
       syncedEmails: (count: number) => `同步了 ${count} 封邮件`,
@@ -257,7 +259,9 @@ const messages = {
     sync: {
       failed: "同步失敗",
       completed: "同步完成",
+      partialFailureTitle: "同步部分失敗",
       processedAccounts: (count: number) => `已處理 ${count} 個帳號。`,
+      partialFailureSummary: (succeeded: number, failed: number) => `成功 ${succeeded} 個，失敗 ${failed} 個帳號。`,
       syncing: "同步中...",
       syncAll: "同步所有信箱",
       syncedEmails: (count: number) => `同步了 ${count} 封郵件`,
@@ -473,7 +477,9 @@ const messages = {
     sync: {
       failed: "Sync failed",
       completed: "Sync completed",
+      partialFailureTitle: "Sync partially failed",
       processedAccounts: (count: number) => `Processed ${count} accounts.`,
+      partialFailureSummary: (succeeded: number, failed: number) => `${succeeded} account(s) succeeded, ${failed} failed.`,
       syncing: "Syncing...",
       syncAll: "Sync all mailboxes",
       syncedEmails: (count: number) => `Synced ${count} emails`,
@@ -689,7 +695,9 @@ const messages = {
     sync: {
       failed: "同期に失敗しました",
       completed: "同期が完了しました",
+      partialFailureTitle: "同期は一部失敗しました",
       processedAccounts: (count: number) => `${count} 件のアカウントを処理しました。`,
+      partialFailureSummary: (succeeded: number, failed: number) => `${succeeded} 件成功、${failed} 件失敗しました。`,
       syncing: "同期中...",
       syncAll: "すべてのメールボックスを同期",
       syncedEmails: (count: number) => `${count} 件のメールを同期しました`,
