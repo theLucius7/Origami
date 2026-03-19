@@ -265,7 +265,13 @@ export function InboxView({
                   className="h-11 rounded-2xl border-border/80 bg-background/80 pl-10 pr-10"
                 />
                 {search && (
-                  <button type="button" onClick={clearSearch} className="absolute right-3 top-3">
+                  <button
+                    type="button"
+                    onClick={clearSearch}
+                    className="absolute right-3 top-3"
+                    aria-label={messages.inbox.clearSearch}
+                    title={messages.inbox.clearSearch}
+                  >
                     <X className="h-4 w-4 text-muted-foreground" />
                   </button>
                 )}
