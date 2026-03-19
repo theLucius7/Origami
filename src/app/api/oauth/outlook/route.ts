@@ -61,8 +61,6 @@ export async function GET(request: NextRequest) {
   } catch (err: unknown) {
     const error = err as Error;
     console.error("Outlook OAuth error:", error.message);
-    return NextResponse.redirect(
-      new URL(`/accounts?error=${encodeURIComponent(error.message)}`, request.url)
-    );
+    return NextResponse.redirect(new URL("/accounts?error=oauth_callback_failed", request.url));
   }
 }

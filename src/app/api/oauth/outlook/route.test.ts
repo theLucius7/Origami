@@ -98,7 +98,7 @@ describe("GET /api/oauth/outlook", () => {
     );
   });
 
-  it("redirects to accounts with encoded error when provider exchange fails", async () => {
+  it("redirects to accounts with a stable error code when provider exchange fails", async () => {
     exchangeOutlookCodeMock.mockRejectedValue(new Error("consent denied"));
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
     const { GET } = await import("./route");
@@ -107,7 +107,7 @@ describe("GET /api/oauth/outlook", () => {
     const response = await GET(request);
 
     expect(response.headers.get("location")).toBe(
-      "http://localhost:3000/accounts?error=consent%20denied"
+      "http://localhost:3000/accounts?error=oauth_callback_failed"
     );
     errorSpy.mockRestore();
   });
