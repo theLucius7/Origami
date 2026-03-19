@@ -13,7 +13,7 @@ function getRequestLocale(request: NextRequest): AppLocale {
 }
 
 function getAttachmentUploadErrorMessage(
-  kind: "missing" | "empty" | "tooLarge",
+  kind: "missing" | "empty" | "tooLarge" | "storageUnavailable" | "uploadFailed",
   locale: AppLocale
 ) {
   switch (kind) {
@@ -50,6 +50,28 @@ function getAttachmentUploadErrorMessage(
         default:
           return "当前版本单个附件需小于 3 MB。";
       }
+    case "storageUnavailable":
+      switch (locale) {
+        case "zh-TW":
+          return "附件儲存尚未配置完成，暫時無法上傳附件。";
+        case "en":
+          return "Attachment storage is not configured yet, so uploads are temporarily unavailable.";
+        case "ja":
+          return "添付ファイル保存先がまだ設定されていないため、現在はアップロードできません。";
+        default:
+          return "附件存储尚未配置完成，暂时无法上传附件。";
+      }
+    case "uploadFailed":
+      switch (locale) {
+        case "zh-TW":
+          return "附件上傳失敗，請稍後再試。";
+        case "en":
+          return "Attachment upload failed. Please try again later.";
+        case "ja":
+          return "添付ファイルのアップロードに失敗しました。しばらくしてからもう一度お試しください。";
+        default:
+          return "附件上传失败，请稍后再试。";
+      }
   }
 }
 
@@ -58,6 +80,10 @@ function isInvalidFormDataRequest(error: unknown) {
     error instanceof TypeError &&
     error.message.includes('Content-Type was not one of "multipart/form-data" or "application/x-www-form-urlencoded"')
   );
+}
+
+function isMissingR2ConfigError(error: unknown) {
+  return error instanceof Error && /^Missing environment variable: R2_/.test(error.message);
 }
 
 export async function POST(request: NextRequest) {
@@ -95,7 +121,22 @@ export async function POST(request: NextRequest) {
   const key = buildComposeUploadKey(uploadId, file.name || "attachment");
   const buffer = Buffer.from(await file.arrayBuffer());
 
-  await uploadAttachment(key, buffer, file.type || "application/octet-stream");
+  try {
+    await uploadAttachment(key, buffer, file.type || "application/octet-stream");
+  } catch (error) {
+    if (isMissingR2ConfigError(error)) {
+      return NextResponse.json(
+        { error: getAttachmentUploadErrorMessage("storageUnavailable", locale) },
+        { status: 503 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: getAttachmentUploadErrorMessage("uploadFailed", locale) },
+      { status: 502 }
+    );
+  }
+
   await db.insert(composeUploads).values({
     id: uploadId,
     filename: file.name || "attachment",
