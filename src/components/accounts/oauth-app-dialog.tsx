@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -103,6 +104,7 @@ export function OAuthAppDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{isEdit ? t.oauthDialog.titleEdit : t.oauthDialog.titleAdd}</DialogTitle>
+          <DialogDescription>{isEdit ? t.oauthDialog.descriptionEdit : t.oauthDialog.descriptionAdd}</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -140,6 +141,7 @@ export function AddAccountDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t.addDialog.title}</DialogTitle>
+          <DialogDescription>{t.addDialog.description}</DialogDescription>
         </DialogHeader>
         <Tabs defaultValue="gmail">
           <TabsList className="grid w-full grid-cols-3">

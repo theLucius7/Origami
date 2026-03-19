@@ -13,6 +13,7 @@ const accountsMessages = {
     },
     addDialog: {
       title: "添加邮箱账号",
+      description: "通过 Gmail、Outlook 或 IMAP/SMTP 接入一个新的邮箱账号。",
       gmailIntro: "点击下方按钮将跳转到 Google 授权页面，授权后自动返回。首次同步默认抓取最近 200 封，可在账号管理页修改。",
       outlookIntro: "点击下方按钮将跳转到 Microsoft 授权页面，授权后自动返回。首次同步默认抓取最近 200 封，可在账号管理页修改。",
       noGmailApps: "当前没有可用的 Gmail OAuth 应用，请先配置环境变量或数据库应用。",
@@ -51,6 +52,7 @@ const accountsMessages = {
     },
     editDialog: {
       title: "编辑邮箱账号",
+      description: "更新当前邮箱账号的显示名称、凭据或 IMAP/SMTP 连接配置。",
       displayName: "显示名称",
       displayNamePlaceholder: "用于侧边栏显示",
       mailboxType: "邮箱类型",
@@ -76,6 +78,8 @@ const accountsMessages = {
     },
     oauthDialog: {
       add: "添加 OAuth 应用",
+      descriptionAdd: "添加一个可用于 Gmail 或 Outlook 授权的新 OAuth 应用配置。",
+      descriptionEdit: "更新当前 OAuth 应用的显示名称、Client ID、Client Secret 或 Tenant。",
       edit: "编辑 OAuth 应用",
       titleAdd: "添加 OAuth 应用",
       titleEdit: "编辑 OAuth 应用",
@@ -199,6 +203,7 @@ const accountsMessages = {
     },
     addDialog: {
       title: "新增信箱帳號",
+      description: "透過 Gmail、Outlook 或 IMAP/SMTP 接入新的信箱帳號。",
       gmailIntro: "點擊下方按鈕會跳轉到 Google 授權頁面，完成授權後自動返回。首次同步預設抓取最近 200 封，可在帳號管理頁調整。",
       outlookIntro: "點擊下方按鈕會跳轉到 Microsoft 授權頁面，完成授權後自動返回。首次同步預設抓取最近 200 封，可在帳號管理頁調整。",
       noGmailApps: "目前沒有可用的 Gmail OAuth 應用，請先設定環境變數或資料庫應用。",
@@ -237,6 +242,7 @@ const accountsMessages = {
     },
     editDialog: {
       title: "編輯信箱帳號",
+      description: "更新目前信箱帳號的顯示名稱、憑證或 IMAP/SMTP 連線設定。",
       displayName: "顯示名稱",
       displayNamePlaceholder: "用於側邊欄顯示",
       mailboxType: "信箱類型",
@@ -262,6 +268,8 @@ const accountsMessages = {
     },
     oauthDialog: {
       add: "新增 OAuth 應用",
+      descriptionAdd: "新增一個可用於 Gmail 或 Outlook 授權的 OAuth 應用設定。",
+      descriptionEdit: "更新目前 OAuth 應用的顯示名稱、Client ID、Client Secret 或 Tenant。",
       edit: "編輯 OAuth 應用",
       titleAdd: "新增 OAuth 應用",
       titleEdit: "編輯 OAuth 應用",
@@ -385,6 +393,7 @@ const accountsMessages = {
     },
     addDialog: {
       title: "Add mailbox account",
+      description: "Connect a new mailbox through Gmail, Outlook, or IMAP/SMTP.",
       gmailIntro: "Click the button below to go to the Google authorization page. After authorization, you will be redirected back automatically. The first sync fetches the latest 200 messages by default and can be changed later on the accounts page.",
       outlookIntro: "Click the button below to go to the Microsoft authorization page. After authorization, you will be redirected back automatically. The first sync fetches the latest 200 messages by default and can be changed later on the accounts page.",
       noGmailApps: "No Gmail OAuth app is available right now. Configure one from environment variables or the database first.",
@@ -423,6 +432,7 @@ const accountsMessages = {
     },
     editDialog: {
       title: "Edit mailbox account",
+      description: "Update the current mailbox display name, credential, or IMAP/SMTP connection settings.",
       displayName: "Display name",
       displayNamePlaceholder: "Used in the sidebar",
       mailboxType: "Mailbox type",
@@ -448,6 +458,8 @@ const accountsMessages = {
     },
     oauthDialog: {
       add: "Add OAuth app",
+      descriptionAdd: "Add a new OAuth app configuration for Gmail or Outlook authorization.",
+      descriptionEdit: "Update the current OAuth app display name, Client ID, Client Secret, or Tenant.",
       edit: "Edit OAuth app",
       titleAdd: "Add OAuth app",
       titleEdit: "Edit OAuth app",
@@ -571,6 +583,7 @@ const accountsMessages = {
     },
     addDialog: {
       title: "メールアカウントを追加",
+      description: "Gmail、Outlook、または IMAP/SMTP 経由で新しいメールアカウントを接続します。",
       gmailIntro: "下のボタンを押すと Google の認可ページに移動し、認可後に自動で戻ります。初回同期では直近 200 件を取得し、あとからアカウント管理画面で変更できます。",
       outlookIntro: "下のボタンを押すと Microsoft の認可ページに移動し、認可後に自動で戻ります。初回同期では直近 200 件を取得し、あとからアカウント管理画面で変更できます。",
       noGmailApps: "利用できる Gmail OAuth アプリがありません。先に環境変数またはデータベースで設定してください。",
@@ -609,6 +622,7 @@ const accountsMessages = {
     },
     editDialog: {
       title: "メールアカウントを編集",
+      description: "現在のメールアカウントの表示名、認証情報、または IMAP/SMTP 接続設定を更新します。",
       displayName: "表示名",
       displayNamePlaceholder: "サイドバーに表示されます",
       mailboxType: "メール種別",
@@ -634,6 +648,8 @@ const accountsMessages = {
     },
     oauthDialog: {
       add: "OAuth アプリを追加",
+      descriptionAdd: "Gmail または Outlook の認可に使う OAuth アプリ設定を追加します。",
+      descriptionEdit: "現在の OAuth アプリの表示名、Client ID、Client Secret、または Tenant を更新します。",
       edit: "OAuth アプリを編集",
       titleAdd: "OAuth アプリを追加",
       titleEdit: "OAuth アプリを編集",
