@@ -8,7 +8,13 @@ export async function syncAccount(accountId: string) {
   const result = await runActionResult("syncAccount", async () => syncAccountById(accountId));
 
   if (!result.ok) {
-    return { ok: false as const, synced: 0, error: result.errorMessage };
+    return {
+      ok: false as const,
+      synced: 0,
+      error: result.errorMessage,
+      errorCode: result.errorCode,
+      errorDetails: result.errorDetails,
+    };
   }
 
   revalidateMailboxPages();
@@ -19,7 +25,13 @@ export async function syncAll() {
   const result = await runActionResult("syncAll", async () => syncAllAccounts());
 
   if (!result.ok) {
-    return { ok: false as const, results: [], error: result.errorMessage };
+    return {
+      ok: false as const,
+      results: [],
+      error: result.errorMessage,
+      errorCode: result.errorCode,
+      errorDetails: result.errorDetails,
+    };
   }
 
   revalidateMailboxPages();

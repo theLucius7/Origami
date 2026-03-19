@@ -6,17 +6,23 @@ import { RefreshCw } from "lucide-react";
 import { syncAll, syncAccount } from "@/app/actions/sync";
 import { useClientAction } from "@/hooks/use-client-action";
 import { useI18n } from "@/components/providers/i18n-provider";
+import { getSyncFailureMessage } from "./sync-errors";
 
 export function SyncAllButton() {
   const { isPending, run } = useClientAction();
-  const { messages } = useI18n();
+  const { locale, messages } = useI18n();
 
   function handleSync() {
     void run({
       action: syncAll,
       refresh: true,
       getFailure: (result) =>
-        result.ok ? null : { title: messages.sync.failed, description: result.error },
+        result.ok
+          ? null
+          : {
+              title: messages.sync.failed,
+              description: getSyncFailureMessage(locale, result),
+            },
       successToast: (result) =>
         result.ok
           ? {
@@ -42,7 +48,7 @@ export function SyncAllButton() {
 
 export function SyncAccountButton({ accountId, ariaLabel }: { accountId: string; ariaLabel?: string }) {
   const { isPending, run } = useClientAction();
-  const { messages } = useI18n();
+  const { locale, messages } = useI18n();
   const [result, setResult] = useState<string | null>(null);
 
   function showResult(message: string) {
@@ -55,7 +61,13 @@ export function SyncAccountButton({ accountId, ariaLabel }: { accountId: string;
       action: () => syncAccount(accountId),
       refresh: true,
       getFailure: (res) =>
-        res.ok ? null : { title: messages.sync.failed, description: res.error, toast: false },
+        res.ok
+          ? null
+          : {
+              title: messages.sync.failed,
+              description: getSyncFailureMessage(locale, res),
+              toast: false,
+            },
       onSuccess: (res) => {
         if (!res.ok) return;
         showResult(messages.sync.syncedEmails(res.synced));

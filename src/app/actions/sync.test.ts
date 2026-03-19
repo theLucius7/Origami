@@ -35,12 +35,44 @@ describe("sync actions", () => {
   });
 
   it("does not revalidate when single-account sync fails", async () => {
-    runActionResultMock.mockResolvedValue({ ok: false, errorMessage: "boom" });
+    runActionResultMock.mockResolvedValue({
+      ok: false,
+      errorCode: "UNKNOWN",
+      errorMessage: "boom",
+      errorDetails: "details",
+    });
 
     const { syncAccount } = await import("./sync");
     const result = await syncAccount("acc-1");
 
-    expect(result).toEqual({ ok: false, synced: 0, error: "boom" });
+    expect(result).toEqual({
+      ok: false,
+      synced: 0,
+      error: "boom",
+      errorCode: "UNKNOWN",
+      errorDetails: "details",
+    });
+    expect(revalidateMailboxPagesMock).not.toHaveBeenCalled();
+  });
+
+  it("does not revalidate when full sync fails", async () => {
+    runActionResultMock.mockResolvedValue({
+      ok: false,
+      errorCode: "UNKNOWN",
+      errorMessage: "network failure",
+      errorDetails: "details",
+    });
+
+    const { syncAll } = await import("./sync");
+    const result = await syncAll();
+
+    expect(result).toEqual({
+      ok: false,
+      results: [],
+      error: "network failure",
+      errorCode: "UNKNOWN",
+      errorDetails: "details",
+    });
     expect(revalidateMailboxPagesMock).not.toHaveBeenCalled();
   });
 
