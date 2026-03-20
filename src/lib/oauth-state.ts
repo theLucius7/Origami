@@ -10,7 +10,9 @@ export interface OAuthStatePayload {
 
 interface SignedOAuthStatePayload extends OAuthStatePayload {
   v: 1;
-  sessionGithubId: string;
+  sessionBindingId?: string;
+  // Backward compatibility for pre-migration states minted against legacy GitHub-session binding.
+  sessionGithubId?: string;
   exp: number;
 }
 
@@ -60,13 +62,13 @@ async function verifySignature(value: string, signature: string): Promise<boolea
 
 export async function encodeOAuthState(
   payload: OAuthStatePayload,
-  options: { sessionGithubId: string }
+  options: { sessionBindingId: string }
 ): Promise<string> {
   const signedPayload: SignedOAuthStatePayload = {
     v: 1,
     ...payload,
     appId: payload.appId?.trim() || DEFAULT_OAUTH_APP_ID,
-    sessionGithubId: options.sessionGithubId,
+    sessionBindingId: options.sessionBindingId,
     exp: Math.floor(Date.now() / 1000) + 60 * 10,
   };
   const encodedPayload = toBase64Url(JSON.stringify(signedPayload));
@@ -76,7 +78,7 @@ export async function encodeOAuthState(
 
 export async function decodeOAuthState(
   state: string | null | undefined,
-  options: { sessionGithubId: string }
+  options: { sessionBindingId: string }
 ): Promise<OAuthStatePayload | null> {
   if (!state) return null;
 
@@ -88,7 +90,8 @@ export async function decodeOAuthState(
     const payload = JSON.parse(fromBase64Url(encodedPayload)) as SignedOAuthStatePayload;
     if (payload.v !== 1) return null;
     if (payload.exp < Math.floor(Date.now() / 1000)) return null;
-    if (payload.sessionGithubId !== options.sessionGithubId) return null;
+    const sessionBindingId = payload.sessionBindingId ?? payload.sessionGithubId;
+    if (sessionBindingId !== options.sessionBindingId) return null;
     return {
       appId: payload.appId?.trim() || DEFAULT_OAUTH_APP_ID,
       intent: payload.intent,

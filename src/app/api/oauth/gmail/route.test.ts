@@ -31,13 +31,24 @@ vi.mock("@/lib/db/schema", () => ({
   accounts: { id: "accounts.id" },
 }));
 
-vi.mock("@/lib/session", () => ({
-  readSessionFromCookies: vi.fn().mockResolvedValue({
-    githubId: "123",
-    githubLogin: "lucius7",
-    githubName: null,
-    githubAvatarUrl: null,
-    setupComplete: true,
+vi.mock("@/lib/app-session", () => ({
+  getOwnerAppAuthContext: vi.fn().mockResolvedValue({
+    installation: {
+      id: "main",
+      ownerGithubId: "123",
+      ownerGithubLogin: "lucius7",
+      ownerUserId: null,
+      setupCompletedAt: 123,
+    },
+    isSetupComplete: true,
+    session: {
+      source: "legacy",
+      userId: null,
+      githubId: "123",
+      githubLogin: "lucius7",
+      githubName: null,
+      githubAvatarUrl: null,
+    },
   }),
 }));
 
@@ -73,7 +84,7 @@ describe("GET /api/oauth/gmail", () => {
         enableReadBack: true,
         enableStarBack: false,
       },
-      { sessionGithubId: "123" }
+      { sessionBindingId: "123" }
     );
     const request = new NextRequest(`http://localhost:3000/api/oauth/gmail?code=test-code&state=${state}`);
 

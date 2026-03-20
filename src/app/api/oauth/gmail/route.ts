@@ -5,18 +5,22 @@ import { accounts } from "@/lib/db/schema";
 import { decodeOAuthState } from "@/lib/oauth-state";
 import { exchangeGmailCode } from "@/lib/providers/gmail";
 import { getAccountRecordByEmail } from "@/lib/queries/accounts";
-import { readSessionFromCookies } from "@/lib/session";
+import { getOwnerAppAuthContext } from "@/lib/app-session";
 import { eq } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
-  const session = await readSessionFromCookies(request.cookies);
-  if (!session) {
+  const authContext = await getOwnerAppAuthContext({
+    requestHeaders: request.headers,
+    cookieStore: request.cookies,
+  });
+  if (!authContext) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
+  const sessionBindingId = authContext.session.userId ?? authContext.session.githubId;
   const stateParam = request.nextUrl.searchParams.get("state");
   const state = stateParam
-    ? await decodeOAuthState(stateParam, { sessionGithubId: session.githubId })
+    ? await decodeOAuthState(stateParam, { sessionBindingId })
     : null;
   if (stateParam && !state) {
     return NextResponse.redirect(new URL("/accounts?error=invalid_oauth_state", request.url));
