@@ -12,16 +12,31 @@ export async function getInstallation(): Promise<AppInstallation | null> {
 export async function claimInstallation(input: {
   ownerGithubId: string;
   ownerGithubLogin: string;
+  ownerUserId?: string | null;
   ownerGithubName?: string | null;
   ownerGithubAvatarUrl?: string | null;
 }) {
   const existing = await getInstallation();
-  if (existing) return existing;
+  if (existing) {
+    if (!existing.ownerUserId && input.ownerUserId && existing.ownerGithubId === input.ownerGithubId) {
+      await db
+        .update(appInstallation)
+        .set({
+          ownerUserId: input.ownerUserId,
+          updatedAt: Math.floor(Date.now() / 1000),
+        })
+        .where(eq(appInstallation.id, INSTALLATION_ROW_ID));
+      return (await getInstallation())!;
+    }
+
+    return existing;
+  }
 
   await db.insert(appInstallation).values({
     id: INSTALLATION_ROW_ID,
     ownerGithubId: input.ownerGithubId,
     ownerGithubLogin: input.ownerGithubLogin,
+    ownerUserId: input.ownerUserId ?? null,
     ownerGithubName: input.ownerGithubName ?? null,
     ownerGithubAvatarUrl: input.ownerGithubAvatarUrl ?? null,
   }).onConflictDoNothing({

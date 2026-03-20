@@ -45,6 +45,7 @@ export const appInstallation = sqliteTable("app_installation", {
   id: text("id").primaryKey(),
   ownerGithubId: text("owner_github_id").notNull(),
   ownerGithubLogin: text("owner_github_login").notNull(),
+  ownerUserId: text("owner_user_id"),
   ownerGithubName: text("owner_github_name"),
   ownerGithubAvatarUrl: text("owner_github_avatar_url"),
   setupCompletedAt: integer("setup_completed_at"),
@@ -185,6 +186,88 @@ export const sentMessageAttachments = sqliteTable(
   (t) => [index("sent_message_attachments_sent_idx").on(t.sentMessageId)]
 );
 
+export const authUsers = sqliteTable(
+  "user",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    email: text("email").notNull(),
+    emailVerified: integer("email_verified", { mode: "boolean" }).notNull().default(false),
+    image: text("image"),
+    githubId: text("github_id").notNull(),
+    githubLogin: text("github_login").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+  },
+  (t) => [
+    uniqueIndex("auth_user_email_idx").on(t.email),
+    uniqueIndex("auth_user_github_id_idx").on(t.githubId),
+    index("auth_user_github_login_idx").on(t.githubLogin),
+  ]
+);
+
+export const authSessions = sqliteTable(
+  "session",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    token: text("token").notNull(),
+    expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+  },
+  (t) => [
+    uniqueIndex("auth_session_token_idx").on(t.token),
+    index("auth_session_user_id_idx").on(t.userId),
+    index("auth_session_expires_at_idx").on(t.expiresAt),
+  ]
+);
+
+export const authAccounts = sqliteTable(
+  "account",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    accountId: text("account_id").notNull(),
+    providerId: text("provider_id").notNull(),
+    accessToken: text("access_token"),
+    refreshToken: text("refresh_token"),
+    idToken: text("id_token"),
+    accessTokenExpiresAt: integer("access_token_expires_at", { mode: "timestamp" }),
+    refreshTokenExpiresAt: integer("refresh_token_expires_at", { mode: "timestamp" }),
+    scope: text("scope"),
+    password: text("password"),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+  },
+  (t) => [
+    uniqueIndex("auth_account_provider_account_idx").on(t.providerId, t.accountId),
+    index("auth_account_user_id_idx").on(t.userId),
+  ]
+);
+
+export const authVerifications = sqliteTable(
+  "verification",
+  {
+    id: text("id").primaryKey(),
+    identifier: text("identifier").notNull(),
+    value: text("value").notNull(),
+    expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+  },
+  (t) => [
+    uniqueIndex("auth_verification_identifier_value_idx").on(t.identifier, t.value),
+    index("auth_verification_expires_at_idx").on(t.expiresAt),
+  ]
+);
+
 export type Account = typeof accounts.$inferSelect;
 export type OAuthApp = typeof oauthApps.$inferSelect;
 export type AppInstallation = typeof appInstallation.$inferSelect;
@@ -211,3 +294,7 @@ export type Attachment = typeof attachments.$inferSelect;
 export type ComposeUpload = typeof composeUploads.$inferSelect;
 export type SentMessage = typeof sentMessages.$inferSelect;
 export type SentMessageAttachment = typeof sentMessageAttachments.$inferSelect;
+export type AuthUser = typeof authUsers.$inferSelect;
+export type AuthSessionRecord = typeof authSessions.$inferSelect;
+export type AuthAccount = typeof authAccounts.$inferSelect;
+export type AuthVerification = typeof authVerifications.$inferSelect;

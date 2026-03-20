@@ -71,6 +71,20 @@
       "when": 1773832800000,
       "tag": "0009_email_hydration_and_writeback_state",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1773907200000,
+      "tag": "0010_better_auth_shadow_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1773908100000,
+      "tag": "0011_app_installation_owner_user_id",
+      "breakpoints": true
     }
   ]
 }

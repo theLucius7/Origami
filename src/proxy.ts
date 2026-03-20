@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { toPublicUrl } from "@/lib/request-origin";
 import { decodeSession } from "@/lib/session";
 
-const PUBLIC_PATHS = ["/login", "/api/auth", "/api/oauth", "/api/cron"];
+const PUBLIC_PATHS = ["/login", "/api/auth", "/api/better-auth", "/api/oauth", "/api/cron"];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
