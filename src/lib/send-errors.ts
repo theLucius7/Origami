@@ -217,9 +217,11 @@ export function mapSendErrorToMessage(params: {
         case "ja": return "送信に失敗しました。このメールボックスは現在送信に対応していません。";
         default: return "发送失败：当前邮箱暂不支持发信。";
       }
+    case "PROVIDER_ERROR":
+      return getDefaultSendFailure(locale);
     case "VALIDATION":
       return errorMessage || getDefaultSendFailure(locale);
     default:
-      return errorMessage || getDefaultSendFailure(locale);
+      return getDefaultSendFailure(locale);
   }
 }

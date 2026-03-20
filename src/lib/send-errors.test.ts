@@ -31,5 +31,13 @@ describe("mapSendErrorToMessage", () => {
         errorMessage: "network down",
       })
     ).toBe("寄送失敗：網路異常，請稍後再試。");
+
+    expect(
+      mapSendErrorToMessage({
+        locale: "en",
+        errorCode: "PROVIDER_ERROR",
+        errorMessage: "550 5.7.1 Daily user sending quota exceeded",
+      })
+    ).toBe("Sending failed. Please try again later.");
   });
 });
