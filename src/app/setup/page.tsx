@@ -3,7 +3,7 @@ import { CheckCircle2, Circle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getSetupStatus } from "@/lib/setup";
-import { readSessionFromCookies } from "@/lib/session";
+import { getOwnerAppAuthContext } from "@/lib/app-session";
 import { getRequestLocale } from "@/i18n/locale.server";
 import { getMessages } from "@/i18n/messages";
 
@@ -17,15 +17,19 @@ function StatusItem({ ok, label }: { ok: boolean; label: string }) {
 }
 
 export default async function SetupPage() {
-  const session = await readSessionFromCookies();
-  if (!session) redirect("/login");
+  const [authContext, status, locale] = await Promise.all([
+    getOwnerAppAuthContext(),
+    getSetupStatus(),
+    getRequestLocale(),
+  ]);
 
-  const [status, locale] = await Promise.all([getSetupStatus(), getRequestLocale()]);
+  if (!authContext) redirect("/login");
   if (status.isSetupComplete) {
     redirect("/");
   }
 
   const messages = getMessages(locale);
+  const ownerLogin = status.installation?.ownerGithubLogin ?? authContext.session.githubLogin;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -33,7 +37,7 @@ export default async function SetupPage() {
         <CardHeader>
           <CardTitle>{messages.setup.title}</CardTitle>
           <CardDescription>
-            {messages.setup.description(session.githubLogin)}
+            {messages.setup.description(ownerLogin)}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">

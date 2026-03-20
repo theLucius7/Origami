@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { getOwnerAppAuthContext } from "@/lib/app-session";
 import { toPublicUrl } from "@/lib/request-origin";
-import { decodeSession } from "@/lib/session";
 
 const PUBLIC_PATHS = ["/login", "/api/auth", "/api/better-auth", "/api/oauth", "/api/cron"];
 
@@ -16,11 +16,19 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const session = await decodeSession(request.cookies.get("origami_session")?.value ?? null);
-  if (session) {
-    if (!session.setupComplete && pathname !== "/setup") {
+  const authContext = await getOwnerAppAuthContext({
+    requestHeaders: request.headers,
+    cookieStore: request.cookies,
+  });
+  if (authContext) {
+    if (!authContext.isSetupComplete && pathname !== "/setup") {
       return NextResponse.redirect(toPublicUrl(request, "/setup"));
     }
+
+    if (authContext.isSetupComplete && pathname === "/setup") {
+      return NextResponse.redirect(toPublicUrl(request, "/"));
+    }
+
     return NextResponse.next();
   }
 

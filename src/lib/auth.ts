@@ -158,9 +158,11 @@ export const auth = betterAuth({
   plugins: [nextCookies()],
 });
 
-export async function getOwnerAuthSession(): Promise<OwnerAuthSession | null> {
+export async function getOwnerAuthSession(options?: {
+  requestHeaders?: HeadersInit;
+}): Promise<OwnerAuthSession | null> {
   const session = await auth.api.getSession({
-    headers: await headers(),
+    headers: options?.requestHeaders ?? (await headers()),
   });
 
   if (!session) {
