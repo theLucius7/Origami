@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { betterAuth } from "better-auth";
+import { APIError } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { db } from "@/lib/db";
@@ -33,25 +34,29 @@ function getBetterAuthBaseUrl(): string | undefined {
   return appUrl || undefined;
 }
 
-async function isAllowedOwnerCandidate(candidate: OwnerCandidate): Promise<boolean> {
+async function assertAllowedOwnerCandidate(candidate: OwnerCandidate): Promise<void> {
   const githubId = candidate.githubId?.trim();
   const githubLogin = normalizeGitHubLogin(candidate.githubLogin);
 
   if (!githubId || !githubLogin) {
-    return false;
+    throw new APIError("BAD_REQUEST", {
+      message: "github_callback",
+    });
   }
 
   const allowedGitHubLogin = getAllowedGitHubLogin();
   if (allowedGitHubLogin && githubLogin !== allowedGitHubLogin) {
-    return false;
+    throw new APIError("FORBIDDEN", {
+      message: "github_not_allowed",
+    });
   }
 
   const installation = await getInstallation();
-  if (!installation) {
-    return true;
+  if (installation && installation.ownerGithubId !== githubId) {
+    throw new APIError("FORBIDDEN", {
+      message: "github_not_owner",
+    });
   }
-
-  return installation.ownerGithubId === githubId;
 }
 
 const githubConfig = hasGitHubOAuthConfig() ? getGitHubOAuthConfig() : null;
@@ -62,7 +67,7 @@ export const auth = betterAuth({
   basePath: "/api/better-auth",
   secret: getAuthSecret(),
   database: drizzleAdapter(db, {
-    provider: "sqlite",
+    provider: "pg",
     schema,
   }),
   socialProviders: githubConfig
@@ -79,6 +84,9 @@ export const auth = betterAuth({
         },
       }
     : undefined,
+  onAPIError: {
+    errorURL: "/login",
+  },
   user: {
     additionalFields: {
       githubId: {
@@ -103,9 +111,7 @@ export const auth = betterAuth({
           const githubId = user.githubId as string | undefined;
           const githubLogin = normalizeGitHubLogin(user.githubLogin as string | undefined);
 
-          if (!(await isAllowedOwnerCandidate({ githubId, githubLogin }))) {
-            return false;
-          }
+          await assertAllowedOwnerCandidate({ githubId, githubLogin });
 
           return {
             data: {
@@ -144,13 +150,19 @@ export const auth = betterAuth({
           });
 
           if (!user) {
-            return false;
+            throw new APIError("UNAUTHORIZED", {
+              message: "github_not_owner",
+            });
           }
 
-          return isAllowedOwnerCandidate({
+          await assertAllowedOwnerCandidate({
             githubId: user.githubId,
             githubLogin: user.githubLogin,
           });
+
+          return {
+            data: session,
+          };
         },
       },
     },

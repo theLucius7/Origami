@@ -198,7 +198,7 @@ export async function markRead(emailId: string) {
 
 export async function toggleStar(emailId: string) {
   return runLoggedAction("toggleStar", async () => {
-    await db.run(
+    await db.execute(
       sql`UPDATE emails SET is_starred = CASE WHEN is_starred = 1 THEN 0 ELSE 1 END WHERE id = ${emailId}`
     );
 
