@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 import { toPublicUrl, withHttpsPreviewCookieCompat } from "@/lib/request-origin";
 import { getSessionCookieName, getSessionCookieOptions } from "@/lib/session";
 
-export async function POST(request: Request) {
-  const response = NextResponse.json({ ok: true });
+async function withClearedLegacySessionCookie(response: NextResponse, request: Request): Promise<NextResponse> {
   response.cookies.set(getSessionCookieName(), "", {
     ...withHttpsPreviewCookieCompat(request, getSessionCookieOptions()),
     maxAge: 0,
@@ -11,11 +11,33 @@ export async function POST(request: Request) {
   return response;
 }
 
-export async function GET(request: Request) {
-  const response = NextResponse.redirect(toPublicUrl(request, "/login"));
-  response.cookies.set(getSessionCookieName(), "", {
-    ...withHttpsPreviewCookieCompat(request, getSessionCookieOptions()),
-    maxAge: 0,
+export async function POST(request: Request) {
+  const response = await auth.api.signOut({
+    headers: new Headers(request.headers),
+    asResponse: true,
   });
-  return response;
+
+  return withClearedLegacySessionCookie(
+    new NextResponse(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
+    }),
+    request
+  );
+}
+
+export async function GET(request: Request) {
+  const response = await auth.api.signOut({
+    headers: new Headers(request.headers),
+    asResponse: true,
+  });
+
+  const redirectResponse = NextResponse.redirect(toPublicUrl(request, "/login"));
+  const setCookie = response.headers.get("set-cookie");
+  if (setCookie) {
+    redirectResponse.headers.append("set-cookie", setCookie);
+  }
+
+  return withClearedLegacySessionCookie(redirectResponse, request);
 }

@@ -45,7 +45,7 @@ export function getGitHubOAuthConfig() {
     clientId,
     clientSecret,
     appUrl,
-    redirectUrl: `${appUrl.replace(/\/$/, "")}/api/auth/github/callback`,
+    redirectUrl: `${appUrl.replace(/\/$/, "")}/api/better-auth/callback/github`,
   };
 }
 

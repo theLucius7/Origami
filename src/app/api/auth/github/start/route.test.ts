@@ -1,43 +1,41 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { GET } from "./route";
+import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/lib/github-auth", () => ({
-  getGitHubAuthUrl: (state: string) => `https://github.com/login/oauth/authorize?state=${state}`,
+const signInSocialMock = vi.fn();
+
+vi.mock("@/lib/auth", () => ({
+  auth: {
+    api: {
+      signInSocial: signInSocialMock,
+    },
+  },
 }));
-
-vi.mock("@/lib/session", () => ({
-  createOAuthStateCookieValue: async (state: string) => `${state}.sig`,
-  getOAuthStateCookieName: () => "origami_github_state",
-  getOAuthStateCookieOptions: () => ({
-    httpOnly: true,
-    secure: false,
-    sameSite: "lax" as const,
-    path: "/",
-    maxAge: 600,
-  }),
-}));
-
-afterEach(() => {
-  vi.unstubAllEnvs();
-});
 
 describe("GET /api/auth/github/start", () => {
-  it("sets SameSite=None + Secure for HTTPS preview in non-production", async () => {
-    vi.stubEnv("NODE_ENV", "development");
+  it("delegates legacy start route to Better Auth social sign-in", async () => {
+    signInSocialMock.mockResolvedValue(
+      new Response(null, {
+        status: 302,
+        headers: {
+          Location: "https://github.com/login/oauth/authorize?client_id=test",
+          "set-cookie": "better-auth.state=abc; Path=/; HttpOnly",
+        },
+      })
+    );
 
-    const req = new Request("https://example.test/api/auth/github/start", {
-      headers: {
-        "x-forwarded-proto": "https",
-      },
-    });
-
+    const { GET } = await import("./route");
+    const req = new Request("https://example.test/api/auth/github/start");
     const res = await GET(req);
-    const setCookie = res.headers.get("set-cookie") ?? "";
 
-    expect(res.status).toBeGreaterThanOrEqual(300);
-    expect(res.status).toBeLessThan(400);
-    expect(setCookie).toMatch(/origami_github_state=/);
-    expect(setCookie.toLowerCase()).toContain("samesite=none");
-    expect(setCookie.toLowerCase()).toContain("secure");
+    expect(signInSocialMock).toHaveBeenCalledWith({
+      headers: expect.any(Headers),
+      body: {
+        provider: "github",
+        callbackURL: "/",
+        errorCallbackURL: "/login",
+      },
+      asResponse: true,
+    });
+    expect(res.status).toBe(302);
+    expect(res.headers.get("location")).toContain("github.com/login/oauth/authorize");
   });
 });
