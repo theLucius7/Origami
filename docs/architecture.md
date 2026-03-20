@@ -9,7 +9,7 @@ Browser
   -> Next.js Proxy
   -> App Router Pages / Server Actions / Route Handlers
   -> Drizzle ORM
-  -> Turso / libSQL
+  -> Neon / PostgreSQL
 
 Attachments
   -> Cloudflare R2
@@ -29,7 +29,7 @@ Scheduled Sync
 1. **Web 应用层**：Next.js 页面、Server Actions、Route Handlers
 2. **业务逻辑层**：账号管理、同步、发信、triage、写回
 3. **Provider 适配层**：Gmail / Outlook / IMAP/SMTP
-4. **存储层**：Turso 保存结构化数据，R2 保存附件对象
+4. **存储层**：Neon PostgreSQL 保存结构化数据，R2 保存附件对象
 
 ## 核心设计原则
 
@@ -181,7 +181,7 @@ Compose form
 
 ## 数据存储分工
 
-### Turso / libSQL
+### Neon / PostgreSQL
 
 保存：
 

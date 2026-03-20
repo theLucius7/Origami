@@ -1,14 +1,19 @@
-import { createClient } from "@libsql/client";
-import { drizzle } from "drizzle-orm/libsql";
-import { migrate } from "drizzle-orm/libsql/migrator";
-import { getDatabaseConfig } from "@/config/db";
+import postgres from "postgres";
+import { drizzle } from "drizzle-orm/postgres-js";
+import { migrate } from "drizzle-orm/postgres-js/migrator";
+import { getDatabaseUrl } from "@/config/db";
 
 async function main() {
-  const client = createClient(getDatabaseConfig());
-  const db = drizzle(client);
-  await migrate(db, { migrationsFolder: "./drizzle" });
-  console.log("Migration complete");
-  process.exit(0);
+  const client = postgres(getDatabaseUrl(), { max: 1, prepare: false });
+
+  try {
+    const db = drizzle(client);
+    await migrate(db, { migrationsFolder: "./drizzle/pg" });
+    console.log("Migration complete");
+    process.exit(0);
+  } finally {
+    await client.end();
+  }
 }
 
 main().catch((err) => {

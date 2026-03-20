@@ -21,7 +21,7 @@
 
 - Node.js 22+
 - npm
-- 一套開發用 Turso / libSQL 資料庫
+- 一套開發用 Neon / PostgreSQL 資料庫
 - 一套開發用 Cloudflare R2 bucket
 - 一個本地專用 GitHub OAuth App
 - 如需測 Gmail / Outlook，對應的開發 OAuth app
@@ -41,8 +41,7 @@ ENCRYPTION_KEY=64-char-hex-key
 AUTH_SECRET=64-char-hex-key
 CRON_SECRET=64-char-hex-key
 
-TURSO_DATABASE_URL=...
-TURSO_AUTH_TOKEN=...
+DATABASE_URL=postgresql://user:password@ep-example.ap-southeast-1.aws.neon.tech/origami_dev?sslmode=require
 
 R2_ACCOUNT_ID=...
 R2_ACCESS_KEY_ID=...
@@ -55,7 +54,7 @@ R2_ENDPOINT=https://<ACCOUNT_ID>.r2.cloudflarestorage.com
 
 - **應用基礎**：`NEXT_PUBLIC_APP_URL`、`ENCRYPTION_KEY`、`AUTH_SECRET`
 - **GitHub 登入**：`GITHUB_CLIENT_ID`、`GITHUB_CLIENT_SECRET`、`GITHUB_ALLOWED_LOGIN`
-- **資料庫**：`TURSO_DATABASE_URL`、`TURSO_AUTH_TOKEN`
+- **資料庫**：`DATABASE_URL`
 - **附件儲存**：`R2_ACCOUNT_ID`、`R2_ACCESS_KEY_ID`、`R2_SECRET_ACCESS_KEY`、`R2_BUCKET_NAME`、`R2_ENDPOINT`
 - **排程任務**：`CRON_SECRET`
 
@@ -142,8 +141,7 @@ npm run db:push
 
 優先檢查：
 
-- `TURSO_DATABASE_URL`
-- `TURSO_AUTH_TOKEN`
+- `DATABASE_URL`
 - 當前資料庫是否已執行 `db:setup`
 
 ### 附件上傳異常

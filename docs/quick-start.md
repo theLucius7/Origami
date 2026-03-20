@@ -12,7 +12,7 @@
 
 - 可公网访问的 Origami 实例
 - 可登录的 GitHub owner 账号
-- 可用的 Turso 数据库
+- 可用的 Neon PostgreSQL 数据库
 - 可用的 Cloudflare R2 附件存储
 - 至少一个可正常同步 / 发信的邮箱账号
 
@@ -21,7 +21,7 @@
 Origami 当前最稳定的生产组合是：
 
 - **应用运行时**：Vercel
-- **数据库**：Turso / libSQL
+- **数据库**：Neon / PostgreSQL
 - **附件存储**：Cloudflare R2
 - **登录**：GitHub OAuth App
 - **邮箱接入**：Gmail OAuth、Outlook OAuth、IMAP/SMTP
@@ -40,7 +40,7 @@ Origami 当前最稳定的生产组合是：
 开始之前，请先准备以下资源：
 
 - 一个生产域名，例如 `mail.example.com`
-- 一个 Turso 数据库
+- 一个 Neon PostgreSQL 数据库
 - 一个 Cloudflare R2 bucket
 - 一个 GitHub OAuth App（用于登录 Origami）
 - 如需接入 Gmail 或 Outlook，对应的 OAuth app
@@ -49,7 +49,7 @@ Origami 当前最稳定的生产组合是：
 
 建议按以下顺序准备：
 
-1. [创建 Turso 数据库](/turso)
+1. [创建 Neon PostgreSQL 数据库](/neon)
 2. [配置 Cloudflare R2](/r2-storage)
 3. [配置 GitHub 登录](/github-auth)
 4. [按需配置 Gmail OAuth](/gmail-oauth)
@@ -84,8 +84,7 @@ ENCRYPTION_KEY=64-char-hex-key
 AUTH_SECRET=64-char-hex-key
 CRON_SECRET=64-char-hex-key
 
-TURSO_DATABASE_URL=...
-TURSO_AUTH_TOKEN=...
+DATABASE_URL=postgresql://user:password@ep-example.ap-southeast-1.aws.neon.tech/origami?sslmode=require
 
 R2_ACCESS_KEY_ID=...
 R2_SECRET_ACCESS_KEY=...
@@ -170,7 +169,7 @@ npm run db:setup
 
 - Vercel 中的 `NEXT_PUBLIC_APP_URL` 已设置为 `https://mail.example.com`
 - GitHub / Gmail / Outlook OAuth 回调地址全部使用相同域名
-- Turso、R2 与应用环境变量来自同一套生产配置
+- Neon、R2 与应用环境变量来自同一套生产配置
 
 如果你想更快排除“刚部署就错”的问题，建议立刻做这 3 个检查：
 
@@ -256,7 +255,7 @@ npm run verify
 先看这 3 项：
 
 1. 全新数据库是否优先执行了 `npm run db:setup`
-2. `TURSO_DATABASE_URL` / `TURSO_AUTH_TOKEN` 是否来自同一个数据库
+2. `DATABASE_URL` 是否指向正确的 Neon 生产数据库
 3. 你是否把开发环境的库误用到了生产环境
 
 ## 下一步
@@ -264,7 +263,7 @@ npm run verify
 如果你要继续完善生产部署，建议按以下顺序阅读：
 
 1. [部署指南](/deployment)
-2. [Turso 数据库详细配置](/turso)
+2. [Neon PostgreSQL 详细配置](/neon)
 3. [Cloudflare R2 / Bucket 详细配置](/r2-storage)
 4. [GitHub Auth 详细配置](/github-auth)
 5. [Gmail OAuth 详细配置](/gmail-oauth)

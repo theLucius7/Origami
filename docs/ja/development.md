@@ -21,7 +21,7 @@
 
 - Node.js 22+
 - npm
-- 開発用 Turso / libSQL データベース
+- 開発用 Neon / PostgreSQL データベース
 - 開発用 Cloudflare R2 バケット
 - ローカル専用 GitHub OAuth App
 - 必要に応じて Gmail / Outlook 開発用 OAuth app
@@ -41,8 +41,7 @@ ENCRYPTION_KEY=64-char-hex-key
 AUTH_SECRET=64-char-hex-key
 CRON_SECRET=64-char-hex-key
 
-TURSO_DATABASE_URL=...
-TURSO_AUTH_TOKEN=...
+DATABASE_URL=postgresql://user:password@ep-example.ap-southeast-1.aws.neon.tech/origami_dev?sslmode=require
 
 R2_ACCOUNT_ID=...
 R2_ACCESS_KEY_ID=...
@@ -55,7 +54,7 @@ R2_ENDPOINT=https://<ACCOUNT_ID>.r2.cloudflarestorage.com
 
 - **アプリ基本設定**：`NEXT_PUBLIC_APP_URL`、`ENCRYPTION_KEY`、`AUTH_SECRET`
 - **GitHub ログイン**：`GITHUB_CLIENT_ID`、`GITHUB_CLIENT_SECRET`、`GITHUB_ALLOWED_LOGIN`
-- **データベース**：`TURSO_DATABASE_URL`、`TURSO_AUTH_TOKEN`
+- **データベース**：`DATABASE_URL`
 - **添付保存**：`R2_ACCOUNT_ID`、`R2_ACCESS_KEY_ID`、`R2_SECRET_ACCESS_KEY`、`R2_BUCKET_NAME`、`R2_ENDPOINT`
 - **定期実行**：`CRON_SECRET`
 
@@ -142,8 +141,7 @@ npm run db:push
 
 先に確認するもの：
 
-- `TURSO_DATABASE_URL`
-- `TURSO_AUTH_TOKEN`
+- `DATABASE_URL`
 - 現在の DB に `db:setup` を実行済みか
 
 ### 添付アップロードが壊れるとき

@@ -17,7 +17,7 @@ export default defineConfig({
           { text: "首页", link: "/" },
           { text: "快速开始", link: "/quick-start" },
           { text: "部署", link: "/deployment" },
-          { text: "平台配置", link: "/turso" },
+          { text: "平台配置", link: "/neon" },
           { text: "开发", link: "/development" },
           { text: "架构", link: "/architecture" },
           { text: "FAQ", link: "/faq" },
@@ -36,7 +36,7 @@ export default defineConfig({
           {
             text: "第三方平台配置",
             items: [
-              { text: "Turso 数据库", link: "/turso" },
+              { text: "Neon PostgreSQL", link: "/neon" },
               { text: "Cloudflare R2 / Bucket", link: "/r2-storage" },
               { text: "GitHub Auth", link: "/github-auth" },
               { text: "Gmail OAuth", link: "/gmail-oauth" },
@@ -86,7 +86,7 @@ export default defineConfig({
           { text: "首頁", link: "/zh-tw/" },
           { text: "快速開始", link: "/zh-tw/quick-start" },
           { text: "部署", link: "/zh-tw/deployment" },
-          { text: "平台設定", link: "/zh-tw/turso" },
+          { text: "平台設定", link: "/zh-tw/neon" },
           { text: "開發", link: "/zh-tw/development" },
           { text: "架構", link: "/zh-tw/architecture" },
           { text: "FAQ", link: "/zh-tw/faq" },
@@ -105,7 +105,7 @@ export default defineConfig({
           {
             text: "第三方平台設定",
             items: [
-              { text: "Turso 資料庫", link: "/zh-tw/turso" },
+              { text: "Neon PostgreSQL", link: "/zh-tw/neon" },
               { text: "Cloudflare R2 / Bucket", link: "/zh-tw/r2-storage" },
               { text: "GitHub Auth", link: "/zh-tw/github-auth" },
               { text: "Gmail OAuth", link: "/zh-tw/gmail-oauth" },
@@ -155,7 +155,7 @@ export default defineConfig({
           { text: "Home", link: "/en/" },
           { text: "Quick Start", link: "/en/quick-start" },
           { text: "Deployment", link: "/en/deployment" },
-          { text: "Platform Setup", link: "/en/turso" },
+          { text: "Platform Setup", link: "/en/neon" },
           { text: "Development", link: "/en/development" },
           { text: "Architecture", link: "/en/architecture" },
           { text: "FAQ", link: "/en/faq" },
@@ -174,7 +174,7 @@ export default defineConfig({
           {
             text: "Third-Party Setup",
             items: [
-              { text: "Turso Database", link: "/en/turso" },
+              { text: "Neon PostgreSQL", link: "/en/neon" },
               { text: "Cloudflare R2 / Bucket", link: "/en/r2-storage" },
               { text: "GitHub Auth", link: "/en/github-auth" },
               { text: "Gmail OAuth", link: "/en/gmail-oauth" },
@@ -224,7 +224,7 @@ export default defineConfig({
           { text: "ホーム", link: "/ja/" },
           { text: "クイックスタート", link: "/ja/quick-start" },
           { text: "デプロイ", link: "/ja/deployment" },
-          { text: "外部サービス設定", link: "/ja/turso" },
+          { text: "外部サービス設定", link: "/ja/neon" },
           { text: "開発", link: "/ja/development" },
           { text: "アーキテクチャ", link: "/ja/architecture" },
           { text: "FAQ", link: "/ja/faq" },
@@ -243,7 +243,7 @@ export default defineConfig({
           {
             text: "外部サービス設定",
             items: [
-              { text: "Turso データベース", link: "/ja/turso" },
+              { text: "Neon PostgreSQL", link: "/ja/neon" },
               { text: "Cloudflare R2 / Bucket", link: "/ja/r2-storage" },
               { text: "GitHub Auth", link: "/ja/github-auth" },
               { text: "Gmail OAuth", link: "/ja/gmail-oauth" },

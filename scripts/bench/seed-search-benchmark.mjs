@@ -1,36 +1,35 @@
-import { createClient } from "@libsql/client";
+import postgres from "postgres";
 
 const totalEmails = Number(process.argv[2] ?? 10000);
 const accountCount = Number(process.argv[3] ?? 5);
-const dbUrl = process.env.BENCH_DB_URL ?? process.env.TURSO_DATABASE_URL;
+const dbUrl = process.env.BENCH_DB_URL ?? process.env.DATABASE_URL;
 
 if (!dbUrl) {
-  console.error("Missing BENCH_DB_URL or TURSO_DATABASE_URL");
+  console.error("Missing BENCH_DB_URL or DATABASE_URL");
   process.exit(1);
 }
 
-const client = createClient({
-  url: dbUrl,
-  authToken: process.env.TURSO_AUTH_TOKEN,
-});
+const client = postgres(dbUrl, { max: 1, prepare: false });
 
 async function main() {
-  console.log(`Seeding ${totalEmails} emails across ${accountCount} accounts into ${dbUrl}`);
+  try {
+    console.log(`Seeding ${totalEmails} emails across ${accountCount} accounts into ${dbUrl}`);
 
-  const accountValues = Array.from({ length: accountCount }, (_, index) => {
-    const id = `seed-account-${index + 1}`;
-    const email = `seed${index + 1}@example.com`;
-    return `('${id}', 'gmail', '${email}', 'Seed Account ${index + 1}', 'seed-creds', unixepoch())`;
-  }).join(",\n");
+    const nowUnix = "cast(extract(epoch from now()) as integer)";
+    const accountValues = Array.from({ length: accountCount }, (_, index) => {
+      const id = `seed-account-${index + 1}`;
+      const email = `seed${index + 1}@example.com`;
+      return `('${id}', 'gmail', '${email}', 'Seed Account ${index + 1}', 'seed-creds', ${nowUnix})`;
+    }).join(",\n");
 
-  await client.execute("delete from attachments where email_id like 'seed-email-%'");
-  await client.execute("delete from emails where id like 'seed-email-%'");
-  await client.execute("delete from accounts where id like 'seed-account-%'");
-  await client.execute(
-    `insert into accounts (id, provider, email, display_name, credentials, created_at) values ${accountValues}`
-  );
+    await client.unsafe("delete from attachments where email_id like 'seed-email-%'");
+    await client.unsafe("delete from emails where id like 'seed-email-%'");
+    await client.unsafe("delete from accounts where id like 'seed-account-%'");
+    await client.unsafe(
+      `insert into accounts (id, provider, email, display_name, credentials, created_at) values ${accountValues}`
+    );
 
-  const sql = `
+    const insertSql = `
 WITH RECURSIVE seq(x) AS (
   SELECT 1
   UNION ALL
@@ -74,19 +73,22 @@ SELECT
   '<p>Benchmark body html #' || x || '</p>',
   CASE WHEN x % 4 = 0 THEN 1 ELSE 0 END,
   CASE WHEN x % 10 = 0 THEN 1 ELSE 0 END,
-  unixepoch() - (x * 90),
+  ${nowUnix} - (x * 90),
   'INBOX',
-  unixepoch()
+  ${nowUnix}
 FROM seq;
 `;
 
-  await client.execute(sql);
+    await client.unsafe(insertSql);
 
-  const count = await client.execute(
-    "select count(*) as total from emails where id like 'seed-email-%'"
-  );
-  console.log(`Seeded rows: ${count.rows[0]?.total ?? 0}`);
-  console.log("Done.");
+    const count = await client`
+      select count(*)::int as total from emails where id like 'seed-email-%'
+    `;
+    console.log(`Seeded rows: ${count[0]?.total ?? 0}`);
+    console.log("Done.");
+  } finally {
+    await client.end();
+  }
 }
 
 main().catch((error) => {

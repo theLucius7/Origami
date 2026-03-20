@@ -7,7 +7,7 @@
 - 単一インスタンス
 - 単一 owner
 - 公開アクセス
-- Vercel + Turso + Cloudflare R2
+- Vercel + Neon + Cloudflare R2
 
 最短手順を見たい場合は、まず次を見てください。
 
@@ -31,7 +31,7 @@
 実際には、次の順で進めると安定しやすいです。
 
 1. 最終的な本番ドメインを決める
-2. Turso / R2 / GitHub OAuth / Gmail OAuth / Outlook OAuth を準備する
+2. Neon / R2 / GitHub OAuth / Gmail OAuth / Outlook OAuth を準備する
 3. 環境変数を埋めて `npm run db:setup` を実行する
 4. Vercel にデプロイする
 5. 初回ログイン、初期化、アカウント接続、上線チェックを行う
@@ -39,7 +39,7 @@
 ## 本番構成
 
 - **Runtime:** Vercel
-- **Database:** Turso / libSQL
+- **Database:** Neon / PostgreSQL
 - **Object storage:** Cloudflare R2
 - **Sign-in:** GitHub OAuth App
 - **Mailbox providers:** Gmail OAuth, Outlook OAuth, IMAP/SMTP
@@ -76,8 +76,7 @@ ENCRYPTION_KEY=64-char-hex-key
 AUTH_SECRET=64-char-hex-key
 CRON_SECRET=64-char-hex-key
 
-TURSO_DATABASE_URL=...
-TURSO_AUTH_TOKEN=...
+DATABASE_URL=postgresql://user:password@ep-example.ap-southeast-1.aws.neon.tech/origami?sslmode=require
 
 R2_ACCESS_KEY_ID=...
 R2_SECRET_ACCESS_KEY=...
@@ -91,7 +90,7 @@ R2_ENDPOINT=https://<ACCOUNT_ID>.r2.cloudflarestorage.com
 
 - **アプリ基本**：`NEXT_PUBLIC_APP_URL`、`ENCRYPTION_KEY`、`AUTH_SECRET`
 - **ログイン制御**：`GITHUB_CLIENT_ID`、`GITHUB_CLIENT_SECRET`、`GITHUB_ALLOWED_LOGIN`
-- **データベース**：`TURSO_DATABASE_URL`、`TURSO_AUTH_TOKEN`
+- **データベース**：`DATABASE_URL`
 - **添付保存**：`R2_ACCESS_KEY_ID`、`R2_SECRET_ACCESS_KEY`、`R2_BUCKET_NAME`、`R2_ENDPOINT`
 - **定期実行**：`CRON_SECRET`
 - **既定のメール OAuth app（任意）**：`GMAIL_CLIENT_ID`、`GMAIL_CLIENT_SECRET`、`OUTLOOK_CLIENT_ID`、`OUTLOOK_CLIENT_SECRET`
@@ -281,7 +280,7 @@ npm run verify
 本番導入を続けるなら次の順がおすすめです。
 
 1. [クイックスタート](/ja/quick-start)
-2. [Turso データベース詳細設定](/ja/turso)
+2. [Neon PostgreSQL 詳細設定](/ja/neon)
 3. [Cloudflare R2 / bucket 詳細設定](/ja/r2-storage)
 4. [GitHub Auth 詳細設定](/ja/github-auth)
 5. [Gmail OAuth 詳細設定](/ja/gmail-oauth)

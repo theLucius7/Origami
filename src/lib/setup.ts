@@ -12,7 +12,7 @@ export async function getSetupStatus() {
     installation,
     checks: {
       githubOAuthConfigured: hasGitHubOAuthConfig(),
-      databaseConfigured: hasRequiredValue(process.env.TURSO_DATABASE_URL),
+      databaseConfigured: hasRequiredValue(process.env.DATABASE_URL),
       encryptionConfigured: hasRequiredValue(process.env.ENCRYPTION_KEY),
       r2Configured: [
         process.env.R2_ACCESS_KEY_ID,

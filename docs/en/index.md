@@ -28,7 +28,7 @@ features:
   - title: OAuth app management
     details: Gmail and Outlook support both env-backed default apps and DB-managed apps.
   - title: Self-hosting friendly
-    details: The production path is documented around Vercel, Turso, and Cloudflare R2.
+    details: The production path is documented around Vercel, Neon PostgreSQL, and Cloudflare R2.
 ---
 
 ## Product scope
@@ -89,7 +89,7 @@ If this is your first time opening the docs, do not read everything from top to 
 
 - **I want a working production instance as quickly as possible** → [Quick Start](/en/quick-start)
 - **I want the full production path and do not want to miss details** → [Deployment](/en/deployment)
-- **I am stuck in a third-party console and need click-by-click guidance** → [Turso](/en/turso), [R2](/en/r2-storage), [GitHub Auth](/en/github-auth), [Gmail OAuth](/en/gmail-oauth), [Outlook OAuth](/en/outlook-oauth)
+- **I am stuck in a third-party console and need click-by-click guidance** → [Neon PostgreSQL](/en/neon), [R2](/en/r2-storage), [GitHub Auth](/en/github-auth), [Gmail OAuth](/en/gmail-oauth), [Outlook OAuth](/en/outlook-oauth)
 - **I want to run locally, change code, or debug OAuth** → [Development](/en/development)
 - **I want to understand the app structure first** → [Architecture](/en/architecture) and [Project Structure](/en/project-structure)
 
@@ -104,7 +104,7 @@ If this is your first time opening the docs, do not read everything from top to 
 ### Path B: full production deployment
 
 1. [Deployment](/en/deployment)
-2. [Turso database detailed setup](/en/turso)
+2. [Neon PostgreSQL detailed setup](/en/neon)
 3. [Cloudflare R2 / bucket detailed setup](/en/r2-storage)
 4. [GitHub Auth detailed setup](/en/github-auth)
 5. [Gmail OAuth detailed setup](/en/gmail-oauth)

@@ -1,12 +1,22 @@
-import { sqliteTable, text, integer, uniqueIndex, index } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
+import {
+  boolean,
+  index,
+  integer,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 
-export const accounts = sqliteTable("accounts", {
+const nowUnix = sql`cast(extract(epoch from now()) as integer)`;
+
+export const accounts = pgTable("accounts", {
   id: text("id").primaryKey(),
-  provider: text("provider").notNull(), // 'gmail' | 'outlook' | 'qq' | 'imap_smtp'
+  provider: text("provider").notNull(),
   email: text("email").notNull().unique(),
   displayName: text("display_name"),
-  credentials: text("credentials").notNull(), // AES-encrypted JSON
+  credentials: text("credentials").notNull(),
   oauthAppId: text("oauth_app_id"),
   presetKey: text("preset_key"),
   authUser: text("auth_user"),
@@ -21,19 +31,19 @@ export const accounts = sqliteTable("accounts", {
   syncStarBack: integer("sync_star_back").notNull().default(0),
   initialFetchLimit: integer("initial_fetch_limit").notNull().default(200),
   lastSyncedAt: integer("last_synced_at"),
-  createdAt: integer("created_at").default(sql`(unixepoch())`),
+  createdAt: integer("created_at").default(nowUnix),
 });
 
-export const oauthApps = sqliteTable(
+export const oauthApps = pgTable(
   "oauth_apps",
   {
     id: text("id").primaryKey(),
-    provider: text("provider").notNull(), // 'gmail' | 'outlook'
+    provider: text("provider").notNull(),
     label: text("label").notNull(),
     clientId: text("client_id").notNull(),
-    clientSecret: text("client_secret").notNull(), // AES-encrypted
+    clientSecret: text("client_secret").notNull(),
     tenant: text("tenant"),
-    createdAt: integer("created_at").default(sql`(unixepoch())`),
+    createdAt: integer("created_at").default(nowUnix),
   },
   (t) => [
     uniqueIndex("oauth_apps_provider_label_idx").on(t.provider, t.label),
@@ -41,7 +51,7 @@ export const oauthApps = sqliteTable(
   ]
 );
 
-export const appInstallation = sqliteTable("app_installation", {
+export const appInstallation = pgTable("app_installation", {
   id: text("id").primaryKey(),
   ownerGithubId: text("owner_github_id").notNull(),
   ownerGithubLogin: text("owner_github_login").notNull(),
@@ -49,11 +59,11 @@ export const appInstallation = sqliteTable("app_installation", {
   ownerGithubName: text("owner_github_name"),
   ownerGithubAvatarUrl: text("owner_github_avatar_url"),
   setupCompletedAt: integer("setup_completed_at"),
-  createdAt: integer("created_at").default(sql`(unixepoch())`),
-  updatedAt: integer("updated_at").default(sql`(unixepoch())`),
+  createdAt: integer("created_at").default(nowUnix),
+  updatedAt: integer("updated_at").default(nowUnix),
 });
 
-export const emails = sqliteTable(
+export const emails = pgTable(
   "emails",
   {
     id: text("id").primaryKey(),
@@ -64,7 +74,7 @@ export const emails = sqliteTable(
     messageId: text("message_id"),
     subject: text("subject"),
     sender: text("sender"),
-    recipients: text("recipients"), // JSON array
+    recipients: text("recipients"),
     snippet: text("snippet"),
     bodyText: text("body_text"),
     bodyHtml: text("body_html"),
@@ -86,7 +96,7 @@ export const emails = sqliteTable(
     receivedAt: integer("received_at"),
     folder: text("folder").default("INBOX"),
     rawHeaders: text("raw_headers"),
-    createdAt: integer("created_at").default(sql`(unixepoch())`),
+    createdAt: integer("created_at").default(nowUnix),
   },
   (t) => [
     uniqueIndex("account_message_idx").on(t.accountId, t.messageId),
@@ -111,10 +121,14 @@ export const emails = sqliteTable(
       t.isRead,
       t.receivedAt
     ),
+    index("emails_search_document_idx").using(
+      "gin",
+      sql`to_tsvector('simple', concat_ws(' ', coalesce(${t.subject}, ''), coalesce(${t.sender}, ''), coalesce(${t.snippet}, '')))`
+    ),
   ]
 );
 
-export const attachments = sqliteTable(
+export const attachments = pgTable(
   "attachments",
   {
     id: text("id").primaryKey(),
@@ -125,12 +139,12 @@ export const attachments = sqliteTable(
     contentType: text("content_type"),
     size: integer("size"),
     r2ObjectKey: text("r2_object_key").notNull(),
-    createdAt: integer("created_at").default(sql`(unixepoch())`),
+    createdAt: integer("created_at").default(nowUnix),
   },
   (t) => [index("attachments_email_id_idx").on(t.emailId)]
 );
 
-export const composeUploads = sqliteTable(
+export const composeUploads = pgTable(
   "compose_uploads",
   {
     id: text("id").primaryKey(),
@@ -138,12 +152,12 @@ export const composeUploads = sqliteTable(
     contentType: text("content_type").notNull(),
     size: integer("size").notNull(),
     r2ObjectKey: text("r2_object_key").notNull(),
-    createdAt: integer("created_at").default(sql`(unixepoch())`),
+    createdAt: integer("created_at").default(nowUnix),
   },
   (t) => [index("compose_uploads_created_idx").on(t.createdAt)]
 );
 
-export const sentMessages = sqliteTable(
+export const sentMessages = pgTable(
   "sent_messages",
   {
     id: text("id").primaryKey(),
@@ -162,7 +176,7 @@ export const sentMessages = sqliteTable(
     providerMessageId: text("provider_message_id"),
     status: text("status").notNull().default("sent"),
     sentAt: integer("sent_at").notNull(),
-    createdAt: integer("created_at").default(sql`(unixepoch())`),
+    createdAt: integer("created_at").default(nowUnix),
   },
   (t) => [
     index("sent_messages_account_sent_idx").on(t.accountId, t.sentAt),
@@ -170,7 +184,7 @@ export const sentMessages = sqliteTable(
   ]
 );
 
-export const sentMessageAttachments = sqliteTable(
+export const sentMessageAttachments = pgTable(
   "sent_message_attachments",
   {
     id: text("id").primaryKey(),
@@ -181,23 +195,23 @@ export const sentMessageAttachments = sqliteTable(
     contentType: text("content_type"),
     size: integer("size"),
     r2ObjectKey: text("r2_object_key").notNull(),
-    createdAt: integer("created_at").default(sql`(unixepoch())`),
+    createdAt: integer("created_at").default(nowUnix),
   },
   (t) => [index("sent_message_attachments_sent_idx").on(t.sentMessageId)]
 );
 
-export const authUsers = sqliteTable(
+export const authUsers = pgTable(
   "user",
   {
     id: text("id").primaryKey(),
     name: text("name").notNull(),
     email: text("email").notNull(),
-    emailVerified: integer("email_verified", { mode: "boolean" }).notNull().default(false),
+    emailVerified: boolean("email_verified").notNull().default(false),
     image: text("image"),
     githubId: text("github_id").notNull(),
     githubLogin: text("github_login").notNull(),
-    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
-    updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
   },
   (t) => [
     uniqueIndex("auth_user_email_idx").on(t.email),
@@ -206,7 +220,7 @@ export const authUsers = sqliteTable(
   ]
 );
 
-export const authSessions = sqliteTable(
+export const authSessions = pgTable(
   "session",
   {
     id: text("id").primaryKey(),
@@ -214,11 +228,11 @@ export const authSessions = sqliteTable(
       .notNull()
       .references(() => authUsers.id, { onDelete: "cascade" }),
     token: text("token").notNull(),
-    expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }).notNull(),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
-    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
-    updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
   },
   (t) => [
     uniqueIndex("auth_session_token_idx").on(t.token),
@@ -227,7 +241,7 @@ export const authSessions = sqliteTable(
   ]
 );
 
-export const authAccounts = sqliteTable(
+export const authAccounts = pgTable(
   "account",
   {
     id: text("id").primaryKey(),
@@ -239,12 +253,12 @@ export const authAccounts = sqliteTable(
     accessToken: text("access_token"),
     refreshToken: text("refresh_token"),
     idToken: text("id_token"),
-    accessTokenExpiresAt: integer("access_token_expires_at", { mode: "timestamp" }),
-    refreshTokenExpiresAt: integer("refresh_token_expires_at", { mode: "timestamp" }),
+    accessTokenExpiresAt: timestamp("access_token_expires_at", { withTimezone: true, mode: "date" }),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at", { withTimezone: true, mode: "date" }),
     scope: text("scope"),
     password: text("password"),
-    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
-    updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
   },
   (t) => [
     uniqueIndex("auth_account_provider_account_idx").on(t.providerId, t.accountId),
@@ -252,15 +266,15 @@ export const authAccounts = sqliteTable(
   ]
 );
 
-export const authVerifications = sqliteTable(
+export const authVerifications = pgTable(
   "verification",
   {
     id: text("id").primaryKey(),
     identifier: text("identifier").notNull(),
     value: text("value").notNull(),
-    expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
-    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
-    updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
   },
   (t) => [
     uniqueIndex("auth_verification_identifier_value_idx").on(t.identifier, t.value),

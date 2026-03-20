@@ -12,7 +12,7 @@ If you follow this page successfully, you should end up with:
 
 - a publicly reachable Origami instance
 - a working GitHub owner sign-in
-- a usable Turso database
+- a usable Neon Postgres database
 - a working Cloudflare R2 attachment store
 - at least one mailbox account that can sync and send mail
 
@@ -21,7 +21,7 @@ If you follow this page successfully, you should end up with:
 Origami is currently most stable in this production combination:
 
 - **Runtime:** Vercel
-- **Database:** Turso / libSQL
+- **Database:** Neon / PostgreSQL
 - **Attachment storage:** Cloudflare R2
 - **Sign-in:** GitHub OAuth App
 - **Mailbox providers:** Gmail OAuth, Outlook OAuth, IMAP/SMTP
@@ -40,7 +40,7 @@ Before you open all those third-party dashboards, confirm these four things firs
 Prepare these first:
 
 - a production domain such as `mail.example.com`
-- a Turso database
+- a Neon Postgres database
 - a Cloudflare R2 bucket
 - a GitHub OAuth App for signing in to Origami
 - Gmail / Outlook OAuth apps if you need those providers
@@ -49,7 +49,7 @@ Prepare these first:
 
 Recommended setup order:
 
-1. [Create the Turso database](/en/turso)
+1. [Create the Neon Postgres database](/en/neon)
 2. [Configure Cloudflare R2](/en/r2-storage)
 3. [Configure GitHub Auth](/en/github-auth)
 4. [Configure Gmail OAuth if needed](/en/gmail-oauth)
@@ -84,8 +84,7 @@ ENCRYPTION_KEY=64-char-hex-key
 AUTH_SECRET=64-char-hex-key
 CRON_SECRET=64-char-hex-key
 
-TURSO_DATABASE_URL=...
-TURSO_AUTH_TOKEN=...
+DATABASE_URL=postgresql://user:password@ep-example.ap-southeast-1.aws.neon.tech/origami?sslmode=require
 
 R2_ACCESS_KEY_ID=...
 R2_SECRET_ACCESS_KEY=...
@@ -170,7 +169,7 @@ After deployment, confirm again that:
 
 - `NEXT_PUBLIC_APP_URL` in Vercel is `https://mail.example.com`
 - GitHub / Gmail / Outlook callbacks all use the same domain
-- Turso, R2, and the application all belong to the same production configuration
+- Neon, R2, and the application all belong to the same production configuration
 
 If you want to catch obvious mistakes quickly, do these three checks immediately:
 
@@ -256,7 +255,7 @@ Check these four things first:
 Check these three things first:
 
 1. whether a brand-new database used `npm run db:setup` first
-2. whether `TURSO_DATABASE_URL` / `TURSO_AUTH_TOKEN` belong to the same database
+2. whether `DATABASE_URL` points to the correct production Neon database
 3. whether you accidentally pointed production at a development database
 
 ## Next
@@ -264,7 +263,7 @@ Check these three things first:
 If you want to keep improving the production deployment, continue in this order:
 
 1. [Deployment](/en/deployment)
-2. [Turso database detailed setup](/en/turso)
+2. [Neon PostgreSQL detailed setup](/en/neon)
 3. [Cloudflare R2 / bucket detailed setup](/en/r2-storage)
 4. [GitHub Auth detailed setup](/en/github-auth)
 5. [Gmail OAuth detailed setup](/en/gmail-oauth)

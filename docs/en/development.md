@@ -21,7 +21,7 @@ Use this page if you want to:
 
 - Node.js 22+
 - npm
-- a development Turso / libSQL database
+- a development Neon / PostgreSQL database
 - a development Cloudflare R2 bucket
 - a dedicated local GitHub OAuth App
 - development Gmail / Outlook OAuth apps when needed
@@ -41,8 +41,7 @@ ENCRYPTION_KEY=64-char-hex-key
 AUTH_SECRET=64-char-hex-key
 CRON_SECRET=64-char-hex-key
 
-TURSO_DATABASE_URL=...
-TURSO_AUTH_TOKEN=...
+DATABASE_URL=postgresql://user:password@ep-example.ap-southeast-1.aws.neon.tech/origami_dev?sslmode=require
 
 R2_ACCOUNT_ID=...
 R2_ACCESS_KEY_ID=...
@@ -55,7 +54,7 @@ A useful way to think about these variables is to group them into five sets:
 
 - **App basics**: `NEXT_PUBLIC_APP_URL`, `ENCRYPTION_KEY`, `AUTH_SECRET`
 - **GitHub sign-in**: `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_ALLOWED_LOGIN`
-- **Database**: `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`
+- **Database**: `DATABASE_URL`
 - **Attachment storage**: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_ENDPOINT`
 - **Scheduled jobs**: `CRON_SECRET`
 
@@ -142,8 +141,7 @@ Check these first:
 
 Check these first:
 
-- `TURSO_DATABASE_URL`
-- `TURSO_AUTH_TOKEN`
+- `DATABASE_URL`
 - whether `db:setup` has already run against the current database
 
 ### Attachment upload issues

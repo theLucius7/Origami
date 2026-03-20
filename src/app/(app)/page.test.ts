@@ -49,8 +49,14 @@ describe("InboxPage", () => {
       search: "invoice",
     });
     expect(listAccountsMock).toHaveBeenCalledTimes(1);
-    expect(element.type).toBe(InboxViewMock);
-    expect(element.props).toEqual({
+    expect(element.type).toBe("div");
+
+    const inboxView = Array.isArray(element.props.children)
+      ? element.props.children[0]
+      : element.props.children;
+
+    expect(inboxView.type).toBe(InboxViewMock);
+    expect(inboxView.props).toEqual({
       initialEmails: emails,
       accountProviders: {
         acc_1: "gmail",

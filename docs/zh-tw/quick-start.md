@@ -12,7 +12,7 @@
 
 - 可公開訪問的 Origami 實例
 - 可登入的 GitHub owner 帳號
-- 可用的 Turso 資料庫
+- 可用的 Neon PostgreSQL 資料庫
 - 可用的 Cloudflare R2 附件儲存
 - 至少一個可正常同步 / 發信的郵箱帳號
 
@@ -21,7 +21,7 @@
 Origami 目前最穩定的正式環境組合是：
 
 - **應用執行環境**：Vercel
-- **資料庫**：Turso / libSQL
+- **資料庫**：Neon / PostgreSQL
 - **附件儲存**：Cloudflare R2
 - **登入方式**：GitHub OAuth App
 - **信箱接入**：Gmail OAuth、Outlook OAuth、IMAP/SMTP
@@ -40,7 +40,7 @@ Origami 目前最穩定的正式環境組合是：
 開始之前，請先準備以下資源：
 
 - 一個正式網域，例如 `mail.example.com`
-- 一個 Turso 資料庫
+- 一個 Neon PostgreSQL 資料庫
 - 一個 Cloudflare R2 bucket
 - 一個 GitHub OAuth App（用於登入 Origami）
 - 若要接入 Gmail 或 Outlook，對應的 OAuth app
@@ -49,7 +49,7 @@ Origami 目前最穩定的正式環境組合是：
 
 建議按以下順序準備：
 
-1. [建立 Turso 資料庫](/zh-tw/turso)
+1. [建立 Neon PostgreSQL 資料庫](/zh-tw/neon)
 2. [設定 Cloudflare R2](/zh-tw/r2-storage)
 3. [設定 GitHub 登入](/zh-tw/github-auth)
 4. [依需求設定 Gmail OAuth](/zh-tw/gmail-oauth)
@@ -84,8 +84,7 @@ ENCRYPTION_KEY=64-char-hex-key
 AUTH_SECRET=64-char-hex-key
 CRON_SECRET=64-char-hex-key
 
-TURSO_DATABASE_URL=...
-TURSO_AUTH_TOKEN=...
+DATABASE_URL=postgresql://user:password@ep-example.ap-southeast-1.aws.neon.tech/origami?sslmode=require
 
 R2_ACCESS_KEY_ID=...
 R2_SECRET_ACCESS_KEY=...
@@ -170,7 +169,7 @@ npm run db:setup
 
 - Vercel 中的 `NEXT_PUBLIC_APP_URL` 已設成 `https://mail.example.com`
 - GitHub / Gmail / Outlook OAuth 回調地址全部使用同一網域
-- Turso、R2 與應用環境變數來自同一套正式配置
+- Neon、R2 與應用環境變數來自同一套正式配置
 
 如果你想更快排除「剛部署就錯」的問題，建議立刻做這 3 個檢查：
 
@@ -256,7 +255,7 @@ npm run verify
 先看這 3 項：
 
 1. 全新資料庫是否優先執行了 `npm run db:setup`
-2. `TURSO_DATABASE_URL` / `TURSO_AUTH_TOKEN` 是否來自同一個資料庫
+2. `DATABASE_URL` 是否指向正確的 Neon 正式資料庫
 3. 你是否把開發環境的庫誤用到了正式環境
 
 ## 下一步
@@ -264,7 +263,7 @@ npm run verify
 如果你要繼續完善正式部署，建議按以下順序閱讀：
 
 1. [部署指南](/zh-tw/deployment)
-2. [Turso 資料庫詳細配置](/zh-tw/turso)
+2. [Neon PostgreSQL 詳細配置](/zh-tw/neon)
 3. [Cloudflare R2 / Bucket 詳細配置](/zh-tw/r2-storage)
 4. [GitHub Auth 詳細配置](/zh-tw/github-auth)
 5. [Gmail OAuth 詳細配置](/zh-tw/gmail-oauth)

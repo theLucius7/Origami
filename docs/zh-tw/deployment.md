@@ -7,7 +7,7 @@
 - 單實例
 - 單 owner
 - 公網訪問
-- Vercel + Turso + Cloudflare R2
+- Vercel + Neon + Cloudflare R2
 
 如果你只是想先完成一套可上線配置，請先閱讀：
 
@@ -31,7 +31,7 @@
 建議按這個順序推進：
 
 1. 先確定最終正式網域
-2. 再準備 Turso / R2 / GitHub OAuth / Gmail OAuth / Outlook OAuth
+2. 再準備 Neon / R2 / GitHub OAuth / Gmail OAuth / Outlook OAuth
 3. 然後填環境變數並執行 `npm run db:setup`
 4. 再把專案部署到 Vercel
 5. 最後完成首次登入、初始化、帳號接入與上線檢查
@@ -41,7 +41,7 @@
 推薦的正式部署組合：
 
 - **執行環境**：Vercel
-- **資料庫**：Turso / libSQL
+- **資料庫**：Neon / PostgreSQL
 - **物件儲存**：Cloudflare R2
 - **登入方式**：GitHub OAuth App
 - **信箱接入**：Gmail OAuth、Outlook OAuth、IMAP/SMTP
@@ -78,8 +78,7 @@ ENCRYPTION_KEY=64-char-hex-key
 AUTH_SECRET=64-char-hex-key
 CRON_SECRET=64-char-hex-key
 
-TURSO_DATABASE_URL=...
-TURSO_AUTH_TOKEN=...
+DATABASE_URL=postgresql://user:password@ep-example.ap-southeast-1.aws.neon.tech/origami?sslmode=require
 
 R2_ACCESS_KEY_ID=...
 R2_SECRET_ACCESS_KEY=...
@@ -93,7 +92,7 @@ R2_ENDPOINT=https://<ACCOUNT_ID>.r2.cloudflarestorage.com
 
 - **應用基礎**：`NEXT_PUBLIC_APP_URL`、`ENCRYPTION_KEY`、`AUTH_SECRET`
 - **登入控制**：`GITHUB_CLIENT_ID`、`GITHUB_CLIENT_SECRET`、`GITHUB_ALLOWED_LOGIN`
-- **資料庫**：`TURSO_DATABASE_URL`、`TURSO_AUTH_TOKEN`
+- **資料庫**：`DATABASE_URL`
 - **附件儲存**：`R2_ACCESS_KEY_ID`、`R2_SECRET_ACCESS_KEY`、`R2_BUCKET_NAME`、`R2_ENDPOINT`
 - **定時任務**：`CRON_SECRET`
 - **預設郵箱 OAuth app（可選）**：`GMAIL_CLIENT_ID`、`GMAIL_CLIENT_SECRET`、`OUTLOOK_CLIENT_ID`、`OUTLOOK_CLIENT_SECRET`
@@ -285,7 +284,7 @@ npm run verify
 按正式部署順序，建議繼續閱讀：
 
 1. [快速開始](/zh-tw/quick-start)
-2. [Turso 資料庫詳細配置](/zh-tw/turso)
+2. [Neon PostgreSQL 詳細配置](/zh-tw/neon)
 3. [Cloudflare R2 / Bucket 詳細配置](/zh-tw/r2-storage)
 4. [GitHub Auth 詳細配置](/zh-tw/github-auth)
 5. [Gmail OAuth 詳細配置](/zh-tw/gmail-oauth)

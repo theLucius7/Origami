@@ -9,7 +9,7 @@ Browser
   -> Next.js Proxy
   -> App Router pages / Server Actions / Route Handlers
   -> Drizzle ORM
-  -> Turso / libSQL
+  -> Neon / PostgreSQL
 
 Attachments
   -> Cloudflare R2
@@ -29,7 +29,7 @@ If you only want the simplest mental model first, think of Origami as four layer
 1. **Web app layer**: Next.js pages, Server Actions, and Route Handlers
 2. **Business logic layer**: onboarding, sync, send, triage, and write-back logic
 3. **Provider adapter layer**: Gmail, Outlook, and IMAP/SMTP integrations
-4. **Storage layer**: Turso for structured data, R2 for attachment objects
+4. **Storage layer**: Neon PostgreSQL for structured data, R2 for attachment objects
 
 ## Core design principles
 
@@ -180,7 +180,7 @@ Current behavior:
 
 ## Storage split
 
-### Turso / libSQL
+### Neon / PostgreSQL
 
 Stores:
 

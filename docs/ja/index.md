@@ -28,7 +28,7 @@ features:
   - title: OAuth app 管理
     details: Gmail と Outlook は env 既定 app と DB 管理 app の両方をサポートします。
   - title: 自前運用向け
-    details: 本番導入の導線は Vercel、Turso、Cloudflare R2 を前提に整理されています。
+    details: 本番導入の導線は Vercel、Neon PostgreSQL、Cloudflare R2 を前提に整理されています。
 ---
 
 ## プロダクトの位置付け
@@ -89,7 +89,7 @@ Origami では次の状態をローカル状態として扱います。
 
 - **できるだけ早く本番インスタンスを立ち上げたい** → [クイックスタート](/ja/quick-start)
 - **本番導入を漏れなく確認しながら進めたい** → [デプロイ](/ja/deployment)
-- **外部サービスの管理画面で詰まっている** → [Turso](/ja/turso)、[R2](/ja/r2-storage)、[GitHub Auth](/ja/github-auth)、[Gmail OAuth](/ja/gmail-oauth)、[Outlook OAuth](/ja/outlook-oauth)
+- **外部サービスの管理画面で詰まっている** → [Neon PostgreSQL](/ja/neon)、[R2](/ja/r2-storage)、[GitHub Auth](/ja/github-auth)、[Gmail OAuth](/ja/gmail-oauth)、[Outlook OAuth](/ja/outlook-oauth)
 - **ローカル実行、コード変更、OAuth デバッグをしたい** → [開発とデバッグ](/ja/development)
 - **構造を先に理解したい** → [アーキテクチャ](/ja/architecture) と [プロジェクト構成](/ja/project-structure)
 
@@ -104,7 +104,7 @@ Origami では次の状態をローカル状態として扱います。
 ### ルート B：本番導入を丁寧に進める
 
 1. [デプロイ](/ja/deployment)
-2. [Turso データベース詳細設定](/ja/turso)
+2. [Neon PostgreSQL 詳細設定](/ja/neon)
 3. [Cloudflare R2 / bucket 詳細設定](/ja/r2-storage)
 4. [GitHub Auth 詳細設定](/ja/github-auth)
 5. [Gmail OAuth 詳細設定](/ja/gmail-oauth)

@@ -22,7 +22,7 @@
 
 - Node.js 22+
 - npm
-- 一套可用的测试用 Turso / libSQL 数据库
+- 一套可用的测试用 Neon / PostgreSQL 数据库
 - 一套可用的测试用 Cloudflare R2 bucket
 - 本地开发专用的 GitHub OAuth App
 - 如需测试 Gmail / Outlook，对应的开发 OAuth app
@@ -44,8 +44,7 @@ ENCRYPTION_KEY=64-char-hex-key
 AUTH_SECRET=64-char-hex-key
 CRON_SECRET=64-char-hex-key
 
-TURSO_DATABASE_URL=...
-TURSO_AUTH_TOKEN=...
+DATABASE_URL=postgresql://user:password@ep-example.ap-southeast-1.aws.neon.tech/origami_dev?sslmode=require
 
 R2_ACCOUNT_ID=...
 R2_ACCESS_KEY_ID=...
@@ -58,7 +57,7 @@ R2_ENDPOINT=https://<ACCOUNT_ID>.r2.cloudflarestorage.com
 
 - **应用基础**：`NEXT_PUBLIC_APP_URL`、`ENCRYPTION_KEY`、`AUTH_SECRET`
 - **GitHub 登录**：`GITHUB_CLIENT_ID`、`GITHUB_CLIENT_SECRET`、`GITHUB_ALLOWED_LOGIN`
-- **数据库**：`TURSO_DATABASE_URL`、`TURSO_AUTH_TOKEN`
+- **数据库**：`DATABASE_URL`
 - **附件存储**：`R2_ACCOUNT_ID`、`R2_ACCESS_KEY_ID`、`R2_SECRET_ACCESS_KEY`、`R2_BUCKET_NAME`、`R2_ENDPOINT`
 - **定时任务**：`CRON_SECRET`
 
@@ -145,8 +144,7 @@ npm run db:push
 
 优先检查：
 
-- `TURSO_DATABASE_URL`
-- `TURSO_AUTH_TOKEN`
+- `DATABASE_URL`
 - 当前数据库是否已经执行 `db:setup`
 
 ### 附件上传异常

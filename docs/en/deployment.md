@@ -7,7 +7,7 @@ The default scenario is:
 - single instance
 - single owner
 - public internet access
-- Vercel + Turso + Cloudflare R2
+- Vercel + Neon + Cloudflare R2
 
 If you just want the fastest path to a working deployment, start with:
 
@@ -31,7 +31,7 @@ This page is better for people who:
 A practical order is:
 
 1. decide the final production domain first
-2. prepare Turso / R2 / GitHub OAuth / Gmail OAuth / Outlook OAuth
+2. prepare Neon / R2 / GitHub OAuth / Gmail OAuth / Outlook OAuth
 3. fill environment variables and run `npm run db:setup`
 4. deploy the project to Vercel
 5. complete first sign-in, initialization, mailbox onboarding, and go-live checks
@@ -41,7 +41,7 @@ A practical order is:
 Recommended stack:
 
 - **Runtime:** Vercel
-- **Database:** Turso / libSQL
+- **Database:** Neon / PostgreSQL
 - **Object storage:** Cloudflare R2
 - **Sign-in:** GitHub OAuth App
 - **Mailbox providers:** Gmail OAuth, Outlook OAuth, IMAP/SMTP
@@ -78,8 +78,7 @@ ENCRYPTION_KEY=64-char-hex-key
 AUTH_SECRET=64-char-hex-key
 CRON_SECRET=64-char-hex-key
 
-TURSO_DATABASE_URL=...
-TURSO_AUTH_TOKEN=...
+DATABASE_URL=postgresql://user:password@ep-example.ap-southeast-1.aws.neon.tech/origami?sslmode=require
 
 R2_ACCESS_KEY_ID=...
 R2_SECRET_ACCESS_KEY=...
@@ -93,7 +92,7 @@ If you want a quicker way to sanity-check your config, group them like this:
 
 - **App basics:** `NEXT_PUBLIC_APP_URL`, `ENCRYPTION_KEY`, `AUTH_SECRET`
 - **Sign-in control:** `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_ALLOWED_LOGIN`
-- **Database:** `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`
+- **Database:** `DATABASE_URL`
 - **Attachment storage:** `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_ENDPOINT`
 - **Scheduled jobs:** `CRON_SECRET`
 - **Default mailbox OAuth apps (optional):** `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `OUTLOOK_CLIENT_ID`, `OUTLOOK_CLIENT_SECRET`
@@ -285,7 +284,7 @@ If you are upgrading an existing instance:
 For production deployment, continue in this order:
 
 1. [Quick Start](/en/quick-start)
-2. [Turso database detailed setup](/en/turso)
+2. [Neon PostgreSQL detailed setup](/en/neon)
 3. [Cloudflare R2 / bucket detailed setup](/en/r2-storage)
 4. [GitHub Auth detailed setup](/en/github-auth)
 5. [Gmail OAuth detailed setup](/en/gmail-oauth)

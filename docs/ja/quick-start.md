@@ -12,7 +12,7 @@
 
 - インターネットからアクセスできる Origami 実例
 - GitHub owner アカウントでのログイン
-- 利用可能な Turso データベース
+- 利用可能な Neon PostgreSQL データベース
 - 利用可能な Cloudflare R2 添付ストレージ
 - 少なくとも 1 つ、同期と送信ができるメールアカウント
 
@@ -21,7 +21,7 @@
 Origami が現在もっとも安定している本番構成は次です。
 
 - **Runtime:** Vercel
-- **Database:** Turso / libSQL
+- **Database:** Neon / PostgreSQL
 - **Attachment storage:** Cloudflare R2
 - **Sign-in:** GitHub OAuth App
 - **Mailbox providers:** Gmail OAuth, Outlook OAuth, IMAP/SMTP
@@ -38,7 +38,7 @@ Origami が現在もっとも安定している本番構成は次です。
 ## 事前に用意するもの
 
 - 本番ドメイン（例: `mail.example.com`）
-- Turso データベース
+- Neon PostgreSQL データベース
 - Cloudflare R2 バケット
 - Origami ログイン用 GitHub OAuth App
 - 必要に応じて Gmail / Outlook OAuth app
@@ -47,7 +47,7 @@ Origami が現在もっとも安定している本番構成は次です。
 
 推奨順序:
 
-1. [Turso データベースを作成](/ja/turso)
+1. [Neon PostgreSQL データベースを作成](/ja/neon)
 2. [Cloudflare R2 を設定](/ja/r2-storage)
 3. [GitHub Auth を設定](/ja/github-auth)
 4. [必要なら Gmail OAuth を設定](/ja/gmail-oauth)
@@ -80,8 +80,7 @@ ENCRYPTION_KEY=64-char-hex-key
 AUTH_SECRET=64-char-hex-key
 CRON_SECRET=64-char-hex-key
 
-TURSO_DATABASE_URL=...
-TURSO_AUTH_TOKEN=...
+DATABASE_URL=postgresql://user:password@ep-example.ap-southeast-1.aws.neon.tech/origami?sslmode=require
 
 R2_ACCESS_KEY_ID=...
 R2_SECRET_ACCESS_KEY=...
@@ -156,7 +155,7 @@ npm run db:setup
 
 - `NEXT_PUBLIC_APP_URL` が本番ドメインと一致している
 - GitHub / Gmail / Outlook callback が同じドメインを使っている
-- Turso、R2、アプリが同じ本番設定一式に属している
+- Neon、R2、アプリが同じ本番設定一式に属している
 
 初回の明らかなミスを早く見つけるなら、次の 3 つをすぐ確認すると楽です。
 
@@ -230,7 +229,7 @@ npm run verify
 ### 新規環境の初期化が失敗する
 
 1. まっさらな DB で `npm run db:setup` を最初に実行したか
-2. `TURSO_DATABASE_URL` / `TURSO_AUTH_TOKEN` は同じ DB のものか
+2. `DATABASE_URL` が正しい本番 Neon DB を指しているか
 3. 本番から誤って開発 DB を参照していないか
 
 ## 次に読むページ
@@ -238,7 +237,7 @@ npm run verify
 本番導入をさらに詰めるなら、次の順で読むのがおすすめです。
 
 1. [デプロイ](/ja/deployment)
-2. [Turso データベース詳細設定](/ja/turso)
+2. [Neon PostgreSQL 詳細設定](/ja/neon)
 3. [Cloudflare R2 / bucket 詳細設定](/ja/r2-storage)
 4. [GitHub Auth 詳細設定](/ja/github-auth)
 5. [Gmail OAuth 詳細設定](/ja/gmail-oauth)

@@ -1,14 +1,21 @@
-import { createClient } from "@libsql/client";
-import { drizzle } from "drizzle-orm/libsql";
-import { getDatabaseConfig } from "@/config/db";
+import postgres from "postgres";
+import { drizzle } from "drizzle-orm/postgres-js";
+import { getDatabaseUrl } from "@/config/db";
 import * as schema from "./schema";
 
+let _client: ReturnType<typeof postgres> | null = null;
 let _db: ReturnType<typeof drizzle<typeof schema>> | null = null;
+
+function getClient() {
+  if (!_client) {
+    _client = postgres(getDatabaseUrl(), { max: 1, prepare: false });
+  }
+  return _client;
+}
 
 export function getDb() {
   if (!_db) {
-    const client = createClient(getDatabaseConfig());
-    _db = drizzle(client, { schema });
+    _db = drizzle(getClient(), { schema });
   }
   return _db;
 }

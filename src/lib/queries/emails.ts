@@ -6,9 +6,9 @@ import {
   desc,
   eq,
   gt,
+  ilike,
   inArray,
   isNull,
-  like,
   lte,
   ne,
   or,
@@ -39,9 +39,9 @@ export const emailSummaryColumns = {
 
 function buildLikeSearchCondition(search: string): SQL<unknown> {
   return or(
-    like(emails.subject, `%${search}%`),
-    like(emails.sender, `%${search}%`),
-    like(emails.snippet, `%${search}%`)
+    ilike(emails.subject, `%${search}%`),
+    ilike(emails.sender, `%${search}%`),
+    ilike(emails.snippet, `%${search}%`)
   )!;
 }
 
@@ -72,21 +72,18 @@ export function buildFtsSearchQuery(searchTerms: string[]): string | null {
     tokens.push(normalized);
   }
 
-  return tokens.map((token) => `${token}*`).join(" ");
+  return tokens.map((token) => `${token}:*`).join(" & ");
 }
 
 export function isFtsFallbackableError(error: unknown): boolean {
   if (!(error instanceof Error)) return false;
   const message = error.message.toLowerCase();
   return (
-    message.includes("no such table: emails_fts") ||
-    message.includes("no such module: fts5") ||
-    message.includes("fts5") ||
-    message.includes("malformed match expression") ||
-    message.includes("unable to use function match") ||
-    message.includes("unterminated string") ||
-    message.includes("syntax error") ||
-    message.includes("no such column:")
+    message.includes("syntax error in tsquery") ||
+    message.includes("text search configuration") ||
+    message.includes("function to_tsquery") ||
+    message.includes("function to_tsvector") ||
+    message.includes("operator does not exist")
   );
 }
 
@@ -163,11 +160,11 @@ export async function buildEmailListConditions(opts: {
   }
 
   for (const fromTerm of parsed.fromTerms) {
-    conditions.push(like(emails.sender, `%${fromTerm}%`));
+    conditions.push(ilike(emails.sender, `%${fromTerm}%`));
   }
 
   for (const subjectTerm of parsed.subjectTerms) {
-    conditions.push(like(emails.subject, `%${subjectTerm}%`));
+    conditions.push(ilike(emails.subject, `%${subjectTerm}%`));
   }
 
   return conditions;
@@ -200,11 +197,10 @@ export async function listEmails(opts?: {
     if (ftsQuery) {
       const ftsWhere = and(
         ...baseConditions,
-        sql`${emails.id} in (
-          select id from emails where rowid in (
-            select rowid from emails_fts where emails_fts match ${ftsQuery}
-          )
-        )`
+        sql`to_tsvector(
+          'simple',
+          concat_ws(' ', coalesce(${emails.subject}, ''), coalesce(${emails.sender}, ''), coalesce(${emails.snippet}, ''))
+        ) @@ to_tsquery('simple', ${ftsQuery})`
       );
 
       try {
