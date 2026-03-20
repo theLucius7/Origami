@@ -22,7 +22,7 @@ import { getClientActionErrorMessage, useClientAction } from "@/hooks/use-client
 import { getAccountsMessages } from "@/i18n/accounts";
 import { formatRelativeTime } from "@/lib/format";
 import { getMailboxPreset, getMailboxPresetLabel } from "@/lib/providers/imap-smtp/presets";
-import { mapRuntimeErrorToMessage } from "@/lib/runtime-errors";
+import { getSafeRuntimeErrorMessage } from "@/lib/runtime-errors";
 import { useToast } from "@/hooks/use-toast";
 
 interface AccountCardProps {
@@ -369,7 +369,11 @@ export function AccountCard({ account, oauthApps }: AccountCardProps) {
                   <div className="mt-2 text-xs text-muted-foreground">
                     <p className="line-clamp-2 text-foreground/90">
                       {t.accountCard.latestError(
-                        mapRuntimeErrorToMessage({ locale, error: account.latestHydrationError }) ?? account.latestHydrationError
+                        getSafeRuntimeErrorMessage({
+                          locale,
+                          error: account.latestHydrationError,
+                          fallback: messages.common.actionFailed,
+                        }) ?? messages.common.actionFailed
                       )}
                     </p>
                     {account.latestHydrationAt && (
@@ -397,7 +401,11 @@ export function AccountCard({ account, oauthApps }: AccountCardProps) {
                   <div className="mt-2 text-xs text-muted-foreground">
                     <p className="line-clamp-2 text-foreground/90">
                       {t.accountCard.latestError(
-                        mapRuntimeErrorToMessage({ locale, error: account.latestReadWriteBackError }) ?? account.latestReadWriteBackError
+                        getSafeRuntimeErrorMessage({
+                          locale,
+                          error: account.latestReadWriteBackError,
+                          fallback: messages.common.actionFailed,
+                        }) ?? messages.common.actionFailed
                       )}
                     </p>
                     {account.latestReadWriteBackAt && (
@@ -425,7 +433,11 @@ export function AccountCard({ account, oauthApps }: AccountCardProps) {
                   <div className="mt-2 text-xs text-muted-foreground">
                     <p className="line-clamp-2 text-foreground/90">
                       {t.accountCard.latestError(
-                        mapRuntimeErrorToMessage({ locale, error: account.latestStarWriteBackError }) ?? account.latestStarWriteBackError
+                        getSafeRuntimeErrorMessage({
+                          locale,
+                          error: account.latestStarWriteBackError,
+                          fallback: messages.common.actionFailed,
+                        }) ?? messages.common.actionFailed
                       )}
                     </p>
                     {account.latestStarWriteBackAt && (

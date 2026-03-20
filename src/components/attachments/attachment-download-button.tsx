@@ -23,11 +23,12 @@ export function AttachmentDownloadButton({
     if (isDownloading) return;
     setIsDownloading(true);
 
+    let description = messages.common.attachmentDownloadFailed;
+
     try {
       const response = await fetch(`/api/attachments/${encodeURIComponent(attachmentId)}`);
 
       if (!response.ok) {
-        let description = messages.common.attachmentDownloadFailed;
         try {
           const data = await response.json();
           if (data?.error && typeof data.error === "string") {
@@ -37,7 +38,7 @@ export function AttachmentDownloadButton({
           // ignore JSON parse failures and use localized fallback below
         }
 
-        throw new Error(description);
+        throw new Error("attachment_download_failed");
       }
 
       const blob = await response.blob();
@@ -49,13 +50,10 @@ export function AttachmentDownloadButton({
       link.click();
       link.remove();
       window.URL.revokeObjectURL(objectUrl);
-    } catch (error) {
+    } catch {
       toast({
         title: messages.common.actionFailed,
-        description:
-          error instanceof Error && error.message
-            ? error.message
-            : messages.common.attachmentDownloadFailed,
+        description,
         variant: "error",
       });
     } finally {

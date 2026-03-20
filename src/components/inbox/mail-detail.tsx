@@ -31,7 +31,7 @@ import type { Email, Attachment } from "@/lib/db/schema";
 import { formatRelativeTime, formatFileSize } from "@/lib/format";
 import { sanitizeEmailHtml } from "@/lib/email-html";
 import { parseStoredStringList } from "@/lib/string-list";
-import { mapRuntimeErrorToMessage } from "@/lib/runtime-errors";
+import { getSafeRuntimeErrorMessage, mapRuntimeErrorToMessage } from "@/lib/runtime-errors";
 import { AttachmentDownloadButton } from "@/components/attachments/attachment-download-button";
 import { SnoozeDialog } from "./snooze-dialog";
 import { shouldPollMailDetailStatus } from "./mail-detail-state";
@@ -53,7 +53,7 @@ function renderWriteBackStatus(
   locale: ReturnType<typeof useI18n>["locale"],
   messages: ReturnType<typeof useI18n>["messages"]
 ) {
-  const description = mapRuntimeErrorToMessage({ locale, error });
+  const description = getSafeRuntimeErrorMessage({ locale, error, fallback: null });
 
   switch (status) {
     case "pending":
@@ -285,7 +285,11 @@ export function MailDetail({
               <div className="flex items-center gap-1 text-xs text-destructive">
                 <AlertCircle className="h-3 w-3" />
                 <span>{messages.mailDetail.hydrationFailedDetail(
-                  mapRuntimeErrorToMessage({ locale, error: email.hydrationError }) ?? email.hydrationError
+                  getSafeRuntimeErrorMessage({
+                    locale,
+                    error: email.hydrationError,
+                    fallback: messages.common.actionFailed,
+                  }) ?? messages.common.actionFailed
                 )}</span>
               </div>
             )}

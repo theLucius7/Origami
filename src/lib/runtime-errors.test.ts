@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { encodeRuntimeError, mapRuntimeErrorToMessage } from "./runtime-errors";
+import { encodeRuntimeError, getSafeRuntimeErrorMessage, mapRuntimeErrorToMessage } from "./runtime-errors";
 
 describe("runtime error mapping", () => {
   it("localizes structured runtime errors", () => {
@@ -53,5 +53,30 @@ describe("runtime error mapping", () => {
         error: "socket hang up",
       })
     ).toBe("socket hang up");
+
+    expect(
+      mapRuntimeErrorToMessage({
+        locale: "zh-CN",
+        error: "Invalid remote id: remote-3",
+      })
+    ).toBe("远端邮件 ID 无效，无法回写。");
+  });
+
+  it("falls back safely for unknown runtime errors", () => {
+    expect(
+      getSafeRuntimeErrorMessage({
+        locale: "en",
+        error: "socket hang up",
+        fallback: "Action failed",
+      })
+    ).toBe("Action failed");
+
+    expect(
+      getSafeRuntimeErrorMessage({
+        locale: "zh-CN",
+        error: "Invalid remote id: remote-3",
+        fallback: "操作失败",
+      })
+    ).toBe("远端邮件 ID 无效，无法回写。");
   });
 });

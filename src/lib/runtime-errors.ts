@@ -6,6 +6,7 @@ type RuntimeErrorCode =
   | "HYDRATION_ACCOUNT_UNAVAILABLE"
   | "HYDRATION_REMOTE_NOT_FOUND"
   | "WRITEBACK_MISSING_REMOTE_ID"
+  | "WRITEBACK_INVALID_REMOTE_ID"
   | "WRITEBACK_INVALID_CREDENTIALS"
   | "WRITEBACK_GMAIL_SCOPE_MISSING"
   | "WRITEBACK_OUTLOOK_SCOPE_MISSING"
@@ -45,6 +46,17 @@ function getRuntimeErrorMessage(locale: AppLocale, code: RuntimeErrorCode) {
           return "リモートのメッセージ ID がないため、書き戻しを実行できません。";
         default:
           return "缺少远端邮件 ID，无法回写。";
+      }
+    case "WRITEBACK_INVALID_REMOTE_ID":
+      switch (locale) {
+        case "zh-TW":
+          return "遠端郵件 ID 無效，無法回寫。";
+        case "en":
+          return "The remote message ID is invalid, so write-back could not run.";
+        case "ja":
+          return "リモートのメッセージ ID が無効なため、書き戻しを実行できません。";
+        default:
+          return "远端邮件 ID 无效，无法回写。";
       }
     case "WRITEBACK_INVALID_CREDENTIALS":
       switch (locale) {
@@ -100,6 +112,7 @@ function parseRuntimeError(error: string): { code: RuntimeErrorCode } | null {
       code === "HYDRATION_ACCOUNT_UNAVAILABLE" ||
       code === "HYDRATION_REMOTE_NOT_FOUND" ||
       code === "WRITEBACK_MISSING_REMOTE_ID" ||
+      code === "WRITEBACK_INVALID_REMOTE_ID" ||
       code === "WRITEBACK_INVALID_CREDENTIALS" ||
       code === "WRITEBACK_GMAIL_SCOPE_MISSING" ||
       code === "WRITEBACK_OUTLOOK_SCOPE_MISSING" ||
@@ -127,6 +140,9 @@ function parseRuntimeError(error: string): { code: RuntimeErrorCode } | null {
     case "unsupported provider":
       return { code: "WRITEBACK_UNSUPPORTED_PROVIDER" };
     default:
+      if (error.startsWith("Invalid remote id:")) {
+        return { code: "WRITEBACK_INVALID_REMOTE_ID" };
+      }
       if (error.startsWith("unsupported provider:")) {
         return { code: "WRITEBACK_UNSUPPORTED_PROVIDER" };
       }
@@ -148,4 +164,20 @@ export function mapRuntimeErrorToMessage(params: {
   const parsed = parseRuntimeError(error);
   if (!parsed) return error;
   return getRuntimeErrorMessage(locale, parsed.code);
+}
+
+export function getSafeRuntimeErrorMessage(params: {
+  locale: AppLocale;
+  error: string | null | undefined;
+  fallback?: string | null;
+}) {
+  const { locale, error, fallback = null } = params;
+  if (!error) return fallback;
+
+  const mapped = mapRuntimeErrorToMessage({ locale, error });
+  if (!mapped || mapped === error) {
+    return fallback;
+  }
+
+  return mapped;
 }

@@ -89,15 +89,20 @@ export function ComposeForm({
       const formData = new FormData();
       formData.append("file", file);
 
+      let message = messages.compose.attachmentUploadFailed;
+
       try {
         const response = await fetch("/api/compose-attachments", {
           method: "POST",
           body: formData,
         });
-        const data = await response.json();
+        const data = await response.json().catch(() => null);
 
         if (!response.ok) {
-          throw new Error(data.error || messages.compose.attachmentUploadFailed);
+          if (data?.error && typeof data.error === "string") {
+            message = data.error;
+          }
+          throw new Error("compose_attachment_upload_failed");
         }
 
         setAttachments((current) =>
@@ -113,8 +118,7 @@ export function ComposeForm({
               : item
           )
         );
-      } catch (error) {
-        const message = error instanceof Error ? error.message : messages.compose.attachmentUploadFailed;
+      } catch {
         setAttachments((current) =>
           current.map((item) =>
             item.id === tempKey
