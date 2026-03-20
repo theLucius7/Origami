@@ -12,6 +12,12 @@
 - `npm run build`
 - `npm run docs:build`
 - Full gate: `npm run verify`
+- CI parity for dependency install: `npx -y npm@10.9.4 ci`
+
+## Lockfile compatibility
+- GitHub Actions currently installs with Node 22 / npm 10.9.4.
+- If `package-lock.json` is regenerated with npm 11, CI `npm ci` may fail with missing optional peer entries under `@docsearch/js` (React 18 / `@types/react` nested packages).
+- Regenerate the lockfile with `npx -y npm@10.9.4 install --package-lock-only` before pushing dependency changes.
 
 ## Useful testing notes
 - Component tests run in Vitest `node` environment and often use `renderToStaticMarkup` instead of DOM interaction.
