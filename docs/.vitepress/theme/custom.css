@@ -114,9 +114,15 @@ body {
 }
 
 .VPNavBar {
-  background: color-mix(in srgb, var(--vp-c-bg) 82%, transparent);
-  backdrop-filter: blur(16px);
-  border-bottom: 1px solid color-mix(in srgb, var(--vp-c-divider) 72%, transparent);
+  background: color-mix(in srgb, var(--vp-c-bg) 94%, transparent);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--vp-c-divider) 78%, transparent);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
+}
+
+.dark .VPNavBar {
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
 }
 
 .VPHero {
