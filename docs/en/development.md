@@ -64,7 +64,7 @@ A useful way to think about these variables is to group them into five sets:
 ### GitHub
 
 ```txt
-http://localhost:3000/api/auth/github/callback
+http://localhost:3000/api/better-auth/callback/github
 ```
 
 ### Gmail

@@ -6,7 +6,7 @@
 [![CI](https://github.com/theLucius7/Origami/actions/workflows/ci.yml/badge.svg)](https://github.com/theLucius7/Origami/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/github/license/theLucius7/Origami)](./LICENSE)
 [![Next.js 16](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org/)
-[![Turso](https://img.shields.io/badge/Database-Turso-4FF8D2?logo=turso&logoColor=111)](https://turso.tech/)
+[![Neon](https://img.shields.io/badge/Database-Neon-00E599?logo=neon&logoColor=041B2D)](https://neon.tech/)
 [![Cloudflare R2](https://img.shields.io/badge/Object%20Storage-Cloudflare%20R2-F38020?logo=cloudflare&logoColor=white)](https://developers.cloudflare.com/r2/)
 [![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://l7cp.de/Origami/)
 
@@ -18,11 +18,10 @@
 - **想逐项确认生产配置，不想漏任何细节**：看 [部署指南（生产环境）](https://l7cp.de/Origami/deployment)
 - **想本地运行、改代码、调试 OAuth**：看 [开发环境说明](https://l7cp.de/Origami/development)
 - **卡在第三方平台配置页面，不确定下一步点哪里**：直接看这些一步一步教程
-  1. [Turso 数据库详细配置](https://l7cp.de/Origami/turso)
-  2. [Cloudflare R2 / Bucket 详细配置](https://l7cp.de/Origami/r2-storage)
-  3. [GitHub Auth 详细配置](https://l7cp.de/Origami/github-auth)
-  4. [Gmail OAuth 详细配置](https://l7cp.de/Origami/gmail-oauth)
-  5. [Outlook OAuth 详细配置](https://l7cp.de/Origami/outlook-oauth)
+  1. [Cloudflare R2 / Bucket 详细配置](https://l7cp.de/Origami/r2-storage)
+  2. [GitHub Auth 详细配置](https://l7cp.de/Origami/github-auth)
+  3. [Gmail OAuth 详细配置](https://l7cp.de/Origami/gmail-oauth)
+  4. [Outlook OAuth 详细配置](https://l7cp.de/Origami/outlook-oauth)
 - **想先理解产品边界和设计取舍**：看 [架构说明](https://l7cp.de/Origami/architecture) 和 [FAQ](https://l7cp.de/Origami/faq)
 
 ## 文档
@@ -47,12 +46,11 @@
 ### 路线 B：我要稳一点，按完整生产流程走
 
 1. [部署指南（生产环境）](https://l7cp.de/Origami/deployment)
-2. [Turso 数据库详细配置](https://l7cp.de/Origami/turso)
-3. [Cloudflare R2 / Bucket 详细配置](https://l7cp.de/Origami/r2-storage)
-4. [GitHub Auth 详细配置](https://l7cp.de/Origami/github-auth)
-5. [Gmail OAuth 详细配置](https://l7cp.de/Origami/gmail-oauth)
-6. [Outlook OAuth 详细配置](https://l7cp.de/Origami/outlook-oauth)
-7. 回到 [快速开始（生产环境）](https://l7cp.de/Origami/quick-start) 做最终上线检查
+2. [Cloudflare R2 / Bucket 详细配置](https://l7cp.de/Origami/r2-storage)
+3. [GitHub Auth 详细配置](https://l7cp.de/Origami/github-auth)
+4. [Gmail OAuth 详细配置](https://l7cp.de/Origami/gmail-oauth)
+5. [Outlook OAuth 详细配置](https://l7cp.de/Origami/outlook-oauth)
+6. 回到 [快速开始（生产环境）](https://l7cp.de/Origami/quick-start) 做最终上线检查
 
 ### 路线 C：我要本地改代码
 
@@ -117,7 +115,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 - **应用本身**：`NEXT_PUBLIC_APP_URL`、`GITHUB_CLIENT_ID`、`GITHUB_CLIENT_SECRET`、`ENCRYPTION_KEY`
 - **可选安全增强**：`AUTH_SECRET`、`GITHUB_ALLOWED_LOGIN`、`CRON_SECRET`
-- **数据库**：`TURSO_DATABASE_URL`、`TURSO_AUTH_TOKEN`
+- **数据库**：`DATABASE_URL`
 - **对象存储**：`R2_ACCESS_KEY_ID`、`R2_SECRET_ACCESS_KEY`、`R2_BUCKET_NAME`、`R2_ENDPOINT`
 - **可选的默认 OAuth app**：`GMAIL_CLIENT_ID` / `GMAIL_CLIENT_SECRET`、`OUTLOOK_CLIENT_ID` / `OUTLOOK_CLIENT_SECRET`
 
@@ -128,7 +126,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 1. 在 GitHub 打开 **Settings → Developer settings → OAuth Apps → New OAuth App**
 2. 填：
    - **Homepage URL** = `https://mail.example.com`
-   - **Authorization callback URL** = `https://mail.example.com/api/auth/github/callback`
+   - **Authorization callback URL** = `https://mail.example.com/api/better-auth/callback/github`
 3. 生成 client secret
 4. 填到 `.env`：
 
@@ -185,7 +183,7 @@ npm run verify
 推荐组合：
 
 - **应用运行时**：Vercel
-- **数据库**：Turso / libSQL
+- **数据库**：Neon / PostgreSQL
 - **附件存储**：Cloudflare R2
 - **OAuth / 邮件 API**：Google Gmail API、Microsoft Graph、国内 IMAP/SMTP
 

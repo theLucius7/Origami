@@ -111,7 +111,7 @@ All OAuth callback URLs must use the **final production domain** and must stay a
 Configure the GitHub OAuth App with:
 
 - **Homepage URL:** `https://mail.example.com`
-- **Authorization callback URL:** `https://mail.example.com/api/auth/github/callback`
+- **Authorization callback URL:** `https://mail.example.com/api/better-auth/callback/github`
 
 > Do not start with a temporary `https://xxx.vercel.app` URL and expect everything to “just follow along” later.
 > If the production domain changes, the OAuth platform settings need to change too.

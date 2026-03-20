@@ -111,7 +111,7 @@ OUTLOOK_CLIENT_SECRET=...
 GitHub OAuth App 中填：
 
 - **Homepage URL**：`https://mail.example.com`
-- **Authorization callback URL**：`https://mail.example.com/api/auth/github/callback`
+- **Authorization callback URL**：`https://mail.example.com/api/better-auth/callback/github`
 
 > 不要先寫成 `https://xxx.vercel.app` 這種臨時地址，再期待後面「自動跟著變」。
 > 如果正式訪問網域變了，OAuth 平台裡的地址也必須一起更新。

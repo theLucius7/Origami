@@ -72,8 +72,8 @@ Origami 選擇把它們定義為 **本地生產力狀態**，從而換取：
 1. `NEXT_PUBLIC_APP_URL` 是否真的是你目前訪問的地址
 2. GitHub OAuth App 裡的 **Homepage URL** 是否和應用地址一致
 3. GitHub OAuth App 裡的 **Authorization callback URL** 是否精確寫成：
-   - `http://localhost:3000/api/auth/github/callback`
-   - 或 `https://你的網域/api/auth/github/callback`
+   - `http://localhost:3000/api/better-auth/callback/github`
+   - 或 `https://你的網域/api/better-auth/callback/github`
 4. `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` 是否填錯、帶了空格、用了別的環境的值
 5. 如果是公網部署，是否設定了 `GITHUB_ALLOWED_LOGIN`
 6. 如果已經完成首次綁定，目前登入的 GitHub 帳號是否就是當初綁定 owner 的那個帳號

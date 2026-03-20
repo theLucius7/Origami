@@ -118,7 +118,7 @@ If you do not fill these four values, you can still create DB-managed OAuth apps
 Configure the GitHub OAuth App like this:
 
 - **Homepage URL:** `https://mail.example.com`
-- **Authorization callback URL:** `https://mail.example.com/api/auth/github/callback`
+- **Authorization callback URL:** `https://mail.example.com/api/better-auth/callback/github`
 
 It is also strongly recommended to set:
 

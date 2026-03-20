@@ -116,7 +116,7 @@ OUTLOOK_CLIENT_SECRET=...
 次のように設定します。
 
 - **Homepage URL:** `https://mail.example.com`
-- **Authorization callback URL:** `https://mail.example.com/api/auth/github/callback`
+- **Authorization callback URL:** `https://mail.example.com/api/better-auth/callback/github`
 
 公開運用なら、次も強く推奨します。
 

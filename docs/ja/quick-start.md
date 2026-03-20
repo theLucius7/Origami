@@ -105,7 +105,7 @@ OUTLOOK_CLIENT_SECRET=...
 ### GitHub
 
 - **Homepage URL:** `https://mail.example.com`
-- **Authorization callback URL:** `https://mail.example.com/api/auth/github/callback`
+- **Authorization callback URL:** `https://mail.example.com/api/better-auth/callback/github`
 
 > 最初に `https://xxx.vercel.app` のような一時 URL を入れて、後で自動的に追随してくれるだろうと期待しないでください。
 > 本番ドメインが変わったら、OAuth 側も一緒に更新が必要です。

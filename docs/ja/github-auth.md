@@ -39,7 +39,7 @@ GitHub Homepage URL
 https://mail.example.com
 
 GitHub Authorization callback URL
-https://mail.example.com/api/auth/github/callback
+https://mail.example.com/api/better-auth/callback/github
 
 許可する GitHub login
 your-github-login
@@ -111,10 +111,10 @@ Single-user inbox login for Origami
 ここは必ず次の値にします。
 
 ```txt
-https://mail.example.com/api/auth/github/callback
+https://mail.example.com/api/better-auth/callback/github
 ```
 
-最も多いミスは、ホーム URL をそのまま入れてしまうことです。正しい値には `/api/auth/github/callback` が必要です。
+最も多いミスは、ホーム URL をそのまま入れてしまうことです。正しい値には `/api/better-auth/callback/github` が必要です。
 
 ### 3. アプリを登録する
 
@@ -153,7 +153,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 - `NEXT_PUBLIC_APP_URL` は本番ドメインか
 - GitHub の **Homepage URL** はそれと一致しているか
-- GitHub の **Authorization callback URL** は `<APP_URL>/api/auth/github/callback` か
+- GitHub の **Authorization callback URL** は `<APP_URL>/api/better-auth/callback/github` か
 - `GITHUB_ALLOWED_LOGIN` は GitHub の login 名で、メールアドレスではないか
 - `AUTH_SECRET` は空ではないか
 
@@ -211,7 +211,7 @@ Authorization callback URL=...
 正しい callback は必ず：
 
 ```txt
-<APP_URL>/api/auth/github/callback
+<APP_URL>/api/better-auth/callback/github
 ```
 
 ### 4. 本番ドメイン変更後に急に壊れた

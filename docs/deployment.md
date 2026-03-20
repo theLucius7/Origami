@@ -118,7 +118,7 @@ OUTLOOK_CLIENT_SECRET=...
 GitHub OAuth App 需要配置为：
 
 - **Homepage URL**：`https://mail.example.com`
-- **Authorization callback URL**：`https://mail.example.com/api/auth/github/callback`
+- **Authorization callback URL**：`https://mail.example.com/api/better-auth/callback/github`
 
 建议同时设置：
 

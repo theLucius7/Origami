@@ -39,7 +39,7 @@ GitHub Homepage URL
 https://mail.example.com
 
 GitHub Authorization callback URL
-https://mail.example.com/api/auth/github/callback
+https://mail.example.com/api/better-auth/callback/github
 
 允許登入的 GitHub 使用者名稱
 your-github-login
@@ -111,10 +111,10 @@ Single-user inbox login for Origami
 這一欄必須精確填成：
 
 ```txt
-https://mail.example.com/api/auth/github/callback
+https://mail.example.com/api/better-auth/callback/github
 ```
 
-最常見的錯是把首頁網址直接填進來。正確值一定要帶 `/api/auth/github/callback`。
+最常見的錯是把首頁網址直接填進來。正確值一定要帶 `/api/better-auth/callback/github`。
 
 ### 第 3 步：註冊應用
 
@@ -157,7 +157,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 - `NEXT_PUBLIC_APP_URL` 是正式網域
 - GitHub 後台的 **Homepage URL** 與它一致
-- GitHub 後台的 **Authorization callback URL** 等於 `<APP_URL>/api/auth/github/callback`
+- GitHub 後台的 **Authorization callback URL** 等於 `<APP_URL>/api/better-auth/callback/github`
 - `GITHUB_ALLOWED_LOGIN` 填的是 GitHub 使用者名稱，不是電子郵件
 - `AUTH_SECRET` 不是空值
 
@@ -217,7 +217,7 @@ Authorization callback URL=...
 正確 callback 只能是：
 
 ```txt
-<APP_URL>/api/auth/github/callback
+<APP_URL>/api/better-auth/callback/github
 ```
 
 ### 4. 換了正式網域後突然登入失效

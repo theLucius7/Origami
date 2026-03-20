@@ -39,7 +39,7 @@ GitHub Homepage URL
 https://mail.example.com
 
 GitHub Authorization callback URL
-https://mail.example.com/api/auth/github/callback
+https://mail.example.com/api/better-auth/callback/github
 
 Allowed GitHub login
 your-github-login
@@ -111,10 +111,10 @@ Single-user inbox login for Origami
 This must be exactly:
 
 ```txt
-https://mail.example.com/api/auth/github/callback
+https://mail.example.com/api/better-auth/callback/github
 ```
 
-The most common mistake is putting the homepage URL here. The correct value must include `/api/auth/github/callback`.
+The most common mistake is putting the homepage URL here. The correct value must include `/api/better-auth/callback/github`.
 
 ### 3. Register the application
 
@@ -157,7 +157,7 @@ Make sure:
 
 - `NEXT_PUBLIC_APP_URL` is your production domain
 - the GitHub **Homepage URL** matches it
-- the GitHub **Authorization callback URL** equals `<APP_URL>/api/auth/github/callback`
+- the GitHub **Authorization callback URL** equals `<APP_URL>/api/better-auth/callback/github`
 - `GITHUB_ALLOWED_LOGIN` is a GitHub login, not an email address
 - `AUTH_SECRET` is not empty
 
@@ -219,7 +219,7 @@ Authorization callback URL=...
 The only correct callback is:
 
 ```txt
-<APP_URL>/api/auth/github/callback
+<APP_URL>/api/better-auth/callback/github
 ```
 
 ### 4. sign-in broke after you changed the production domain

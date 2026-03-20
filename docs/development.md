@@ -67,7 +67,7 @@ R2_ENDPOINT=https://<ACCOUNT_ID>.r2.cloudflarestorage.com
 ### GitHub
 
 ```txt
-http://localhost:3000/api/auth/github/callback
+http://localhost:3000/api/better-auth/callback/github
 ```
 
 ### Gmail

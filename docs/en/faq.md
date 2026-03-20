@@ -71,8 +71,8 @@ This order is usually fastest:
 1. whether `NEXT_PUBLIC_APP_URL` is really the address you are visiting
 2. whether the GitHub OAuth App **Homepage URL** matches the app URL
 3. whether the GitHub OAuth App **Authorization callback URL** is exactly:
-   - `http://localhost:3000/api/auth/github/callback`
-   - or `https://your-domain/api/auth/github/callback`
+   - `http://localhost:3000/api/better-auth/callback/github`
+   - or `https://your-domain/api/better-auth/callback/github`
 4. whether `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` are wrong, copied with spaces, or from another environment
 5. whether `GITHUB_ALLOWED_LOGIN` is set as intended for public deployment
 6. if the instance was already claimed, whether you are signing in with the GitHub account that originally claimed the owner binding
