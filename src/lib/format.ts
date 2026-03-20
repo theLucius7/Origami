@@ -13,6 +13,25 @@ function getIntlLocale(locale: AppLocale) {
   }
 }
 
+const dateFormatterCache = new Map<string, Intl.DateTimeFormat>();
+
+function getDateFormatter(locale: AppLocale, sameYear: boolean) {
+  const cacheKey = `${locale}:${sameYear ? "current" : "historical"}`;
+  let formatter = dateFormatterCache.get(cacheKey);
+
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat(
+      getIntlLocale(locale),
+      sameYear
+        ? { month: "short", day: "numeric" }
+        : { year: "numeric", month: "short", day: "numeric" }
+    );
+    dateFormatterCache.set(cacheKey, formatter);
+  }
+
+  return formatter;
+}
+
 export function formatRelativeTime(unixTimestamp: number, locale: AppLocale = "zh-CN"): string {
   const now = Math.floor(Date.now() / 1000);
   const diff = now - unixTimestamp;
@@ -74,9 +93,7 @@ export function formatRelativeTime(unixTimestamp: number, locale: AppLocale = "z
 
   const date = new Date(unixTimestamp * 1000);
   const sameYear = date.getFullYear() === new Date().getFullYear();
-  return new Intl.DateTimeFormat(getIntlLocale(locale), sameYear
-    ? { month: "short", day: "numeric" }
-    : { year: "numeric", month: "short", day: "numeric" }).format(date);
+  return getDateFormatter(locale, sameYear).format(date);
 }
 
 export function formatFileSize(bytes: number): string {

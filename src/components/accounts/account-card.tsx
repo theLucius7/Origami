@@ -182,7 +182,7 @@ export function AccountCard({ account, oauthApps }: AccountCardProps) {
             )}
             <p className="mt-1 text-xs text-muted-foreground">
               {account.lastSyncedAt
-                ? t.accountCard.lastSync(formatRelativeTime(account.lastSyncedAt))
+                ? t.accountCard.lastSync(formatRelativeTime(account.lastSyncedAt, locale))
                 : t.accountCard.notSynced}
             </p>
           </div>
@@ -379,7 +379,7 @@ export function AccountCard({ account, oauthApps }: AccountCardProps) {
                     {account.latestHydrationAt && (
                       <p className="mt-1 flex items-center gap-1">
                         <Clock3 className="h-3 w-3" />
-                        {formatRelativeTime(account.latestHydrationAt)}
+                        {formatRelativeTime(account.latestHydrationAt, locale)}
                       </p>
                     )}
                   </div>
@@ -411,7 +411,7 @@ export function AccountCard({ account, oauthApps }: AccountCardProps) {
                     {account.latestReadWriteBackAt && (
                       <p className="mt-1 flex items-center gap-1">
                         <Clock3 className="h-3 w-3" />
-                        {formatRelativeTime(account.latestReadWriteBackAt)}
+                        {formatRelativeTime(account.latestReadWriteBackAt, locale)}
                       </p>
                     )}
                   </div>
@@ -443,7 +443,7 @@ export function AccountCard({ account, oauthApps }: AccountCardProps) {
                     {account.latestStarWriteBackAt && (
                       <p className="mt-1 flex items-center gap-1">
                         <Clock3 className="h-3 w-3" />
-                        {formatRelativeTime(account.latestStarWriteBackAt)}
+                        {formatRelativeTime(account.latestStarWriteBackAt, locale)}
                       </p>
                     )}
                   </div>

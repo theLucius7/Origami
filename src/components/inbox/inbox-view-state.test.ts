@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { applyInboxEmailPatch, buildInboxSearchNavigationState, resolveVisibleSelectedMailId } from "./inbox-view-state";
+import {
+  applyInboxEmailBatchPatch,
+  applyInboxEmailPatch,
+  buildInboxSearchNavigationState,
+  reconcileSelectedIds,
+  resolveVisibleSelectedMailId,
+} from "./inbox-view-state";
 import type { EmailListItem } from "@/lib/db/schema";
 
 function makeEmail(overrides: Partial<EmailListItem> = {}): EmailListItem {
@@ -84,5 +90,36 @@ describe("inbox-view-state", () => {
 
     expect(unstarredInStarredView.emails).toEqual([]);
     expect(unstarredInStarredView.removedSelectedEmail).toBe(true);
+  });
+
+  it("applies batch patches in one pass without dropping earlier updates", () => {
+    const result = applyInboxEmailBatchPatch(
+      [makeEmail({ id: "mail_1" }), makeEmail({ id: "mail_2" }), makeEmail({ id: "mail_3" })],
+      ["mail_1", "mail_2"],
+      { localDone: 1 },
+      {
+        nowTs: 1_763_700_100,
+        selectedId: "mail_3",
+      }
+    );
+
+    expect(result.emails.map((email) => ({ id: email.id, localDone: email.localDone }))).toEqual([
+      { id: "mail_1", localDone: 1 },
+      { id: "mail_2", localDone: 1 },
+      { id: "mail_3", localDone: 0 },
+    ]);
+    expect(result.removedSelectedEmail).toBe(false);
+  });
+
+  it("drops hidden selected ids when the visible inbox changes", () => {
+    expect(
+      reconcileSelectedIds(
+        ["mail_1", "mail_2", "mail_3"],
+        [makeEmail({ id: "mail_2" }), makeEmail({ id: "mail_4" })]
+      )
+    ).toEqual(["mail_2"]);
+
+    const selectedIds: string[] = [];
+    expect(reconcileSelectedIds(selectedIds, [makeEmail({ id: "mail_1" })])).toBe(selectedIds);
   });
 });

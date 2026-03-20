@@ -199,7 +199,6 @@ export function ComposeForm({
 
         toast({ title: messages.compose.sendSuccess, description: messages.compose.sendSuccessDescription });
         router.push(buildComposeSuccessHref(result.localMessageId, selectedAccount.id));
-        router.refresh();
       } catch (error) {
         toast({
           title: messages.compose.sendFailed,
@@ -311,7 +310,10 @@ export function ComposeForm({
             id="compose-attachments"
             type="file"
             multiple
-            onChange={(event) => uploadFiles(event.target.files)}
+            onChange={(event) => {
+              void uploadFiles(event.target.files);
+              event.currentTarget.value = "";
+            }}
             disabled={isPending}
           />
           <p className="text-xs text-muted-foreground">{messages.compose.attachmentLimit}</p>

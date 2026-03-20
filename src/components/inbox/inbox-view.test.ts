@@ -76,6 +76,7 @@ describe("InboxView", () => {
       })
     );
 
+    expect(html).toContain('aria-label="Search mail..."');
     expect(html).toContain('aria-label="Clear search"');
     expect(html).toContain('title="Clear search"');
   });

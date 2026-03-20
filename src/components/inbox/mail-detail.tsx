@@ -349,10 +349,13 @@ export function MailDetail({
         open={snoozeOpen}
         onOpenChange={setSnoozeOpen}
         onConfirm={async (value) => {
+          let succeeded = false;
+
           await run({
             action: () => snooze([email.id], value),
             refresh: true,
             onSuccess: () => {
+              succeeded = true;
               onLocalUpdate?.(email.id, {
                 localSnoozeUntil: Math.floor(new Date(value).getTime() / 1000),
               });
@@ -363,6 +366,8 @@ export function MailDetail({
               variant: "error",
             }),
           });
+
+          return succeeded;
         }}
       />
     </>

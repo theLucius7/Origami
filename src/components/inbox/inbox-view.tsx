@@ -28,8 +28,10 @@ import {
 import type { Email, EmailListItem, Attachment } from "@/lib/db/schema";
 import { buildInboxHref } from "@/lib/inbox-route";
 import {
+  applyInboxEmailBatchPatch,
   applyInboxEmailPatch,
   buildInboxSearchNavigationState,
+  reconcileSelectedIds,
   resolveVisibleSelectedMailId,
 } from "./inbox-view-state";
 import { useI18n } from "@/components/providers/i18n-provider";
@@ -83,6 +85,7 @@ export function InboxView({
 
   useEffect(() => {
     setEmails(initialEmails);
+    setSelectedIds((current) => reconcileSelectedIds(current, initialEmails));
   }, [initialEmails]);
 
   useEffect(() => {
@@ -220,8 +223,27 @@ export function InboxView({
   }
 
   function applyBatchPatch(ids: string[], patch: Partial<Email>) {
-    ids.forEach((id) => applyLocalPatch(id, patch));
+    const now = Math.floor(Date.now() / 1000);
+    const nextState = applyInboxEmailBatchPatch(emails, ids, patch, {
+      starred,
+      nowTs: now,
+      selectedId,
+    });
+
+    setEmails(nextState.emails);
     setSelectedIds([]);
+
+    if (selectedId && ids.includes(selectedId)) {
+      setSelectedEmail((current) =>
+        current && current.id === selectedId ? { ...current, ...patch } : current
+      );
+    }
+
+    if (nextState.removedSelectedEmail) {
+      setSelectedEmail(null);
+      setSelectedAttachments([]);
+      router.replace(buildCurrentInboxHref({ mailId: undefined }), { scroll: false });
+    }
   }
 
   function handleSelect(id: string) {
@@ -260,6 +282,7 @@ export function InboxView({
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder={messages.inbox.searchPlaceholder}
+                  aria-label={messages.inbox.searchPlaceholder}
                   className="h-11 rounded-2xl border-border/80 bg-background/80 pl-10 pr-10"
                 />
                 {search && (
@@ -396,10 +419,13 @@ export function InboxView({
         onOpenChange={setBatchSnoozeOpen}
         title={messages.inbox.batchSnoozeTitle}
         onConfirm={async (value) => {
+          let succeeded = false;
+
           await run({
             action: () => snooze(selectedIds, value),
             refresh: true,
             onSuccess: () => {
+              succeeded = true;
               applyBatchPatch(selectedIds, {
                 localSnoozeUntil: Math.floor(new Date(value).getTime() / 1000),
               });
@@ -410,6 +436,8 @@ export function InboxView({
               variant: "error",
             }),
           });
+
+          return succeeded;
         }}
       />
     </>

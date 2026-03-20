@@ -23,4 +23,10 @@ describe("crypto", () => {
 
     expect(() => encrypt("test")).toThrow(/ENCRYPTION_KEY/);
   });
+
+  it("throws when ENCRYPTION_KEY contains non-hex characters", () => {
+    process.env.ENCRYPTION_KEY = "g123456789abcdef0123456789abcdef0123456789abcdef0123456789abcde";
+
+    expect(() => encrypt("test")).toThrow(/ENCRYPTION_KEY/);
+  });
 });

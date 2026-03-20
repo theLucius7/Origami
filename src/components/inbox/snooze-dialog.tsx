@@ -16,7 +16,7 @@ import { useI18n } from "@/components/providers/i18n-provider";
 interface SnoozeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: (value: string) => void | Promise<void>;
+  onConfirm: (value: string) => boolean | Promise<boolean>;
   title?: string;
 }
 
@@ -64,8 +64,10 @@ export function SnoozeDialog({
           </Button>
           <Button
             onClick={async () => {
-              await onConfirm(value);
-              handleOpenChange(false);
+              const confirmed = await onConfirm(value);
+              if (confirmed) {
+                handleOpenChange(false);
+              }
             }}
             disabled={!value}
           >

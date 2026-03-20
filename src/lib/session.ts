@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { getAuthSecret } from "@/lib/secrets";
 
@@ -41,14 +42,28 @@ function fromBase64Url(input: string): string {
   return new TextDecoder().decode(decodeBase64(base64 + "=".repeat(padding)));
 }
 
+const signingKeyCache = new Map<string, Promise<CryptoKey>>();
+
+async function getSigningKey(): Promise<CryptoKey> {
+  const secret = getAuthSecret();
+  let keyPromise = signingKeyCache.get(secret);
+
+  if (!keyPromise) {
+    keyPromise = crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(secret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+    signingKeyCache.set(secret, keyPromise);
+  }
+
+  return keyPromise;
+}
+
 async function sign(value: string): Promise<string> {
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(getAuthSecret()),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
+  const key = await getSigningKey();
   const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(value));
   return encodeBase64(new Uint8Array(signature))
     .replace(/\+/g, "-")
@@ -58,7 +73,14 @@ async function sign(value: string): Promise<string> {
 
 async function verifySignature(value: string, signature: string): Promise<boolean> {
   const expected = await sign(value);
-  return expected === signature;
+  const expectedBytes = Buffer.from(expected);
+  const signatureBytes = Buffer.from(signature);
+
+  if (expectedBytes.length !== signatureBytes.length) {
+    return false;
+  }
+
+  return timingSafeEqual(expectedBytes, signatureBytes);
 }
 
 export function getSessionCookieName() {
@@ -82,7 +104,10 @@ export async function encodeSession(session: AuthSession): Promise<string> {
 
 export async function decodeSession(value?: string | null): Promise<AuthSession | null> {
   if (!value) return null;
-  const [encodedPayload, signature] = value.split(".");
+  const parts = value.split(".");
+  if (parts.length !== 2) return null;
+
+  const [encodedPayload, signature] = parts;
   if (!encodedPayload || !signature) return null;
   if (!(await verifySignature(encodedPayload, signature))) return null;
 
@@ -126,7 +151,10 @@ export async function createOAuthStateCookieValue(state: string): Promise<string
 
 export async function verifyOAuthStateCookie(value: string | null | undefined, state: string | null): Promise<boolean> {
   if (!value || !state) return false;
-  const [rawState, signature] = value.split(".");
+  const parts = value.split(".");
+  if (parts.length !== 2) return false;
+
+  const [rawState, signature] = parts;
   if (!rawState || !signature) return false;
   if (rawState !== state) return false;
   return verifySignature(rawState, signature);

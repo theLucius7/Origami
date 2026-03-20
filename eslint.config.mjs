@@ -2,7 +2,7 @@ import nextVitals from "eslint-config-next/core-web-vitals";
 
 const config = [
   {
-    ignores: ["docs/.vitepress/dist/**"],
+    ignores: ["coverage/**", "docs/.vitepress/dist/**"],
   },
   ...nextVitals,
 ];

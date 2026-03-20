@@ -20,11 +20,18 @@ export function LocaleSwitcher() {
     const normalized = normalizeAppLocale(nextLocale);
     setLocaleCookie(normalized);
 
-    const params = new URLSearchParams(searchParams.toString());
+    const currentQuery = searchParams.toString();
+    const currentUrl = currentQuery ? `${pathname}?${currentQuery}` : pathname;
+    const params = new URLSearchParams(currentQuery);
     params.delete("lang");
     const nextUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+
+    if (nextUrl === currentUrl) {
+      router.refresh();
+      return;
+    }
+
     router.replace(nextUrl, { scroll: false });
-    router.refresh();
   }
 
   return (

@@ -29,6 +29,16 @@ export function resolveVisibleSelectedMailId(
   return emails.some((email) => email.id === selectedId) ? selectedId : undefined;
 }
 
+export function reconcileSelectedIds(
+  selectedIds: string[],
+  emails: Array<Pick<EmailListItem, "id">>
+) {
+  if (selectedIds.length === 0) return selectedIds;
+
+  const visibleIds = new Set(emails.map((email) => email.id));
+  return selectedIds.filter((id) => visibleIds.has(id));
+}
+
 export function buildInboxSearchNavigationState({
   accountId,
   starred,
@@ -58,19 +68,37 @@ function isInboxEmailVisible(email: Pick<Email, "localArchived" | "localSnoozeUn
   return true;
 }
 
-export function applyInboxEmailPatch(
+function applyInboxEmailPatchSet(
   emails: EmailListItem[],
-  emailId: string,
+  emailIds: string[],
   patch: Partial<Email>,
   { starred, nowTs, selectedId }: ApplyInboxEmailPatchOptions
 ) {
+  const targetIds = new Set(emailIds);
   const updatedEmails = emails
-    .map((email) => (email.id === emailId ? { ...email, ...patch } : email))
+    .map((email) => (targetIds.has(email.id) ? { ...email, ...patch } : email))
     .filter((email) => isInboxEmailVisible(email, starred, nowTs));
 
   return {
     emails: updatedEmails,
-    removedSelectedEmail:
-      emailId === selectedId && !updatedEmails.some((email) => email.id === emailId),
+    removedSelectedEmail: !!selectedId && targetIds.has(selectedId) && !updatedEmails.some((email) => email.id === selectedId),
   };
+}
+
+export function applyInboxEmailPatch(
+  emails: EmailListItem[],
+  emailId: string,
+  patch: Partial<Email>,
+  options: ApplyInboxEmailPatchOptions
+) {
+  return applyInboxEmailPatchSet(emails, [emailId], patch, options);
+}
+
+export function applyInboxEmailBatchPatch(
+  emails: EmailListItem[],
+  emailIds: string[],
+  patch: Partial<Email>,
+  options: ApplyInboxEmailPatchOptions
+) {
+  return applyInboxEmailPatchSet(emails, emailIds, patch, options);
 }
