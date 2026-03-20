@@ -24,6 +24,8 @@ const syncEmailsMock = vi.fn();
 const getAccountWithProviderMock = vi.fn();
 const persistProviderCredentialsIfNeededMock = vi.fn();
 const uploadAttachmentMock = vi.fn();
+const getAccountRecordByIdMock = vi.fn();
+const listAccountsMock = vi.fn();
 const buildObjectKeyMock = vi.fn((accountId: string, emailId: string, attachmentId: string, filename: string) =>
   `key:${accountId}:${emailId}:${attachmentId}:${filename}`
 );
@@ -67,8 +69,8 @@ vi.mock("@/lib/r2", () => ({
 }));
 
 vi.mock("@/lib/queries/accounts", () => ({
-  getAccountRecordById: vi.fn(),
-  listAccounts: vi.fn(),
+  getAccountRecordById: getAccountRecordByIdMock,
+  listAccounts: listAccountsMock,
 }));
 
 describe("sync-service", () => {
@@ -102,6 +104,8 @@ describe("sync-service", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     getAccountWithProviderMock.mockResolvedValue({ account, provider });
+    getAccountRecordByIdMock.mockResolvedValue(account);
+    listAccountsMock.mockResolvedValue([account]);
     persistProviderCredentialsIfNeededMock.mockResolvedValue(undefined);
     uploadAttachmentMock.mockResolvedValue(undefined);
     selectLimitMock.mockResolvedValue([]);
@@ -267,5 +271,27 @@ describe("sync-service", () => {
         (values as { folder?: string }).folder === "REMOTE_REMOVED"
     );
     expect(tombstoneUpdate).toBeTruthy();
+  });
+
+  it("sanitizes unknown full-sync errors in aggregated results", async () => {
+    syncEmailsMock.mockRejectedValue(new Error("getaddrinfo ENOTFOUND imap.example.com"));
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const { syncAllAccounts } = await import("./sync-service");
+    const result = await syncAllAccounts();
+
+    expect(result).toEqual({
+      results: [
+        {
+          email: "user@example.com",
+          synced: 0,
+          error: "Sync failed",
+          errorCode: "UNKNOWN",
+          errorDetails: undefined,
+        },
+      ],
+    });
+
+    errorSpy.mockRestore();
   });
 });

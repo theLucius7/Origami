@@ -1,6 +1,6 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { nanoid } from "nanoid";
-import { ActionError } from "@/lib/actions";
+import { ActionError, asActionError } from "@/lib/actions";
 import { getAccountWithProvider, persistProviderCredentialsIfNeeded } from "@/lib/account-providers";
 import { db } from "@/lib/db";
 import { accounts, attachments, emails, type Account } from "@/lib/db/schema";
@@ -187,16 +187,28 @@ export async function syncAccountById(accountId: string) {
 
 export async function syncAllAccounts() {
   const accountList = await listAccounts();
-  const results: Array<{ email: string; synced: number; error?: string }> = [];
+  const results: Array<{
+    email: string;
+    synced: number;
+    error?: string;
+    errorCode?: string;
+    errorDetails?: string;
+  }> = [];
 
   for (const account of accountList) {
     try {
       const { synced } = await syncSingleAccount(account);
       results.push({ email: account.email, synced });
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      console.error(`Sync error for ${account.email}:`, message);
-      results.push({ email: account.email, synced: 0, error: message });
+      const normalized = asActionError(error, "UNKNOWN", "Sync failed");
+      console.error(`Sync error for ${account.email}:`, normalized.message);
+      results.push({
+        email: account.email,
+        synced: 0,
+        error: normalized.code === "UNKNOWN" ? "Sync failed" : normalized.message,
+        errorCode: normalized.code,
+        errorDetails: normalized.details,
+      });
     }
   }
 
