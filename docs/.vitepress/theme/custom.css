@@ -88,7 +88,15 @@ body {
 .VPDoc .container,
 .VPNavBar .content,
 .VPHome .container {
-  max-width: min(1280px, calc(100vw - 48px));
+  max-width: min(1280px, calc(100% - 48px));
+}
+
+@media (max-width: 640px) {
+  .VPDoc .container,
+  .VPNavBar .content,
+  .VPHome .container {
+    max-width: calc(100% - 32px);
+  }
 }
 
 body {
