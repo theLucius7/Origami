@@ -29,13 +29,15 @@ export default async function InboxPage({ searchParams }: PageProps) {
   }
 
   return (
-    <InboxView
-      initialEmails={emailList}
-      accountProviders={accountProviders}
-      accountId={accountId}
-      starred={starred}
-      initialSearch={search ?? ""}
-      selectedMailId={selectedMailId}
-    />
+    <div className="flex min-h-0 flex-1 overflow-hidden bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.08),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(14,165,233,0.08),transparent_26%)] p-4 md:p-6">
+      <InboxView
+        initialEmails={emailList}
+        accountProviders={accountProviders}
+        accountId={accountId}
+        starred={starred}
+        initialSearch={search ?? ""}
+        selectedMailId={selectedMailId}
+      />
+    </div>
   );
 }

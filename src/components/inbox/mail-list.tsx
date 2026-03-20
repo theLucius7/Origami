@@ -32,7 +32,7 @@ export function MailList({
 
   if (emails.length === 0) {
     return (
-      <div className="flex min-h-0 flex-1 items-center justify-center text-muted-foreground">
+      <div className="flex min-h-0 flex-1 items-center justify-center px-6 text-center text-sm text-muted-foreground">
         <p>{messages.mailList.empty}</p>
       </div>
     );
@@ -40,7 +40,7 @@ export function MailList({
 
   return (
     <ScrollArea className="min-h-0 flex-1">
-      <div className="divide-y divide-border/70">
+      <div className="space-y-2 p-3">
         {emails.map((email) => {
           const provider = accountProviders[email.accountId] ?? "qq";
           const providerMeta = getProviderMeta(provider, locale);
@@ -51,69 +51,78 @@ export function MailList({
             <div
               key={email.id}
               className={cn(
-                "group flex gap-3 px-4 py-3 transition-colors hover:bg-accent/55",
-                selectedId === email.id && "bg-accent/75",
-                !email.isRead && "bg-primary/[0.035]"
+                "group rounded-[20px] border border-transparent bg-background/70 shadow-sm transition-all hover:-translate-y-0.5 hover:border-border/80 hover:bg-background hover:shadow-md",
+                selectedId === email.id && "border-primary/15 bg-accent/55 shadow-none",
+                !email.isRead && "border-border/70 bg-primary/[0.045]"
               )}
             >
-              <button
-                type="button"
-                onClick={() => onToggleSelect(email.id)}
-                className={cn(
-                  "mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded border",
-                  isSelectedForBatch
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-muted-foreground/40"
-                )}
-                aria-label={isSelectedForBatch ? messages.mailList.unselectMail : messages.mailList.selectMail}
-              >
-                {isSelectedForBatch && <Check className="h-3 w-3" />}
-              </button>
+              <div className="flex gap-3 p-4">
+                <button
+                  type="button"
+                  onClick={() => onToggleSelect(email.id)}
+                  aria-pressed={isSelectedForBatch}
+                  className={cn(
+                    "mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border shadow-sm transition-colors",
+                    isSelectedForBatch
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-muted-foreground/30 bg-background text-transparent"
+                  )}
+                  aria-label={isSelectedForBatch ? messages.mailList.unselectMail : messages.mailList.selectMail}
+                >
+                  <Check className="h-3 w-3" />
+                </button>
 
-              <button
-                type="button"
-                onClick={() => onSelect(email.id)}
-                className="flex min-w-0 flex-1 flex-col gap-1 text-left"
-              >
-                <div className="flex items-center gap-2">
-                  <span className={cn("h-2 w-2 shrink-0 rounded-full", providerMeta.dotClass)} />
-                  <span className={cn("flex-1 truncate text-sm", !email.isRead && "font-semibold")}>
-                    {email.sender?.replace(/<.*>/, "").trim() || email.sender}
-                  </span>
-                  {email.isStarred === 1 && <Star className="h-3 w-3 shrink-0 fill-yellow-400 text-yellow-400" />}
-                  <span className="shrink-0 text-xs text-muted-foreground">
-                    {email.receivedAt ? formatRelativeTime(email.receivedAt, locale) : ""}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 pl-4">
-                  <span className={cn("truncate text-sm", !email.isRead && "font-medium")}>
-                    {email.subject || messages.common.untitled}
-                  </span>
-                </div>
-                <div className="flex flex-wrap items-center gap-1 pl-4">
-                  <Badge variant="outline" className={cn("text-[10px]", providerMeta.badgeClass)}>
-                    {providerMeta.label}
-                  </Badge>
-                  {email.localDone === 1 && (
-                    <Badge variant="secondary" className="gap-1 text-[10px]">
-                      <CheckCircle2 className="h-3 w-3" /> {messages.inbox.done}
-                    </Badge>
-                  )}
-                  {email.localArchived === 1 && (
-                    <Badge variant="secondary" className="gap-1 text-[10px]">
-                      <Archive className="h-3 w-3" /> {messages.mailList.archived}
-                    </Badge>
-                  )}
-                  {isSnoozed && (
-                    <Badge variant="secondary" className="gap-1 text-[10px]">
-                      <Clock3 className="h-3 w-3" /> {messages.mailList.snoozed}
-                    </Badge>
-                  )}
-                </div>
-                <p className="truncate pl-4 text-xs text-muted-foreground">
-                  {email.snippet || messages.common.noSummary}
-                </p>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => onSelect(email.id)}
+                  className="flex min-w-0 flex-1 flex-col gap-2 text-left"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className={cn("h-2 w-2 shrink-0 rounded-full", providerMeta.dotClass)} />
+                        <span className={cn("truncate text-sm text-foreground", !email.isRead && "font-semibold")}>
+                          {email.sender?.replace(/<.*>/, "").trim() || email.sender}
+                        </span>
+                        {email.isStarred === 1 && <Star className="h-3 w-3 shrink-0 fill-yellow-400 text-yellow-400" />}
+                      </div>
+                      <p className={cn("mt-1 truncate text-sm text-foreground/90", !email.isRead && "font-medium")}>
+                        {email.subject || messages.common.untitled}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <Badge variant="outline" className={cn("rounded-full text-[10px]", providerMeta.badgeClass)}>
+                        {providerMeta.label}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {email.receivedAt ? formatRelativeTime(email.receivedAt, locale) : ""}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-1">
+                    {email.localDone === 1 && (
+                      <Badge variant="secondary" className="gap-1 rounded-full text-[10px]">
+                        <CheckCircle2 className="h-3 w-3" /> {messages.inbox.done}
+                      </Badge>
+                    )}
+                    {email.localArchived === 1 && (
+                      <Badge variant="secondary" className="gap-1 rounded-full text-[10px]">
+                        <Archive className="h-3 w-3" /> {messages.mailList.archived}
+                      </Badge>
+                    )}
+                    {isSnoozed && (
+                      <Badge variant="secondary" className="gap-1 rounded-full text-[10px]">
+                        <Clock3 className="h-3 w-3" /> {messages.mailList.snoozed}
+                      </Badge>
+                    )}
+                  </div>
+
+                  <p className="truncate text-xs leading-5 text-muted-foreground">
+                    {email.snippet || messages.common.noSummary}
+                  </p>
+                </button>
+              </div>
             </div>
           );
         })}

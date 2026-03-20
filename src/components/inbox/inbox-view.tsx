@@ -269,21 +269,34 @@ export function InboxView({
   }
 
   const shouldShowMobileDetail = Boolean(selectedId);
+  const inboxTitle = starred ? messages.sidebar.starred : messages.sidebar.allInbox;
 
   return (
     <>
-      <div className="flex h-full min-h-0 flex-1 overflow-hidden">
-        <div className={`${shouldShowMobileDetail ? "hidden md:flex" : "flex"} min-h-0 w-[23rem] flex-col border-r border-border/70 xl:w-[28rem]`}>
-          <div className="border-b border-border/70 p-4">
-            <form onSubmit={handleSearchSubmit} className="flex gap-2">
+      <div className="flex h-full min-h-0 flex-1 overflow-hidden rounded-[28px] border border-border/70 bg-background/80 shadow-[0_24px_60px_rgba(15,23,42,0.08)] backdrop-blur">
+        <div className={`${shouldShowMobileDetail ? "hidden md:flex" : "flex"} min-h-0 w-full flex-col border-r border-border/60 bg-muted/20 md:w-[25rem] xl:w-[29rem]`}>
+          <div className="border-b border-border/60 px-4 pb-4 pt-5">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground/80">
+                  {messages.sidebar.workspace}
+                </p>
+                <h2 className="truncate text-2xl font-semibold tracking-tight">{inboxTitle}</h2>
+              </div>
+              <div className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm">
+                {messages.inbox.count(emails.length)}
+              </div>
+            </div>
+
+            <form onSubmit={handleSearchSubmit} className="mt-4 flex gap-2">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder={messages.inbox.searchPlaceholder}
                   aria-label={messages.inbox.searchPlaceholder}
-                  className="h-11 rounded-2xl border-border/80 bg-background/80 pl-10 pr-10"
+                  className="h-11 rounded-2xl border-border/70 bg-background/80 pl-10 pr-10 shadow-sm"
                 />
                 {search && (
                   <button
@@ -298,28 +311,67 @@ export function InboxView({
                 )}
               </div>
             </form>
-            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <span>{messages.inbox.count(emails.length)}</span>
-              {starred && <span>• {messages.inbox.starredOnly}</span>}
-              {activeSearch && <span>• {messages.inbox.searching}</span>}
-              {isPending && <span>• {messages.inbox.loading}</span>}
+
+            <div className="mt-4 flex flex-wrap items-center gap-2 text-xs">
+              {starred && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-background/70 px-3 py-1 text-muted-foreground shadow-sm">
+                  <Star className="h-3 w-3" />
+                  {messages.inbox.starredOnly}
+                </span>
+              )}
+              {activeSearch && (
+                <span className="inline-flex items-center rounded-full border border-border/70 bg-background/70 px-3 py-1 text-muted-foreground shadow-sm">
+                  {messages.inbox.searching}
+                </span>
+              )}
+              {isPending && (
+                <span className="inline-flex items-center rounded-full border border-border/70 bg-background/70 px-3 py-1 text-muted-foreground shadow-sm">
+                  {messages.inbox.loading}
+                </span>
+              )}
             </div>
-            <div className="mt-3 rounded-2xl bg-muted/55 px-3 py-2 text-xs text-muted-foreground">
-              <div>
+
+            <div className="mt-4 rounded-2xl border border-border/60 bg-background/75 px-3 py-2 text-xs leading-5 text-muted-foreground">
+              <div className="font-medium text-foreground/80">
                 {messages.inbox.searchExample.includes("：") ? messages.inbox.searchExample : `Example: ${messages.inbox.searchExample}`}
               </div>
               <div className="mt-1">{messages.inbox.searchSupport}</div>
             </div>
           </div>
 
-          <div className="border-b border-border/70 px-4 py-3">
+          <div className="border-b border-border/60 px-4 py-3">
             {selectedIds.length > 0 ? (
-              <div className="space-y-2">
-                <div className="text-xs text-muted-foreground">{messages.inbox.selectedCount(selectedIds.length)}</div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="text-xs font-medium text-muted-foreground">
+                    {messages.inbox.selectedCount(selectedIds.length)}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 rounded-full px-3"
+                      onClick={handleSelectAllVisible}
+                      disabled={isPending || emails.length === 0}
+                    >
+                      {allVisibleSelected ? messages.inbox.unselectAll : messages.inbox.selectAllVisible}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 rounded-full px-3"
+                      onClick={() => setSelectedIds([])}
+                      disabled={isPending}
+                    >
+                      {messages.inbox.clearSelection}
+                    </Button>
+                  </div>
+                </div>
                 <div className="flex flex-wrap gap-2">
                   <Button
                     size="sm"
                     variant="outline"
+                    className="rounded-full"
                     disabled={isPending}
                     onClick={() =>
                       runBatchAction(async () => {
@@ -333,6 +385,7 @@ export function InboxView({
                   <Button
                     size="sm"
                     variant="outline"
+                    className="rounded-full"
                     disabled={isPending}
                     onClick={() =>
                       runBatchAction(async () => {
@@ -343,12 +396,19 @@ export function InboxView({
                   >
                     <Archive className="h-4 w-4" /> {messages.inbox.archive}
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => setBatchSnoozeOpen(true)} disabled={isPending}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-full"
+                    onClick={() => setBatchSnoozeOpen(true)}
+                    disabled={isPending}
+                  >
                     <Clock3 className="h-4 w-4" /> {messages.inbox.snooze}
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
+                    className="rounded-full"
                     disabled={isPending}
                     onClick={() =>
                       runBatchAction(async () => {
@@ -359,35 +419,41 @@ export function InboxView({
                   >
                     <Star className="h-4 w-4" /> {messages.inbox.batchStar}
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setSelectedIds([])} disabled={isPending}>
-                    {messages.inbox.clearSelection}
-                  </Button>
                 </div>
               </div>
             ) : (
-              <Button size="sm" variant="ghost" onClick={handleSelectAllVisible} disabled={isPending}>
-                {emails.length > 0
-                  ? allVisibleSelected
-                    ? messages.inbox.unselectAll
-                    : messages.inbox.selectAllVisible
-                  : messages.inbox.nothingSelectable}
-              </Button>
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-xs text-muted-foreground">
+                  {emails.length > 0 ? messages.inbox.count(emails.length) : messages.mailList.empty}
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 rounded-full px-3"
+                  onClick={handleSelectAllVisible}
+                  disabled={isPending || emails.length === 0}
+                >
+                  {messages.inbox.selectAllVisible}
+                </Button>
+              </div>
             )}
           </div>
 
-          <MailList
-            emails={emails}
-            selectedId={selectedId ?? undefined}
-            selectedIds={[...selectedIdSet]}
-            accountProviders={accountProviders}
-            onSelect={handleSelect}
-            onToggleSelect={handleToggleSelect}
-          />
+          <div className="min-h-0 flex-1 bg-background/40">
+            <MailList
+              emails={emails}
+              selectedId={selectedId ?? undefined}
+              selectedIds={[...selectedIdSet]}
+              accountProviders={accountProviders}
+              onSelect={handleSelect}
+              onToggleSelect={handleToggleSelect}
+            />
+          </div>
         </div>
 
-        <div className={`${shouldShowMobileDetail ? "flex" : "hidden md:flex"} min-h-0 flex-1 overflow-hidden`}>
+        <div className={`${shouldShowMobileDetail ? "flex" : "hidden md:flex"} min-h-0 flex-1 overflow-hidden bg-muted/10 md:p-4`}>
           {selectedEmail || detailLoading ? (
-            <div className="min-h-0 flex-1">
+            <div className="min-h-0 flex-1 overflow-hidden md:rounded-[24px] md:border md:border-border/60 md:bg-background/90 md:shadow-sm">
               {selectedEmail ? (
                 <MailDetail
                   email={selectedEmail}
@@ -403,11 +469,11 @@ export function InboxView({
               )}
             </div>
           ) : (
-            <div className="flex flex-1 items-center justify-center px-8 text-muted-foreground">
-              <div className="max-w-md rounded-[2rem] border border-dashed border-border/80 bg-background/55 px-8 py-10 text-center shadow-sm">
+            <div className="flex flex-1 items-center justify-center p-6 md:p-10">
+              <div className="max-w-md rounded-[28px] border border-dashed border-border/80 bg-background/70 px-8 py-10 text-center shadow-sm backdrop-blur">
                 <p className="text-lg font-medium text-foreground">{messages.inbox.emptyTitle}</p>
-                <p className="mt-1 text-sm">{messages.inbox.emptyDescription}</p>
-                <p className="mt-3 text-xs">{messages.inbox.emptyNote}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{messages.inbox.emptyDescription}</p>
+                <p className="mt-3 text-xs text-muted-foreground">{messages.inbox.emptyNote}</p>
               </div>
             </div>
           )}
