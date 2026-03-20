@@ -32,6 +32,7 @@ import { formatRelativeTime, formatFileSize } from "@/lib/format";
 import { sanitizeEmailHtml } from "@/lib/email-html";
 import { parseStoredStringList } from "@/lib/string-list";
 import { mapRuntimeErrorToMessage } from "@/lib/runtime-errors";
+import { AttachmentDownloadButton } from "@/components/attachments/attachment-download-button";
 import { SnoozeDialog } from "./snooze-dialog";
 import { shouldPollMailDetailStatus } from "./mail-detail-state";
 import { getClientActionErrorMessage, useClientAction } from "@/hooks/use-client-action";
@@ -321,17 +322,18 @@ export function MailDetail({
               </div>
               <div className="flex flex-wrap gap-2">
                 {attachments.map((att) => (
-                  <a
+                  <AttachmentDownloadButton
                     key={att.id}
-                    href={`/api/attachments/${encodeURIComponent(att.id)}`}
-                    className="flex items-center gap-2 rounded-2xl border px-3 py-2 text-sm transition-colors hover:bg-accent"
+                    attachmentId={att.id}
+                    filename={att.filename ?? "attachment"}
+                    className="flex items-center gap-2 rounded-2xl border px-3 py-2 text-sm transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <Download className="h-3 w-3 shrink-0" />
                     <span className="max-w-[200px] truncate">{att.filename}</span>
                     <Badge variant="outline" className="text-xs">
                       {formatFileSize(att.size ?? 0)}
                     </Badge>
-                  </a>
+                  </AttachmentDownloadButton>
                 ))}
               </div>
             </div>

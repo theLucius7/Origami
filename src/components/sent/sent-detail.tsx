@@ -8,6 +8,7 @@ import { Download, Paperclip } from "lucide-react";
 import type { AppLocale } from "@/i18n/locale";
 import { getMessages } from "@/i18n/messages";
 import { getProviderMeta } from "@/config/providers";
+import { AttachmentDownloadButton } from "@/components/attachments/attachment-download-button";
 
 export function SentDetail({
   message,
@@ -87,15 +88,16 @@ export function SentDetail({
             </div>
             <div className="flex flex-wrap gap-2">
               {attachments.map((attachment) => (
-                <a
+                <AttachmentDownloadButton
                   key={attachment.id}
-                  href={`/api/attachments/${encodeURIComponent(attachment.id)}`}
-                  className="flex items-center gap-2 rounded-2xl border px-3 py-2 text-sm hover:bg-accent"
+                  attachmentId={attachment.id}
+                  filename={attachment.filename ?? "attachment"}
+                  className="flex items-center gap-2 rounded-2xl border px-3 py-2 text-sm hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <Download className="h-4 w-4" />
                   <span className="max-w-[220px] truncate">{attachment.filename}</span>
                   <Badge variant="outline">{formatFileSize(attachment.size ?? 0)}</Badge>
-                </a>
+                </AttachmentDownloadButton>
               ))}
             </div>
           </div>
