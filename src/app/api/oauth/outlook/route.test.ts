@@ -98,6 +98,17 @@ describe("GET /api/oauth/outlook", () => {
     );
   });
 
+  it("redirects to accounts when the callback is missing a code", async () => {
+    const { GET } = await import("./route");
+    const request = new NextRequest("http://localhost:3000/api/oauth/outlook?error=access_denied");
+
+    const response = await GET(request);
+
+    expect(response.headers.get("location")).toBe(
+      "http://localhost:3000/accounts?error=oauth_callback_failed"
+    );
+  });
+
   it("redirects to accounts with a stable error code when provider exchange fails", async () => {
     exchangeOutlookCodeMock.mockRejectedValue(new Error("consent denied"));
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);

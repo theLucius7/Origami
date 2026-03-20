@@ -9,12 +9,6 @@ import { readSessionFromCookies } from "@/lib/session";
 import { eq } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
-  const code = request.nextUrl.searchParams.get("code");
-
-  if (!code) {
-    return NextResponse.json({ error: "Missing code" }, { status: 400 });
-  }
-
   const session = await readSessionFromCookies(request.cookies);
   if (!session) {
     return NextResponse.redirect(new URL("/login", request.url));
@@ -26,6 +20,11 @@ export async function GET(request: NextRequest) {
     : null;
   if (stateParam && !state) {
     return NextResponse.redirect(new URL("/accounts?error=invalid_oauth_state", request.url));
+  }
+
+  const code = request.nextUrl.searchParams.get("code");
+  if (!code) {
+    return NextResponse.redirect(new URL("/accounts?error=oauth_callback_failed", request.url));
   }
 
   try {
