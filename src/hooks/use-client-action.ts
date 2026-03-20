@@ -7,6 +7,7 @@ import { useI18n } from "@/components/providers/i18n-provider";
 import { parseSerializedActionError } from "@/lib/actions";
 import { getLocalizedActionErrorFallback, getLocalizedActionErrorMessage } from "@/i18n/action-errors";
 import { APP_LOCALE_COOKIE, DEFAULT_APP_LOCALE, normalizeAppLocale, type AppLocale } from "@/i18n/locale";
+import { mapRuntimeErrorToMessage } from "@/lib/runtime-errors";
 
 export interface ClientActionToast {
   title: string;
@@ -73,15 +74,25 @@ export function getClientActionErrorMessage(
 
   const serialized = parseSerializedActionError(rawMessage);
   if (serialized) {
+    const rawSerializedMessage = serialized.message ?? serialized.details;
+    const runtimeMessage = rawSerializedMessage
+      ? mapRuntimeErrorToMessage({ locale, error: rawSerializedMessage })
+      : null;
+
     return getLocalizedActionErrorMessage(
       serialized.code,
       locale,
       serialized.details,
-      serialized.message || localizedFallback
+      runtimeMessage && runtimeMessage !== rawSerializedMessage ? runtimeMessage : localizedFallback
     );
   }
 
-  return rawMessage;
+  const runtimeMessage = mapRuntimeErrorToMessage({ locale, error: rawMessage });
+  if (runtimeMessage && runtimeMessage !== rawMessage) {
+    return runtimeMessage;
+  }
+
+  return localizedFallback;
 }
 
 function resolveToast<T>(input: MaybeToast<T>, value: T) {

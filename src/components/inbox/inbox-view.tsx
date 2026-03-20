@@ -54,7 +54,7 @@ export function InboxView({
   const router = useRouter();
   const { toast } = useToast();
   const { isPending: isMutating, run } = useClientAction();
-  const { messages } = useI18n();
+  const { locale, messages } = useI18n();
   const [emails, setEmails] = useState(initialEmails);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null);
@@ -112,10 +112,9 @@ export function InboxView({
       })
       .catch((error) => {
         if (cancelled) return;
-        const message = error instanceof Error ? error.message : messages.inbox.loadDetailErrorDescription;
         toast({
           title: messages.inbox.loadDetailErrorTitle,
-          description: message,
+          description: getClientActionErrorMessage(error, messages.inbox.loadDetailErrorDescription, locale),
           variant: "error",
         });
         setSelectedEmail(null);
@@ -129,7 +128,7 @@ export function InboxView({
     return () => {
       cancelled = true;
     };
-  }, [messages.inbox.loadDetailErrorDescription, messages.inbox.loadDetailErrorTitle, selectedId, toast]);
+  }, [locale, messages.inbox.loadDetailErrorDescription, messages.inbox.loadDetailErrorTitle, selectedId, toast]);
 
   useEffect(() => {
     if (!selectedId) return;
@@ -165,16 +164,15 @@ export function InboxView({
 
           router.replace(nextState.href, { scroll: false });
         } catch (error) {
-          const message = error instanceof Error ? error.message : messages.inbox.searchErrorDescription;
           toast({
             title: messages.inbox.searchErrorTitle,
-            description: message,
+            description: getClientActionErrorMessage(error, messages.inbox.searchErrorDescription, locale),
             variant: "error",
           });
         }
       });
     },
-    [accountId, messages.inbox.searchErrorDescription, messages.inbox.searchErrorTitle, router, selectedId, starred, toast]
+    [accountId, locale, messages.inbox.searchErrorDescription, messages.inbox.searchErrorTitle, router, selectedId, starred, toast]
   );
 
   function handleSearchSubmit(e: React.FormEvent) {
