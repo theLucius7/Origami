@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { encodeRuntimeError, getSafeRuntimeErrorMessage, mapRuntimeErrorToMessage } from "./runtime-errors";
+import {
+  encodeRuntimeError,
+  getSafeRuntimeErrorMessage,
+  mapRuntimeErrorToMessage,
+  normalizeRuntimeError,
+} from "./runtime-errors";
 
 describe("runtime error mapping", () => {
   it("localizes structured runtime errors", () => {
@@ -78,5 +83,19 @@ describe("runtime error mapping", () => {
         fallback: "操作失败",
       })
     ).toBe("远端邮件 ID 无效，无法回写。");
+  });
+
+  it("normalizes runtime errors for storage", () => {
+    expect(normalizeRuntimeError(new Error("Invalid remote id: remote-3"), "WRITEBACK_UNKNOWN")).toBe(
+      encodeRuntimeError("WRITEBACK_INVALID_REMOTE_ID")
+    );
+
+    expect(normalizeRuntimeError(new Error("socket hang up"), "WRITEBACK_UNKNOWN")).toBe(
+      encodeRuntimeError("WRITEBACK_UNKNOWN")
+    );
+
+    expect(normalizeRuntimeError(new Error("timeout"), "HYDRATION_UNKNOWN")).toBe(
+      encodeRuntimeError("HYDRATION_UNKNOWN")
+    );
   });
 });

@@ -5,7 +5,7 @@ import { nanoid } from "nanoid";
 import { buildObjectKey, uploadAttachment } from "@/lib/r2";
 import { getAccountWithProvider, persistProviderCredentialsIfNeeded } from "@/lib/account-providers";
 import { getEmailRecordById, listEmailAttachments } from "@/lib/queries/emails";
-import { encodeRuntimeError } from "@/lib/runtime-errors";
+import { encodeRuntimeError, normalizeRuntimeError } from "@/lib/runtime-errors";
 
 function nowUnix() {
   return Math.floor(Date.now() / 1000);
@@ -118,12 +118,11 @@ export async function hydrateEmailIfNeeded(email: Email): Promise<Email> {
 
     return (await getEmailRecordById(email.id)) ?? email;
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
     console.error("Failed to hydrate email body:", error);
     await setHydrationState(email.id, {
       hydrationStatus: "failed",
       hydratedAt: nowUnix(),
-      hydrationError: message,
+      hydrationError: normalizeRuntimeError(error, "HYDRATION_UNKNOWN"),
     });
     return (await getEmailRecordById(email.id)) ?? email;
   }

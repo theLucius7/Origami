@@ -5,12 +5,14 @@ const RUNTIME_ERROR_PREFIX = "origami-runtime:";
 type RuntimeErrorCode =
   | "HYDRATION_ACCOUNT_UNAVAILABLE"
   | "HYDRATION_REMOTE_NOT_FOUND"
+  | "HYDRATION_UNKNOWN"
   | "WRITEBACK_MISSING_REMOTE_ID"
   | "WRITEBACK_INVALID_REMOTE_ID"
   | "WRITEBACK_INVALID_CREDENTIALS"
   | "WRITEBACK_GMAIL_SCOPE_MISSING"
   | "WRITEBACK_OUTLOOK_SCOPE_MISSING"
-  | "WRITEBACK_UNSUPPORTED_PROVIDER";
+  | "WRITEBACK_UNSUPPORTED_PROVIDER"
+  | "WRITEBACK_UNKNOWN";
 
 function getRuntimeErrorMessage(locale: AppLocale, code: RuntimeErrorCode) {
   switch (code) {
@@ -35,6 +37,17 @@ function getRuntimeErrorMessage(locale: AppLocale, code: RuntimeErrorCode) {
           return "リモート側でこのメールが見つかりませんでした。削除または移動された可能性があります。";
         default:
           return "远端未找到这封邮件，可能已被删除或移动。";
+      }
+    case "HYDRATION_UNKNOWN":
+      switch (locale) {
+        case "zh-TW":
+          return "正文補抓失敗，請稍後再試。";
+        case "en":
+          return "Body hydration failed. Please try again later.";
+        case "ja":
+          return "本文の補完に失敗しました。しばらくしてからもう一度お試しください。";
+        default:
+          return "正文补拉失败，请稍后重试。";
       }
     case "WRITEBACK_MISSING_REMOTE_ID":
       switch (locale) {
@@ -102,6 +115,17 @@ function getRuntimeErrorMessage(locale: AppLocale, code: RuntimeErrorCode) {
         default:
           return "当前 provider 不支持这个写回操作。";
       }
+    case "WRITEBACK_UNKNOWN":
+      switch (locale) {
+        case "zh-TW":
+          return "遠端回寫失敗，請稍後再試。";
+        case "en":
+          return "Remote write-back failed. Please try again later.";
+        case "ja":
+          return "リモートへの書き戻しに失敗しました。しばらくしてからもう一度お試しください。";
+        default:
+          return "远端写回失败，请稍后重试。";
+      }
   }
 }
 
@@ -111,12 +135,14 @@ function parseRuntimeError(error: string): { code: RuntimeErrorCode } | null {
     if (
       code === "HYDRATION_ACCOUNT_UNAVAILABLE" ||
       code === "HYDRATION_REMOTE_NOT_FOUND" ||
+      code === "HYDRATION_UNKNOWN" ||
       code === "WRITEBACK_MISSING_REMOTE_ID" ||
       code === "WRITEBACK_INVALID_REMOTE_ID" ||
       code === "WRITEBACK_INVALID_CREDENTIALS" ||
       code === "WRITEBACK_GMAIL_SCOPE_MISSING" ||
       code === "WRITEBACK_OUTLOOK_SCOPE_MISSING" ||
-      code === "WRITEBACK_UNSUPPORTED_PROVIDER"
+      code === "WRITEBACK_UNSUPPORTED_PROVIDER" ||
+      code === "WRITEBACK_UNKNOWN"
     ) {
       return { code };
     }
@@ -180,4 +206,24 @@ export function getSafeRuntimeErrorMessage(params: {
   }
 
   return mapped;
+}
+
+export function normalizeRuntimeError(error: unknown, fallbackCode?: RuntimeErrorCode) {
+  const rawMessage =
+    error instanceof Error && error.message
+      ? error.message
+      : typeof error === "string" && error.trim()
+        ? error
+        : null;
+
+  if (!rawMessage) {
+    return fallbackCode ? encodeRuntimeError(fallbackCode) : null;
+  }
+
+  const parsed = parseRuntimeError(rawMessage);
+  if (parsed) {
+    return encodeRuntimeError(parsed.code);
+  }
+
+  return fallbackCode ? encodeRuntimeError(fallbackCode) : rawMessage;
 }

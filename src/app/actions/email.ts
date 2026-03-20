@@ -12,7 +12,7 @@ import {
 } from "@/lib/queries/emails";
 import { writeBackRead, writeBackStar, type WriteBackResult } from "@/lib/providers/writeBack";
 import { revalidateMailboxPages } from "@/lib/revalidate";
-import { encodeRuntimeError } from "@/lib/runtime-errors";
+import { encodeRuntimeError, normalizeRuntimeError } from "@/lib/runtime-errors";
 import { getHydratedEmailDetail, hydrateEmailIfNeeded } from "@/lib/services/email-service";
 
 type WriteBackKind = "read" | "star";
@@ -97,10 +97,9 @@ async function scheduleReadWriteBack(emailId: string) {
       await persistWriteBackState([emailId], "read", mapWriteBackResult(result));
     })
     .catch(async (error) => {
-      const message = error instanceof Error ? error.message : String(error);
       await persistWriteBackState([emailId], "read", {
         status: "failed",
-        error: message,
+        error: normalizeRuntimeError(error, "WRITEBACK_UNKNOWN"),
         at: Math.floor(Date.now() / 1000),
       });
       console.warn(`[writeback:read] failed to schedule for ${emailId}:`, error);
@@ -144,10 +143,9 @@ async function scheduleStarWriteBack(emailIds: string[], starred: boolean) {
         const result = await writeBackStar(row.account, row.email.remoteId!, starred);
         await persistWriteBackState([row.email.id], "star", mapWriteBackResult(result));
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
         await persistWriteBackState([row.email.id], "star", {
           status: "failed",
-          error: message,
+          error: normalizeRuntimeError(error, "WRITEBACK_UNKNOWN"),
           at: Math.floor(Date.now() / 1000),
         });
         console.warn(`[writeback:star] failed to schedule for ${row.email.id}:`, error);
